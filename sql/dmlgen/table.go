@@ -347,9 +347,9 @@ func (t *Table) fnEntityCopy(mainGen *codegen.Go, g *Generator) {
 	}
 	mainGen.C(`Copy copies the struct and returns a new pointer. TODO use deepcopy tool to generate code afterwards`)
 	mainGen.Pln(`func (e *`, t.EntityName(), `) Copy() *`, t.EntityName(), ` {
-		e2 := new(`, t.EntityName(), `)
-		*e2 = *e // for now a shallow copy
-		return e2
+		if e == nil { return &`, t.EntityName(), `{} }
+		e2 := *e // for now a shallow copy
+		return &e2
 }`)
 }
 
@@ -942,21 +942,21 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		mainGen.Pln(dmlEnabled, `}
 		cacheKey = `, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `
 	}
-	if _, err = dbm.CachedQuery(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}`)
 	} else {
 		mainGen.Pln(dmlEnabled, `if len(pkIDs) > 0 {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
 		mainGen.Pln(dmlEnabled, `} else {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
@@ -983,7 +983,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
@@ -1012,7 +1012,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		resCheckFn = dbmNoopResultCheckFn
 	}`)
 
-	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).Prepare(ctx)
+	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).Prepare(ctx)
 		if err != nil {	return errors.WithStack(err) }`)
 
 	mainGen.Pln(dmlEnabled, `for _, c := range cc.Data {
@@ -1036,7 +1036,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
@@ -1057,7 +1057,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
@@ -1137,7 +1137,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).Load(ctx, e, `, &bufPKNames, `); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).Load(ctx, e, `, &bufPKNames, `); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -1160,7 +1160,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
@@ -1181,7 +1181,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
@@ -1202,7 +1202,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
@@ -1223,7 +1223,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.CachedQuery(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
@@ -1255,35 +1255,34 @@ func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 		pkWhereEQ.WriteString("Tuples(),\n")
 	}
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.CollectionName(), `SelectAll"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).WithDBR()),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")),`)
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.CollectionName(), `SelectByPK"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereIN.String(), `).WithDBR().Interpolate()),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereIN.String(), `),`)
 
-	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `SelectByPK"`),
-		`, dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereEQ.String(), `).WithDBR().Interpolate()),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereEQ.String(), `),`)
 
 	if t.Table.IsView() {
 		return
 	}
 
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `UpdateByPK"`),
-		`, dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Update().Where(`, pkWhereEQ.String(), `)).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		`: dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Update().Where(`, pkWhereEQ.String(), `)),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `DeleteByPK"`),
-		`, dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Delete().Where(`, pkWhereIN.String(), `)).WithDBR().Interpolate()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		`: dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Delete().Where(`, pkWhereIN.String(), `)),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `Insert"`),
-		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).WithDBR()),`)
-	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct|FeatureCollectionStruct), `ddl.WithQueryDBR( `,
+		`: dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()),`)
+	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `UpsertByPK"`),
-		`, dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey().WithDBR()),`)
-	mainGen.Pln(``)
+		`: dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey(),`)
 }
 
 func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten int) {
@@ -1328,51 +1327,46 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 	testGen.Pln(`t.Run("` + strs.ToGoCamelCase(t.Table.Name) + `_Entity", func(t *testing.T) {`)
 	testGen.Pln(`tbl := tbls.MustTable(TableName`+strs.ToGoCamelCase(t.Table.Name), `)`)
 
-	testGen.Pln(`entSELECT := tbl.SelectByPK("*")`)
-	testGen.C(`WithDBR generates the cached SQL string with empty key "".`)
-	testGen.Pln(`entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()`)
+	testGen.Pln(`selOneRow := tbl.Select("*").Where(`)
+	for _, c := range t.Table.Columns {
+		if c.IsPK() && c.IsAutoIncrement() {
+			testGen.Pln(`dml.Column(`, strconv.Quote(c.Field), `).Equal().PlaceHolder(),`)
+		}
+	}
+	testGen.Pln(`)`)
 
-	testGen.Pln(`entSELECT.WithCacheKey("select_10").Wheres.Reset()`)
-	testGen.Pln(`_, _, err := entSELECT.Where(`)
-
+	testGen.Pln(`selTenRows := tbl.Select("*").Where(`)
 	for _, c := range t.Table.Columns {
 		if c.IsPK() && c.IsAutoIncrement() {
 			testGen.Pln(`dml.Column(`, strconv.Quote(c.Field), `).LessOrEqual().Int(10),`)
 		}
 	}
+	testGen.Pln(`)`)
 
-	testGen.Pln(`).ToSQL() // ToSQL generates the new cached SQL string with key select_10`)
-	testGen.Pln(`assert.NoError(t, err)`)
-	testGen.Pln(`entCol := New`+t.CollectionName(), `()`)
+	testGen.Pln(`selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)`)
+	testGen.Pln(`defer selOneRowDBR.Close()`)
+	testGen.Pln(`selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)`)
 
 	if t.HasAutoIncrement < 2 {
 		testGen.C(`this table/view does not support auto_increment`)
-		testGen.Pln(`rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)`)
+		testGen.Pln(`entCol := New`+t.CollectionName(), `()`)
+		testGen.Pln(`rowCount, err := selTenRowsDBR.Load(ctx, entCol)`)
 		testGen.Pln(`assert.NoError(t, err)`)
-		testGen.Pln(`t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())`)
 		testGen.Pln(`t.Logf("Collection load rowCount: %d", rowCount)`)
 	} else {
-		testGen.Pln(`entINSERT := tbl.Insert().BuildValues()`)
-		testGen.Pln(`entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)`)
+		testGen.Pln(`entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx,tbl.Insert().BuildValues())`)
 
 		testGen.Pln(`for i := 0; i < 9; i++ {`)
 		{
 			testGen.In()
 			testGen.Pln(`entIn := new(`, strs.ToGoCamelCase(t.Table.Name), `)`)
-			testGen.Pln(`if err := ps.FakeData(entIn); err != nil {`)
-			{
-				testGen.In()
-				testGen.Pln(`t.Errorf("IDX[%d]: %+v", i, err)`)
-				testGen.Pln(`return`)
-				testGen.Out()
-			}
-			testGen.Pln(`}`)
+			testGen.Pln(`assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)`)
 
 			testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.` + strs.ToGoCamelCase(t.Table.Name) + `_Entity")(entINSERTStmtA.ExecContext(ctx,dml.Qualify("", entIn)))`)
 			testGen.Pln(`entINSERTStmtA.Reset()`)
 
 			testGen.Pln(`entOut := new(`, strs.ToGoCamelCase(t.Table.Name), `)`)
-			testGen.Pln(`rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)`)
+			testGen.Pln(`rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)`)
 			testGen.Pln(`assert.NoError(t, err)`)
 			testGen.Pln(`assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)`)
 
@@ -1393,17 +1387,14 @@ func (t *Table) generateTestDB(testGen *codegen.Go) {
 		}
 		testGen.Pln(`}`) // endfor
 		testGen.Pln(`dmltest.Close(t, entINSERTStmtA)`)
-
-		testGen.Pln(`rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)`)
+		testGen.Pln(`entCol := New`+t.CollectionName(), `()`)
+		testGen.Pln(`rowCount, err := selTenRowsDBR.Load(ctx, entCol)`)
 		testGen.Pln(`assert.NoError(t, err)`)
 		testGen.Pln(`t.Logf("Collection load rowCount: %d", rowCount)`)
 
-		testGen.Pln(`entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)`)
-		testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: `, t.CollectionName(), `")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))`)
-		testGen.Pln(`dmltest.Close(t, entINSERTStmtA)`)
+		testGen.Pln(`colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())`)
+		testGen.Pln(`lID := dmltest.CheckLastInsertID(t, "Error: `, t.CollectionName(), `")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))`)
 		testGen.Pln(`t.Logf("Last insert ID into: %d", lID)`)
-		testGen.Pln(`t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())`)
-		testGen.Pln(`t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())`)
 	}
 
 	testGen.Pln(`})`)

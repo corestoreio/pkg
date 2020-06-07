@@ -875,9 +875,11 @@ It panics if the event argument is larger than dml.EventFlagMax.`)
 
 		{
 			mainGen.Pln(`err = tbls.Options(`)
+			mainGen.Pln(`ddl.WithQueryDBR(map[string]dml.QueryBuilder{`)
 			for _, tbl := range tbls {
 				tbl.fnDBMOptionsSQLBuildQueries(mainGen, g)
 			}
+			mainGen.Pln("}),")
 			mainGen.Pln(`)`) // end options
 			mainGen.Pln(`if err != nil { return nil, err }`)
 			mainGen.Pln(`if err := tbls.Options(dbmo.TableOptionsAfter...); err != nil { return nil, err }`)
@@ -961,6 +963,8 @@ func (g *Generator) fnTestMainDB(testGen *codegen.Go, tbls tables) {
 			t.generateTestDB(testGen)
 		} // end for tables
 	}
+	testGen.C(`Uncomment the next line for debugging to see all the queries.`)
+	testGen.Pln(`// t.Logf("queries: %#v", tbls.ConnPool.CachedQueries())`)
 	testGen.Pln(`}`) // end TestNewDBManager
 }
 

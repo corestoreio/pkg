@@ -208,7 +208,7 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 			fContent = buf.Bytes()
 		}
 
-		if err := ioutil.WriteFile(file, fContent, 0644); err != nil {
+		if err := ioutil.WriteFile(file, fContent, 0o644); err != nil {
 			return errors.WithStack(err)
 		}
 	}

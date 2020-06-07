@@ -5,12 +5,11 @@ package dmltestgenerated4
 import (
 	"context"
 	"database/sql"
-	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
+	"time"
 )
 
 // TableName constants define the names of all tables.
@@ -133,35 +132,37 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 		dbmo.InitInsertFn = func(s *dml.Insert) *dml.Insert { return s }
 	}
 	err = tbls.Options(
-		ddl.WithQueryDBR("CoreConfigurationsSelectAll", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")).WithDBR()),
-		ddl.WithQueryDBR("CoreConfigurationsSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")).Where(
-			dml.Column(`config_id`).In().PlaceHolder(),
-		).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("CoreConfigurationSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")).Where(
-			dml.Column(`config_id`).Equal().PlaceHolder(),
-		).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("CoreConfigurationUpdateByPK", dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).Update().Where(
-			dml.Column(`config_id`).Equal().PlaceHolder(),
-		)).WithDBR()),
-		ddl.WithQueryDBR("CoreConfigurationDeleteByPK", dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).Delete().Where(
-			dml.Column(`config_id`).In().PlaceHolder(),
-		)).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("CoreConfigurationInsert", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).WithDBR()),
-		ddl.WithQueryDBR("CoreConfigurationUpsertByPK", dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).OnDuplicateKey().WithDBR()),
-		ddl.WithQueryDBR("SalesOrderStatusStatesSelectAll", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")).WithDBR()),
-		ddl.WithQueryDBR("SalesOrderStatusStatesSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")).Where(
-			dml.Columns(`status`, `state`).In().Tuples(),
-		).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("SalesOrderStatusStateSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")).Where(
-			dml.Columns(`status`, `state`).Equal().Tuples(),
-		).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementsSelectAll", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")).WithDBR()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementsSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")).Where(
-			dml.Column(`ce_entity_id`).In().PlaceHolder(),
-		).WithDBR().Interpolate()),
-		ddl.WithQueryDBR("ViewCustomerAutoIncrementSelectByPK", dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")).Where(
-			dml.Column(`ce_entity_id`).Equal().PlaceHolder(),
-		).WithDBR().Interpolate()),
+		ddl.WithQueryDBR(map[string]dml.QueryBuilder{
+			"CoreConfigurationsSelectAll": dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")),
+			"CoreConfigurationsSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")).Where(
+				dml.Column(`config_id`).In().PlaceHolder(),
+			),
+			"CoreConfigurationSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameCoreConfiguration).Select("*")).Where(
+				dml.Column(`config_id`).Equal().PlaceHolder(),
+			),
+			"CoreConfigurationUpdateByPK": dbmo.InitUpdateFn(tbls.MustTable(TableNameCoreConfiguration).Update().Where(
+				dml.Column(`config_id`).Equal().PlaceHolder(),
+			)),
+			"CoreConfigurationDeleteByPK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCoreConfiguration).Delete().Where(
+				dml.Column(`config_id`).In().PlaceHolder(),
+			)),
+			"CoreConfigurationInsert":         dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()),
+			"CoreConfigurationUpsertByPK":     dbmo.InitInsertFn(tbls.MustTable(TableNameCoreConfiguration).Insert()).OnDuplicateKey(),
+			"SalesOrderStatusStatesSelectAll": dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")),
+			"SalesOrderStatusStatesSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")).Where(
+				dml.Columns(`status`, `state`).In().Tuples(),
+			),
+			"SalesOrderStatusStateSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameSalesOrderStatusState).Select("*")).Where(
+				dml.Columns(`status`, `state`).Equal().Tuples(),
+			),
+			"ViewCustomerAutoIncrementsSelectAll": dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")),
+			"ViewCustomerAutoIncrementsSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")).Where(
+				dml.Column(`ce_entity_id`).In().PlaceHolder(),
+			),
+			"ViewCustomerAutoIncrementSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameViewCustomerAutoIncrement).Select("*")).Where(
+				dml.Column(`ce_entity_id`).Equal().PlaceHolder(),
+			),
+		}),
 	)
 	if err != nil {
 		return nil, err
@@ -232,7 +233,7 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("CoreConfigurationSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey("CoreConfigurationSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -244,7 +245,7 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.ConfigID); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, e.ConfigID); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
@@ -259,7 +260,7 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
@@ -274,7 +275,7 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
@@ -289,7 +290,7 @@ func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationUpsertByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
@@ -374,11 +375,11 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 		return nil // might return data from cache
 	}
 	if len(pkIDs) > 0 {
-		if _, err = dbm.CachedQuery("CoreConfigurationsSelectByPK").ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
+		if _, err = dbm.ConnPool.WithCacheKey("CoreConfigurationsSelectByPK").ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
 			return errors.WithStack(err)
 		}
 	} else {
-		if _, err = dbm.CachedQuery("CoreConfigurationsSelectAll").ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
+		if _, err = dbm.ConnPool.WithCacheKey("CoreConfigurationsSelectAll").ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -391,7 +392,7 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
@@ -412,7 +413,7 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	if resCheckFn == nil {
 		resCheckFn = dbmNoopResultCheckFn
 	}
-	dbrStmt, err := dbm.CachedQuery("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
+	dbrStmt, err := dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK").ApplyCallBacks(opts...).Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -430,7 +431,7 @@ func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dm
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert").ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
@@ -445,7 +446,7 @@ func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dm
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if res, err = dbm.CachedQuery("CoreConfigurationUpsertByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK").ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
@@ -530,7 +531,7 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("SalesOrderStatusStateSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, arg.Status, arg.State); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, arg.Status, arg.State); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -623,7 +624,7 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 		}
 		cacheKey = "SalesOrderStatusStatesSelectByPK"
 	}
-	if _, err = dbm.CachedQuery(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
@@ -716,7 +717,7 @@ func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryK
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey("ViewCustomerAutoIncrementSelectByPK").ApplyCallBacks(opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -782,11 +783,11 @@ func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkID
 		return nil // might return data from cache
 	}
 	if len(pkIDs) > 0 {
-		if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementsSelectByPK").ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
+		if _, err = dbm.ConnPool.WithCacheKey("ViewCustomerAutoIncrementsSelectByPK").ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
 			return errors.WithStack(err)
 		}
 	} else {
-		if _, err = dbm.CachedQuery("ViewCustomerAutoIncrementsSelectAll").ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
+		if _, err = dbm.ConnPool.WithCacheKey("ViewCustomerAutoIncrementsSelectAll").ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
 			return errors.WithStack(err)
 		}
 	}

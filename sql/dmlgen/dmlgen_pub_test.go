@@ -100,10 +100,10 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 		dmlgen.WithProtobuf(&dmlgen.SerializerConfig{}),
 
 		dmlgen.WithTablesFromDB(ctx, db,
-			//"dmlgen_types",
+			"dmlgen_types",
 			"core_configuration", "customer_entity", "customer_address_entity",
-			//"catalog_product_index_eav_decimal_idx", "sales_order_status_state",
-			//"view_customer_no_auto_increment", "view_customer_auto_increment",
+			"catalog_product_index_eav_decimal_idx", "sales_order_status_state",
+			"view_customer_no_auto_increment", "view_customer_auto_increment",
 		),
 
 		dmlgen.WithTableConfig(
@@ -118,19 +118,19 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 				StructTags: []string{"max_len"},
 			}),
 
-		//dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{}),
-		//dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
-		//	Encoders:   []string{"json", "protobuf"},
-		//	StructTags: []string{"max_len"},
-		//}),
-		//dmlgen.WithTableConfig("view_customer_no_auto_increment", &dmlgen.TableConfig{
-		//	Encoders:   []string{"json", "protobuf"},
-		//	StructTags: []string{"max_len"},
-		//}),
-		//dmlgen.WithTableConfig("view_customer_auto_increment", &dmlgen.TableConfig{
-		//	Encoders:   []string{"json", "protobuf"},
-		//	StructTags: []string{"max_len"},
-		//}),
+		dmlgen.WithTableConfig("catalog_product_index_eav_decimal_idx", &dmlgen.TableConfig{}),
+		dmlgen.WithTableConfig("sales_order_status_state", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
+		dmlgen.WithTableConfig("view_customer_no_auto_increment", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
+		dmlgen.WithTableConfig("view_customer_auto_increment", &dmlgen.TableConfig{
+			Encoders:   []string{"json", "protobuf"},
+			StructTags: []string{"max_len"},
+		}),
 
 		dmlgen.WithTableConfig(
 			"core_configuration", &dmlgen.TableConfig{
@@ -150,15 +150,14 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 			&ddl.Column{Field: "path", Pos: 5, Default: null.MakeString("'general'"), Null: "NO", DataType: "varchar", CharMaxLength: null.MakeInt64(255), ColumnType: "varchar(255)", Comment: "Config Path overwritten"},
 		}, "overwrite"),
 
-		// dmlgen.WithTableConfig(
-		//	"dmlgen_types", &dmlgen.TableConfig{
-		//		Encoders:          []string{"easyjson", "protobuf"},
-		//		StructTags:        []string{"json", "protobuf", "max_len"},
-		//		UniquifiedColumns: []string{"col_varchar_100", "price_a_12_4", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
-		//		Comment:           "Just another comment.",
-		//	}),
+		dmlgen.WithTableConfig(
+			"dmlgen_types", &dmlgen.TableConfig{
+				Encoders:          []string{"easyjson", "protobuf"},
+				StructTags:        []string{"json", "protobuf", "max_len"},
+				UniquifiedColumns: []string{"col_varchar_100", "price_a_12_4", "col_int_1", "col_int_2", "has_smallint_5", "col_date_2"},
+				Comment:           "Just another comment.",
+			}),
 
-		// dmlgen.WithColumnAliasesFromForeignKeys(ctx, db.DB),
 		dmlgen.WithForeignKeyRelationships(ctx, db.DB, dmlgen.ForeignKeyOptions{
 			ExcludeRelationships: []string{"customer_address_entity.parent_id", "customer_entity.entity_id"},
 		},
@@ -205,13 +204,13 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	g.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated/output_gen.go", g.GenerateGo)
-	// writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
+	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
 	// Generates for all proto files the Go source code.
 
-	//assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated", &dmlgen.ProtocOptions{
-	//	ProtoGen: "gogo",
-	//}))
-	//assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", "", nil))
+	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated", &dmlgen.ProtocOptions{
+		ProtoGen: "gogo",
+	}))
+	assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", "", nil))
 }
 
 func TestInfoSchemaForeignKeys(t *testing.T) {

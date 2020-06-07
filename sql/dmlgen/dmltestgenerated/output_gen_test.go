@@ -20,9 +20,27 @@ import (
 	"github.com/corestoreio/pkg/util/pseudo"
 )
 
-func TestNewDBManagerNonDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
+func TestNewDBManagerNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
 	_ = ps
+	t.Run("CatalogProductIndexEAVDecimalIDX_Empty", func(t *testing.T) {
+		e := new(CatalogProductIndexEAVDecimalIDX)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, CatalogProductIndexEAVDecimalIDX{})
+	})
+	t.Run("CatalogProductIndexEAVDecimalIDX_Copy", func(t *testing.T) {
+		e := new(CatalogProductIndexEAVDecimalIDX)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("CatalogProductIndexEAVDecimalIDXes_Validate", func(t *testing.T) {
+		c := CatalogProductIndexEAVDecimalIDXes{Data: []*CatalogProductIndexEAVDecimalIDX{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
 		e := new(CoreConfiguration)
 		assert.NoError(t, ps.FakeData(e))
@@ -77,9 +95,81 @@ func TestNewDBManagerNonDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 		c := CustomerEntities{Data: []*CustomerEntity{nil}}
 		assert.True(t, errors.NotValid.Match(c.Validate()))
 	})
+	t.Run("DmlgenTypes_Empty", func(t *testing.T) {
+		e := new(DmlgenTypes)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, DmlgenTypes{})
+	})
+	t.Run("DmlgenTypes_Copy", func(t *testing.T) {
+		e := new(DmlgenTypes)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("DmlgenTypesCollection_Validate", func(t *testing.T) {
+		c := DmlgenTypesCollection{Data: []*DmlgenTypes{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
+	t.Run("SalesOrderStatusState_Empty", func(t *testing.T) {
+		e := new(SalesOrderStatusState)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, SalesOrderStatusState{})
+	})
+	t.Run("SalesOrderStatusState_Copy", func(t *testing.T) {
+		e := new(SalesOrderStatusState)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("SalesOrderStatusStates_Validate", func(t *testing.T) {
+		c := SalesOrderStatusStates{Data: []*SalesOrderStatusState{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
+	t.Run("ViewCustomerAutoIncrement_Empty", func(t *testing.T) {
+		e := new(ViewCustomerAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, ViewCustomerAutoIncrement{})
+	})
+	t.Run("ViewCustomerAutoIncrement_Copy", func(t *testing.T) {
+		e := new(ViewCustomerAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("ViewCustomerAutoIncrements_Validate", func(t *testing.T) {
+		c := ViewCustomerAutoIncrements{Data: []*ViewCustomerAutoIncrement{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
+	t.Run("ViewCustomerNoAutoIncrement_Empty", func(t *testing.T) {
+		e := new(ViewCustomerNoAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e.Empty()
+		assert.Exactly(t, *e, ViewCustomerNoAutoIncrement{})
+	})
+	t.Run("ViewCustomerNoAutoIncrement_Copy", func(t *testing.T) {
+		e := new(ViewCustomerNoAutoIncrement)
+		assert.NoError(t, ps.FakeData(e))
+		e2 := e.Copy()
+		assert.Exactly(t, e, e2)
+		assert.NoError(t, ps.FakeData(e))
+		assert.NotEqual(t, e, e2)
+	})
+	t.Run("ViewCustomerNoAutoIncrements_Validate", func(t *testing.T) {
+		c := ViewCustomerNoAutoIncrements{Data: []*ViewCustomerNoAutoIncrement{nil}}
+		assert.True(t, errors.NotValid.Match(c.Validate()))
+	})
 }
 
-func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
+func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
@@ -91,7 +181,7 @@ func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 	assert.NoError(t, err)
 	tblNames := tbls.Tables.Tables()
 	sort.Strings(tblNames)
-	assert.Exactly(t, []string{"core_configuration", "customer_address_entity", "customer_entity"}, tblNames)
+	assert.Exactly(t, []string{"catalog_product_index_eav_decimal_idx", "core_configuration", "customer_address_entity", "customer_entity", "dmlgen_types", "sales_order_status_state", "view_customer_auto_increment", "view_customer_no_auto_increment"}, tblNames)
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
 	var ps *pseudo.Service
@@ -136,29 +226,38 @@ func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 			"col_float", "col_decimal206",
 		),
 	)
+	t.Run("CatalogProductIndexEAVDecimalIDX_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameCatalogProductIndexEAVDecimalIDX)
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		// this table/view does not support auto_increment
+		entCol := NewCatalogProductIndexEAVDecimalIDXes()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+	})
 	t.Run("CoreConfiguration_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCoreConfiguration)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where(
+		selOneRow := tbl.Select("*").Where(
+			dml.Column("config_id").Equal().PlaceHolder(),
+		)
+		selTenRows := tbl.Select("*").Where(
 			dml.Column("config_id").LessOrEqual().Int(10),
-		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewCoreConfigurations()
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
+		)
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx, tbl.Insert().BuildValues())
 		for i := 0; i < 9; i++ {
 			entIn := new(CoreConfiguration)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
+			assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfiguration_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CoreConfiguration)
-			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
+			rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.ConfigID, entOut.ConfigID, "IDX%d: ConfigID should match", lID)
@@ -168,39 +267,33 @@ func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 			assert.ExactlyLength(t, 65535, &entIn.Value, &entOut.Value, "IDX%d: Value should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewCoreConfigurations()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
-		dmltest.Close(t, entINSERTStmtA)
+		colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())
+		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))
 		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("CustomerAddressEntity_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCustomerAddressEntity)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where(
+		selOneRow := tbl.Select("*").Where(
+			dml.Column("entity_id").Equal().PlaceHolder(),
+		)
+		selTenRows := tbl.Select("*").Where(
 			dml.Column("entity_id").LessOrEqual().Int(10),
-		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewCustomerAddressEntities()
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
+		)
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx, tbl.Insert().BuildValues())
 		for i := 0; i < 9; i++ {
 			entIn := new(CustomerAddressEntity)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
+			assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerAddressEntity_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CustomerAddressEntity)
-			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
+			rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
@@ -228,39 +321,33 @@ func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 			assert.Exactly(t, entIn.VatRequestSuccess, entOut.VatRequestSuccess, "IDX%d: VatRequestSuccess should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewCustomerAddressEntities()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
-		dmltest.Close(t, entINSERTStmtA)
+		colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerAddressEntities ")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))
 		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("CustomerEntity_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCustomerEntity)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where(
+		selOneRow := tbl.Select("*").Where(
+			dml.Column("entity_id").Equal().PlaceHolder(),
+		)
+		selTenRows := tbl.Select("*").Where(
 			dml.Column("entity_id").LessOrEqual().Int(10),
-		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewCustomerEntities()
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
+		)
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx, tbl.Insert().BuildValues())
 		for i := 0; i < 9; i++ {
 			entIn := new(CustomerEntity)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
+			assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CustomerEntity_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CustomerEntity)
-			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
+			rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.EntityID, entOut.EntityID, "IDX%d: EntityID should match", lID)
@@ -287,14 +374,119 @@ func TestNewDBManagerDB_8f19c4cdd5a6e47eec7ec4136afa7092(t *testing.T) {
 			assert.Exactly(t, entIn.FailuresNum, entOut.FailuresNum, "IDX%d: FailuresNum should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewCustomerEntities()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
-		dmltest.Close(t, entINSERTStmtA)
+		colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())
+		lID := dmltest.CheckLastInsertID(t, "Error:  CustomerEntities ")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))
 		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
+	t.Run("DmlgenTypes_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameDmlgenTypes)
+		selOneRow := tbl.Select("*").Where(
+			dml.Column("id").Equal().PlaceHolder(),
+		)
+		selTenRows := tbl.Select("*").Where(
+			dml.Column("id").LessOrEqual().Int(10),
+		)
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx, tbl.Insert().BuildValues())
+		for i := 0; i < 9; i++ {
+			entIn := new(DmlgenTypes)
+			assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)
+			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.DmlgenTypes_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
+			entINSERTStmtA.Reset()
+			entOut := new(DmlgenTypes)
+			rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)
+			assert.NoError(t, err)
+			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
+			assert.Exactly(t, entIn.ID, entOut.ID, "IDX%d: ID should match", lID)
+			assert.Exactly(t, entIn.ColBigint1, entOut.ColBigint1, "IDX%d: ColBigint1 should match", lID)
+			assert.Exactly(t, entIn.ColBigint2, entOut.ColBigint2, "IDX%d: ColBigint2 should match", lID)
+			assert.Exactly(t, entIn.ColBigint3, entOut.ColBigint3, "IDX%d: ColBigint3 should match", lID)
+			assert.Exactly(t, entIn.ColBigint4, entOut.ColBigint4, "IDX%d: ColBigint4 should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.ColBlob, &entOut.ColBlob, "IDX%d: ColBlob should match", lID)
+			assert.Exactly(t, entIn.ColDecimal101, entOut.ColDecimal101, "IDX%d: ColDecimal101 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal124, entOut.ColDecimal124, "IDX%d: ColDecimal124 should match", lID)
+			assert.Exactly(t, entIn.PriceA124, entOut.PriceA124, "IDX%d: PriceA124 should match", lID)
+			assert.Exactly(t, entIn.PriceB124, entOut.PriceB124, "IDX%d: PriceB124 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal123, entOut.ColDecimal123, "IDX%d: ColDecimal123 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal206, entOut.ColDecimal206, "IDX%d: ColDecimal206 should match", lID)
+			assert.Exactly(t, entIn.ColDecimal2412, entOut.ColDecimal2412, "IDX%d: ColDecimal2412 should match", lID)
+			assert.Exactly(t, entIn.ColInt1, entOut.ColInt1, "IDX%d: ColInt1 should match", lID)
+			assert.Exactly(t, entIn.ColInt2, entOut.ColInt2, "IDX%d: ColInt2 should match", lID)
+			assert.Exactly(t, entIn.ColInt3, entOut.ColInt3, "IDX%d: ColInt3 should match", lID)
+			assert.Exactly(t, entIn.ColInt4, entOut.ColInt4, "IDX%d: ColInt4 should match", lID)
+			assert.ExactlyLength(t, 4294967295, &entIn.ColLongtext1, &entOut.ColLongtext1, "IDX%d: ColLongtext1 should match", lID)
+			assert.ExactlyLength(t, 4294967295, &entIn.ColLongtext2, &entOut.ColLongtext2, "IDX%d: ColLongtext2 should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumblob, &entOut.ColMediumblob, "IDX%d: ColMediumblob should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumtext1, &entOut.ColMediumtext1, "IDX%d: ColMediumtext1 should match", lID)
+			assert.ExactlyLength(t, 16777215, &entIn.ColMediumtext2, &entOut.ColMediumtext2, "IDX%d: ColMediumtext2 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint1, entOut.ColSmallint1, "IDX%d: ColSmallint1 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint2, entOut.ColSmallint2, "IDX%d: ColSmallint2 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint3, entOut.ColSmallint3, "IDX%d: ColSmallint3 should match", lID)
+			assert.Exactly(t, entIn.ColSmallint4, entOut.ColSmallint4, "IDX%d: ColSmallint4 should match", lID)
+			assert.Exactly(t, entIn.HasSmallint5, entOut.HasSmallint5, "IDX%d: HasSmallint5 should match", lID)
+			assert.Exactly(t, entIn.IsSmallint5, entOut.IsSmallint5, "IDX%d: IsSmallint5 should match", lID)
+			assert.ExactlyLength(t, 65535, &entIn.ColText, &entOut.ColText, "IDX%d: ColText should match", lID)
+			assert.Exactly(t, entIn.ColTinyint1, entOut.ColTinyint1, "IDX%d: ColTinyint1 should match", lID)
+			assert.ExactlyLength(t, 1, &entIn.ColVarchar1, &entOut.ColVarchar1, "IDX%d: ColVarchar1 should match", lID)
+			assert.ExactlyLength(t, 100, &entIn.ColVarchar100, &entOut.ColVarchar100, "IDX%d: ColVarchar100 should match", lID)
+			assert.ExactlyLength(t, 16, &entIn.ColVarchar16, &entOut.ColVarchar16, "IDX%d: ColVarchar16 should match", lID)
+			assert.ExactlyLength(t, 21, &entIn.ColChar1, &entOut.ColChar1, "IDX%d: ColChar1 should match", lID)
+			assert.ExactlyLength(t, 17, &entIn.ColChar2, &entOut.ColChar2, "IDX%d: ColChar2 should match", lID)
+		}
+		dmltest.Close(t, entINSERTStmtA)
+		entCol := NewDmlgenTypesCollection()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+		colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())
+		lID := dmltest.CheckLastInsertID(t, "Error:  DmlgenTypesCollection ")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))
+		t.Logf("Last insert ID into: %d", lID)
+	})
+	t.Run("SalesOrderStatusState_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameSalesOrderStatusState)
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		// this table/view does not support auto_increment
+		entCol := NewSalesOrderStatusStates()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+	})
+	t.Run("ViewCustomerAutoIncrement_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameViewCustomerAutoIncrement)
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		// this table/view does not support auto_increment
+		entCol := NewViewCustomerAutoIncrements()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+	})
+	t.Run("ViewCustomerNoAutoIncrement_Entity", func(t *testing.T) {
+		tbl := tbls.MustTable(TableNameViewCustomerNoAutoIncrement)
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		// this table/view does not support auto_increment
+		entCol := NewViewCustomerNoAutoIncrements()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
+		assert.NoError(t, err)
+		t.Logf("Collection load rowCount: %d", rowCount)
+	})
+	// Uncomment the next line for debugging to see all the queries.
+	// t.Logf("queries: %#v", tbls.ConnPool.CachedQueries())
 }

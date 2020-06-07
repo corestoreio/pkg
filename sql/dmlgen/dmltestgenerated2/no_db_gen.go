@@ -4,11 +4,10 @@ package dmltestgenerated2
 
 import (
 	"fmt"
-	"io"
-	"time"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
+	"io"
+	"time"
 )
 
 // CoreConfiguration represents a single row for DB table core_configuration.
@@ -28,9 +27,11 @@ type CoreConfiguration struct {
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *CoreConfiguration) Copy() *CoreConfiguration {
-	e2 := new(CoreConfiguration)
-	*e2 = *e // for now a shallow copy
-	return e2
+	if e == nil {
+		return &CoreConfiguration{}
+	}
+	e2 := *e // for now a shallow copy
+	return &e2
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.
@@ -204,9 +205,11 @@ type SalesOrderStatusState struct {
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
-	e2 := new(SalesOrderStatusState)
-	*e2 = *e // for now a shallow copy
-	return e2
+	if e == nil {
+		return &SalesOrderStatusState{}
+	}
+	e2 := *e // for now a shallow copy
+	return &e2
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.

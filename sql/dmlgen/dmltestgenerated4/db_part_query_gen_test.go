@@ -4,15 +4,14 @@ package dmltestgenerated4
 
 import (
 	"context"
-	"sort"
-	"testing"
-	"time"
-
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
+	"sort"
+	"testing"
+	"time"
 )
 
 func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
@@ -41,27 +40,23 @@ func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 	)
 	t.Run("CoreConfiguration_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameCoreConfiguration)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where(
+		selOneRow := tbl.Select("*").Where(
+			dml.Column("config_id").Equal().PlaceHolder(),
+		)
+		selTenRows := tbl.Select("*").Where(
 			dml.Column("config_id").LessOrEqual().Int(10),
-		).ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewCoreConfigurations()
-		entINSERT := tbl.Insert().BuildValues()
-		entINSERTStmtA := entINSERT.PrepareWithDBR(ctx)
+		)
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
+		entINSERTStmtA := tbls.ConnPool.WithPrepare(ctx, tbl.Insert().BuildValues())
 		for i := 0; i < 9; i++ {
 			entIn := new(CoreConfiguration)
-			if err := ps.FakeData(entIn); err != nil {
-				t.Errorf("IDX[%d]: %+v", i, err)
-				return
-			}
+			assert.NoError(t, ps.FakeData(entIn), "Error at index %d", i)
 			lID := dmltest.CheckLastInsertID(t, "Error: TestNewTables.CoreConfiguration_Entity")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entIn)))
 			entINSERTStmtA.Reset()
 			entOut := new(CoreConfiguration)
-			rowCount, err := entSELECTStmtA.Load(ctx, entOut, lID)
+			rowCount, err := selOneRowDBR.Load(ctx, entOut, lID)
 			assert.NoError(t, err)
 			assert.Exactly(t, uint64(1), rowCount, "IDX%d: RowCount did not match", i)
 			assert.Exactly(t, entIn.ConfigID, entOut.ConfigID, "IDX%d: ConfigID should match", lID)
@@ -71,44 +66,40 @@ func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 			assert.ExactlyLength(t, 65535, &entIn.Value, &entOut.Value, "IDX%d: Value should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewCoreConfigurations()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
 		t.Logf("Collection load rowCount: %d", rowCount)
-		entINSERTStmtA = entINSERT.WithCacheKey("row_count_%d", len(entCol.Data)).Replace().SetRowCount(len(entCol.Data)).PrepareWithDBR(ctx)
-		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(entINSERTStmtA.ExecContext(ctx, dml.Qualify("", entCol)))
-		dmltest.Close(t, entINSERTStmtA)
+		colInsertDBR := tbls.ConnPool.WithQueryBuilder(tbl.Insert().Replace().SetRowCount(len(entCol.Data)).BuildValues())
+		lID := dmltest.CheckLastInsertID(t, "Error:  CoreConfigurations ")(colInsertDBR.ExecContext(ctx, dml.Qualify("", entCol)))
 		t.Logf("Last insert ID into: %d", lID)
-		t.Logf("INSERT queries: %#v", entINSERT.CachedQueries())
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 	})
 	t.Run("SalesOrderStatusState_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameSalesOrderStatusState)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewSalesOrderStatusStates()
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
 		// this table/view does not support auto_increment
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewSalesOrderStatusStates()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 		t.Logf("Collection load rowCount: %d", rowCount)
 	})
 	t.Run("ViewCustomerAutoIncrement_Entity", func(t *testing.T) {
 		tbl := tbls.MustTable(TableNameViewCustomerAutoIncrement)
-		entSELECT := tbl.SelectByPK("*")
-		// WithDBR generates the cached SQL string with empty key "".
-		entSELECTStmtA := entSELECT.WithDBR().ExpandPlaceHolders()
-		entSELECT.WithCacheKey("select_10").Wheres.Reset()
-		_, _, err := entSELECT.Where().ToSQL() // ToSQL generates the new cached SQL string with key select_10
-		assert.NoError(t, err)
-		entCol := NewViewCustomerAutoIncrements()
+		selOneRow := tbl.Select("*").Where()
+		selTenRows := tbl.Select("*").Where()
+		selOneRowDBR := tbls.ConnPool.WithPrepare(ctx, selOneRow)
+		defer selOneRowDBR.Close()
+		selTenRowsDBR := tbls.ConnPool.WithQueryBuilder(selTenRows)
 		// this table/view does not support auto_increment
-		rowCount, err := entSELECTStmtA.WithCacheKey("select_10").Load(ctx, entCol)
+		entCol := NewViewCustomerAutoIncrements()
+		rowCount, err := selTenRowsDBR.Load(ctx, entCol)
 		assert.NoError(t, err)
-		t.Logf("SELECT queries: %#v", entSELECT.CachedQueries())
 		t.Logf("Collection load rowCount: %d", rowCount)
 	})
+	// Uncomment the next line for debugging to see all the queries.
+	// t.Logf("queries: %#v", tbls.ConnPool.CachedQueries())
 }
