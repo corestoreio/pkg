@@ -14,12 +14,21 @@
 
 package bgwork
 
-import "sync"
+import (
+	"context"
+	"sync"
+
+	"golang.org/x/sync/errgroup"
+)
 
 // Wait is a better pattern around using sync.WaitGroup. For returning errors
 // while working on a subtask of a common task, consider using package
 // x/errgroup.
 func Wait(length int, block func(index int)) {
+	if length == 1 {
+		block(0)
+		return
+	}
 	var w sync.WaitGroup
 	w.Add(length)
 	for i := 0; i < length; i++ {
@@ -29,4 +38,23 @@ func Wait(length int, block func(index int)) {
 		}(&w, i)
 	}
 	w.Wait()
+}
+
+// WaitContext is a better pattern around using errgroup.Group. See function
+// Wait. The returned error of the block function cancels the context.
+func WaitContext(length int, block func(ctx context.Context, index int) error) error {
+	ctx := context.Background()
+	if length == 1 {
+		return block(ctx, 0)
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	for i := 0; i < length; i++ {
+		i := i
+		g.Go(func() error {
+			return block(ctx, i)
+		})
+	}
+	return g.Wait()
 }
