@@ -1,12 +1,12 @@
 package cstrace
 
 import (
-	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/trace"
 	"google.golang.org/grpc/codes"
 )
 
-var ErrorKey = key.New("error")
+var ErrorKey = kv.Key("error")
 
 // Status codes for use with Span.SetStatus. These correspond to the status
 // codes used by gRPC defined here: https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
