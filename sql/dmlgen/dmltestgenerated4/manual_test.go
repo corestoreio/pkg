@@ -139,7 +139,9 @@ func TestNewDBManager_Manual(t *testing.T) {
 		})
 		t.Run("DBLoad partial IDs", func(t *testing.T) {
 			var eca CoreConfigurations
-			assert.NoError(t, eca.DBLoad(ctx, dbm, ec.ConfigIDs()))
+			assert.NoError(t, eca.DBLoad(ctx, dbm, ec.ConfigIDs(), func(dbr *dml.DBR) {
+				dbr.Interpolate()
+			}))
 			assert.Exactly(t, len(ec.Data), len(eca.Data), "former collection must have the same length as the loaded one")
 		})
 		t.Run("DBDelete", func(t *testing.T) {
@@ -191,7 +193,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 	})
 
 	t.Run("Events and cached queries", func(t *testing.T) {
-		cq := dbm.CachedQueries()
+		cq := dbm.ConnPool.CachedQueries()
 		queries := make([]string, 0, len(cq)*2)
 		for k, v := range cq {
 			queries = append(queries, k+"::"+v)
@@ -200,10 +202,10 @@ func TestNewDBManager_Manual(t *testing.T) {
 
 		assert.Exactly(t, []string{
 			"CoreConfigurationDeleteByPK::DELETE FROM `core_configuration` WHERE (`config_id` IN ?)",
-			"CoreConfigurationInsert::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES (?,?,?,?,?)",
+			"CoreConfigurationInsert::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES ",
 			"CoreConfigurationSelectByPK::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` WHERE (`config_id` = ?) LIMIT 0,1000",
 			"CoreConfigurationUpdateByPK::UPDATE `core_configuration` SET `scope`=?, `scope_id`=?, `expires`=?, `path`=?, `value`=? WHERE (`config_id` = ?)",
-			"CoreConfigurationUpsertByPK::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `scope`=VALUES(`scope`), `scope_id`=VALUES(`scope_id`), `expires`=VALUES(`expires`), `path`=VALUES(`path`), `value`=VALUES(`value`)",
+			"CoreConfigurationUpsertByPK::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES  ON DUPLICATE KEY UPDATE `scope`=VALUES(`scope`), `scope_id`=VALUES(`scope_id`), `expires`=VALUES(`expires`), `path`=VALUES(`path`), `value`=VALUES(`value`)",
 			"CoreConfigurationsSelectAll::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` LIMIT 0,1000",
 			"CoreConfigurationsSelectByPK::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` WHERE (`config_id` IN ?) LIMIT 0,1000",
 			"SalesOrderStatusStateSelectByPK::SELECT `status`, `state`, `is_default`, `visible_on_front` FROM `sales_order_status_state` AS `main_table` WHERE ((`status`, `state`) = /*TUPLES=002*/) LIMIT 0,1000",

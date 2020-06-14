@@ -942,21 +942,21 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		mainGen.Pln(dmlEnabled, `}
 		cacheKey = `, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `
 	}
-	if _, err = dbm.ConnPool.WithCacheKey(cacheKey).ApplyCallBacks(opts...).Load(ctx, cc, args...); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey(cacheKey, opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}`)
 	} else {
 		mainGen.Pln(dmlEnabled, `if len(pkIDs) > 0 {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc, pkIDs); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, t.CollectionName(), "SelectByPK", `"`), `, opts...).Load(ctx, cc, pkIDs); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
 		mainGen.Pln(dmlEnabled, `} else {`)
 		mainGen.In()
 		{
-			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `).ApplyCallBacks(opts...).Load(ctx, cc); err != nil {
+			mainGen.Pln(dmlEnabled, `if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `, opts...).Load(ctx, cc); err != nil {
 		return errors.WithStack(err); }`)
 		}
 		mainGen.Out()
@@ -983,7 +983,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
@@ -1012,7 +1012,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		resCheckFn = dbmNoopResultCheckFn
 	}`)
 
-	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).Prepare(ctx)
+	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).Prepare(ctx)
 		if err != nil {	return errors.WithStack(err) }`)
 
 	mainGen.Pln(dmlEnabled, `for _, c := range cc.Data {
@@ -1036,7 +1036,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, cc); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, cc); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
@@ -1057,7 +1057,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
@@ -1137,7 +1137,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	if e.IsSet() {
 		return nil // might return data from cache
 	}
-	if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).Load(ctx, e, `, &bufPKNames, `); err != nil {
+	if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).Load(ctx, e, `, &bufPKNames, `); err != nil {
 		return errors.WithStack(err)
 	}
 	return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, nil, e))
@@ -1160,7 +1160,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
@@ -1181,7 +1181,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
@@ -1202,7 +1202,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, e); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
@@ -1223,7 +1223,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `).ApplyCallBacks(opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
+		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
