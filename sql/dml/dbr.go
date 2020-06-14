@@ -55,19 +55,6 @@ type cachedSQL struct {
 	// DBR.prepareQueryAndArgs will replace the tuples placeholder with the
 	// correct amount of MySQL/MariaDB placeholders.
 	containsTuples bool
-	// QualifiedColumnsAliases allows to overwrite the internal qualified
-	// columns slice with custom names. Only in the use case when records are
-	// applied. The list of column names in `QualifiedColumnsAliases` gets
-	// passed to the ColumnMapper and back to the provided object. The
-	// `QualifiedColumnsAliases` slice must have the same length as the
-	// qualified columns slice. The order of the alias names must be in the same
-	// order as the qualified columns or as the placeholders occur.
-	QualifiedColumnsAliases []string
-	OrderBys                ids
-	LimitValid              bool
-	OffsetValid             bool
-	LimitCount              uint64
-	OffsetCount             uint64
 	// insertCachedSQL contains the final build SQL string with the correct
 	// amount of placeholders.
 	insertCachedSQL     string
@@ -176,8 +163,9 @@ func makeCachedSQL(qb QueryBuilder, rawSQL, id string) *cachedSQL {
 // contain under the hood different connection types. DBR is optimized for reuse
 // and allow saving memory allocations. It can't be used in concurrent context.
 type DBR struct {
-	cachedSQL cachedSQL
-	log       log.Logger // Log optional logger
+	customCacheKey string // set before to access a different query
+	cachedSQL      cachedSQL
+	log            log.Logger // Log optional logger
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
@@ -187,6 +175,20 @@ type DBR struct {
 	// Options like enable interpolation or expanding placeholders.
 	Options     uint
 	previousErr error
+
+	// QualifiedColumnsAliases allows to overwrite the internal qualified
+	// columns slice with custom names. Only in the use case when records are
+	// applied. The list of column names in `QualifiedColumnsAliases` gets
+	// passed to the ColumnMapper and back to the provided object. The
+	// `QualifiedColumnsAliases` slice must have the same length as the
+	// qualified columns slice. The order of the alias names must be in the same
+	// order as the qualified columns or as the placeholders occur.
+	QualifiedColumnsAliases []string
+	OrderBys                ids
+	LimitValid              bool
+	OffsetValid             bool
+	LimitCount              uint64
+	OffsetCount             uint64
 }
 
 // PreviousError returns the previous error. Mostly used for testing.
@@ -289,13 +291,11 @@ func (bc *DBR) CacheKey() string {
 	return bc.cachedSQL.id
 }
 
-// ApplyCallBacks may clone the DBR object and applies various functions to the new
-// DBR instance. It only clones if slice `fns` has at least one entry.
-func (a *DBR) ApplyCallBacks(fns ...DBRFunc) *DBR {
-	for _, af := range fns {
-		af(a)
-	}
-	return a
+// WithCacheKey allows to set a custom cache key in generated code to change the
+// underlying SQL query.
+func (bc *DBR) WithCacheKey(cacheKey string) *DBR {
+	bc.customCacheKey = cacheKey
+	return bc
 }
 
 // TupleCount sets the amount of tuples and its rows. Only needed in case of a prepared statement with tuples.
@@ -320,7 +320,7 @@ func (a *DBR) TupleCount(tuples, rows uint) *DBR {
 // the sorting. This avoids using the method OrderByDesc when sorting certain
 // columns descending.
 func (a *DBR) OrderBy(columns ...string) *DBR {
-	a.cachedSQL.OrderBys = a.cachedSQL.OrderBys.AppendColumns(false, columns...)
+	a.OrderBys = a.OrderBys.AppendColumns(false, columns...)
 	return a
 }
 
@@ -330,7 +330,7 @@ func (a *DBR) OrderBy(columns ...string) *DBR {
 // internal cached SQL string independently if the SQL statement supports it or
 // not or if there exists already an ORDER BY clause.
 func (a *DBR) OrderByDesc(columns ...string) *DBR {
-	a.cachedSQL.OrderBys = a.cachedSQL.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
+	a.OrderBys = a.OrderBys.AppendColumns(false, columns...).applySort(len(columns), sortDescending)
 	return a
 }
 
@@ -339,10 +339,10 @@ func (a *DBR) OrderByDesc(columns ...string) *DBR {
 // independently if the SQL statement supports it or not or if there exists
 // already a LIMIT clause.
 func (a *DBR) Limit(offset, limit uint64) *DBR {
-	a.cachedSQL.OffsetCount = offset
-	a.cachedSQL.LimitCount = limit
-	a.cachedSQL.OffsetValid = true
-	a.cachedSQL.LimitValid = true
+	a.OffsetCount = offset
+	a.LimitCount = limit
+	a.OffsetValid = true
+	a.LimitValid = true
 	return a
 }
 
@@ -356,7 +356,7 @@ func (a *DBR) Paginate(page, perPage uint64) *DBR {
 // WithQualifiedColumnsAliases for documentation please see:
 // DBR.QualifiedColumnsAliases.
 func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
-	a.cachedSQL.QualifiedColumnsAliases = aliases
+	a.QualifiedColumnsAliases = aliases
 	return a
 }
 
@@ -470,14 +470,14 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		if a.isPrepared {
 			return "", expandInterfaces(args), nil
 		}
-		if a.Options == 0 && len(a.cachedSQL.OrderBys) == 0 && !a.cachedSQL.LimitValid {
+		if a.Options == 0 && len(a.OrderBys) == 0 && !a.LimitValid {
 			return cachedSQL, expandInterfaces(args), nil
 		}
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
 		buf.WriteString(cachedSQL)
-		sqlWriteOrderBy(buf, a.cachedSQL.OrderBys, false)
-		sqlWriteLimitOffset(buf, a.cachedSQL.LimitValid, a.cachedSQL.OffsetValid, a.cachedSQL.OffsetCount, a.cachedSQL.LimitCount)
+		sqlWriteOrderBy(buf, a.OrderBys, false)
+		sqlWriteLimitOffset(buf, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 		return buf.String(), expandInterfaces(args), nil
 	}
 
@@ -510,8 +510,8 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		return "", nil, errors.WithStack(err)
 	}
 
-	sqlWriteOrderBy(sqlBuf.First, a.cachedSQL.OrderBys, false)
-	sqlWriteLimitOffset(sqlBuf.First, a.cachedSQL.LimitValid, a.cachedSQL.OffsetValid, a.cachedSQL.OffsetCount, a.cachedSQL.LimitCount)
+	sqlWriteOrderBy(sqlBuf.First, a.OrderBys, false)
+	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
@@ -584,15 +584,15 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 	}
 
 	qualifiedColumns := a.cachedSQL.qualifiedColumns
-	if lqca := len(a.cachedSQL.QualifiedColumnsAliases); lqca > 0 {
+	if lqca := len(a.QualifiedColumnsAliases); lqca > 0 {
 		if lqca != len(a.cachedSQL.qualifiedColumns) {
 			return nil, errors.Mismatch.Newf(
 				"[dml] Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length",
-				a.cachedSQL.QualifiedColumnsAliases,
+				a.QualifiedColumnsAliases,
 				a.cachedSQL.qualifiedColumns,
 			)
 		}
-		qualifiedColumns = a.cachedSQL.QualifiedColumnsAliases
+		qualifiedColumns = a.QualifiedColumnsAliases
 	}
 
 	var nextUnnamedArgPos int

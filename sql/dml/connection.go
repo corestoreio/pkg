@@ -496,7 +496,7 @@ const (
 	sqlIDSuffix = "*/"
 )
 
-func (qc *queryCache) prependUniqueID(rawSQL string) (id string, _rawSQL string) {
+func (qc *queryCache) prependUniqueID(rawSQL string) (id, _rawSQL string) {
 	if qc.makeUniqueID != nil {
 		id = qc.makeUniqueID()
 		if id != "" {
@@ -511,12 +511,116 @@ func (qc *queryCache) prependUniqueID(rawSQL string) (id string, _rawSQL string)
 	return id, rawSQL
 }
 
+func (qc *queryCache) initDBRCacheKey(
+	ctx context.Context,
+	l log.Logger,
+	connSource, cacheKey string,
+	isPrepared bool,
+	db QueryExecPreparer,
+	opts []DBRFunc,
+) *DBR {
+	qc.mu.RLock()
+	defer qc.mu.RUnlock()
+
+	if l != nil && l.IsDebug() {
+		defer log.WhenDone(l).Debug("Prepare")
+	}
+
+	dbr := &DBR{
+		customCacheKey: cacheKey,
+		DB:             db,
+		isPrepared:     isPrepared,
+	}
+	for _, opt := range opts {
+		opt(dbr)
+	}
+	sqlCache, ok := qc.queries[dbr.customCacheKey]
+	if !ok {
+		return &DBR{
+			previousErr: errors.NotFound.Newf("CacheKey %q not found", dbr.customCacheKey),
+		}
+	}
+	if l != nil {
+		l = l.With(log.String("conn_source", connSource), log.Bool("is_prepared", isPrepared),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	dbr.cachedSQL = *sqlCache
+	dbr.log = l
+
+	if isPrepared {
+		stmt, err := db.PrepareContext(ctx, dbr.cachedSQL.rawSQL)
+		if err != nil {
+			return &DBR{
+				previousErr: err,
+			}
+		}
+		dbr.DB = stmtWrapper{stmt: stmt}
+	}
+
+	return dbr
+}
+
+func (qc *queryCache) initDBRQB(
+	ctx context.Context,
+	l log.Logger,
+	connSource string,
+	isPrepared bool,
+	qb QueryBuilder,
+	db QueryExecPreparer,
+	opts []DBRFunc,
+) *DBR {
+	prepareQueryBuilder(qc.mapTableName, qb)
+	rawSQL, _, err := qb.ToSQL()
+	if err != nil {
+		return &DBR{
+			previousErr: errors.WithStack(err),
+		}
+	}
+
+	if isPrepared {
+		stmt, err := db.PrepareContext(ctx, rawSQL)
+		if err != nil {
+			return &DBR{
+				previousErr: errors.WithStack(err),
+			}
+		}
+		db = stmtWrapper{stmt: stmt}
+	}
+
+	dbr := &DBR{
+		customCacheKey: hashSQL(rawSQL),
+		DB:             db,
+		isPrepared:     isPrepared,
+	}
+
+	for _, opt := range opts {
+		opt(dbr)
+	}
+
+	qc.mu.Lock()
+	defer qc.mu.Unlock()
+	sqlCache, ok := qc.queries[dbr.customCacheKey]
+	if !ok {
+		id, rawSQL := qc.prependUniqueID(rawSQL)
+		sqlCache = makeCachedSQL(qb, rawSQL, id)
+		qc.queries[dbr.customCacheKey] = sqlCache
+	}
+	if l != nil {
+		l = l.With(log.String("conn_source", connSource), log.Bool("is_prepared", isPrepared),
+			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
+	}
+	dbr.cachedSQL = *sqlCache
+	dbr.log = l
+
+	return dbr
+}
+
 // hashSQL removes spaces and transforms the SQL to all lowercase and hashes it,
 // to avoid minor duplicates ... maybe that is not worth. refactor later.
 func hashSQL(rawSQL string) string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if strings.HasPrefix(rawSQL, sqlIDPrefix) {
+	if strings.HasPrefix(rawSQL, sqlIDPrefix) { // remove unique query ID /*$ID$....*/
 		idx := strings.Index(rawSQL, sqlIDSuffix)
 		if idx < 0 {
 			idx = 0
@@ -706,55 +810,13 @@ func (c *ConnPool) DeregisterByCacheKey(cacheKeys ...string) error {
 }
 
 // WithCacheKey creates a DBR object from a cached query.
-func (c *ConnPool) WithCacheKey(cacheKey string) *DBR {
-	c.queryCache.mu.RLock()
-	defer c.queryCache.mu.RUnlock()
-
-	sqlCache, ok := c.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        c.DB,
-	}
+func (c *ConnPool) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRCacheKey(context.Background(), c.Log, "ConnPool", cacheKey, false, c.DB, opts)
 }
 
 // WithPrepareCacheKey creates a DBR object from a prepared cached query.
-func (c *ConnPool) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
-	c.queryCache.mu.RLock()
-	defer c.queryCache.mu.RUnlock()
-
-	sqlCache, ok := c.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	if l != nil && l.IsDebug() {
-		defer log.WhenDone(l).Debug("Prepare")
-	}
-	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: err,
-		isPrepared:  true,
-	}
+func (c *ConnPool) WithPrepareCacheKey(ctx context.Context, cacheKey string, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRCacheKey(ctx, c.Log, "ConnPool", cacheKey, true, c.DB, opts)
 }
 
 // WithQueryBuilder creates a new DBR for handling the arguments with the
@@ -762,34 +824,8 @@ func (c *ConnPool) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DB
 // errors of the QueryBuilder will be forwarded to the DBR type. It generates a
 // unique cache key based on the SQL string. The cache key can be retrieved via
 // DBR object.
-func (c *ConnPool) WithQueryBuilder(qb QueryBuilder) *DBR {
-	prepareQueryBuilder(c.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	c.queryCache.mu.Lock()
-	defer c.queryCache.mu.Unlock()
-	sqlCache, ok := c.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		c.queryCache.queries[key] = sqlCache
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        c.DB,
-	}
+func (c *ConnPool) WithQueryBuilder(qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRQB(context.Background(), c.Log, "ConnPool", false, qb, c.DB, opts)
 }
 
 // Conn returns a single connection by either opening a new connection
@@ -823,38 +859,8 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 // the underlying *sql.Stmt is.
 // It generates a unique cache key based on the SQL string. The cache key can be
 // retrieved via DBR object.
-func (c *ConnPool) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
-	prepareQueryBuilder(c.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	c.queryCache.mu.Lock()
-	defer c.queryCache.mu.Unlock()
-	sqlCache, ok := c.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		c.queryCache.queries[key] = sqlCache
-	}
-
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "ConnPool"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: errors.WithStack(err),
-		isPrepared:  true,
-	}
+func (c *ConnPool) WithPrepare(ctx context.Context, qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRQB(ctx, c.Log, "ConnPool", true, qb, c.DB, opts)
 }
 
 // WithDisabledForeignKeyChecks runs the callBack with disabled foreign key
@@ -962,169 +968,36 @@ func (c *Conn) Close() error {
 // errors of the QueryBuilder will be forwarded to the DBR type. It generates a
 // unique cache key based on the SQL string. The cache key can be retrieved via
 // DBR object.
-func (c *Conn) WithQueryBuilder(qb QueryBuilder) *DBR {
-	prepareQueryBuilder(c.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	c.queryCache.mu.Lock()
-	defer c.queryCache.mu.Unlock()
-	sqlCache, ok := c.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		c.queryCache.queries[key] = sqlCache
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        c.DB,
-	}
+func (c *Conn) WithQueryBuilder(qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRQB(context.Background(), c.Log, "Conn", false, qb, c.DB, opts)
 }
 
 // WithPrepare adds the query to the cache and returns a prepared statement
 // which must be closed after its use.
-func (c *Conn) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
-	prepareQueryBuilder(c.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	c.queryCache.mu.Lock()
-	defer c.queryCache.mu.Unlock()
-	sqlCache, ok := c.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := c.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		c.queryCache.queries[key] = sqlCache
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: errors.WithStack(err),
-		isPrepared:  true,
-	}
+func (c *Conn) WithPrepare(ctx context.Context, qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRQB(ctx, c.Log, "Conn", true, qb, c.DB, opts)
 }
 
 // WithCacheKey creates a DBR object from a cached query.
-func (c *Conn) WithCacheKey(cacheKey string) *DBR {
-	c.queryCache.mu.RLock()
-	defer c.queryCache.mu.RUnlock()
-
-	sqlCache, ok := c.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        c.DB,
-	}
+func (c *Conn) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRCacheKey(context.Background(), c.Log, "Conn", cacheKey, false, c.DB, opts)
 }
 
 // WithPrepareCacheKey creates a DBR object from a prepared cached query. The
 // statement must be closed after its use.
-func (c *Conn) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
-	c.queryCache.mu.RLock()
-	defer c.queryCache.mu.RUnlock()
-
-	sqlCache, ok := c.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Conn"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	stmt, err := c.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: err,
-		isPrepared:  true,
-	}
+func (c *Conn) WithPrepareCacheKey(ctx context.Context, cacheKey string, opts ...DBRFunc) *DBR {
+	return c.queryCache.initDBRCacheKey(ctx, c.Log, "Conn", cacheKey, true, c.DB, opts)
 }
 
 // WithCacheKey creates a DBR object from a cached query.
-func (tx *Tx) WithCacheKey(cacheKey string) *DBR {
-	tx.queryCache.mu.RLock()
-	defer tx.queryCache.mu.RUnlock()
-
-	sqlCache, ok := tx.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := tx.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        tx.DB,
-	}
+func (tx *Tx) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
+	return tx.queryCache.initDBRCacheKey(context.Background(), tx.Log, "Tx", cacheKey, false, tx.DB, opts)
 }
 
 // WithPrepareCacheKey creates a DBR object from a prepared cached query. After
 // use the query statement must be closed.
-func (tx *Tx) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
-	tx.queryCache.mu.RLock()
-	defer tx.queryCache.mu.RUnlock()
-
-	sqlCache, ok := tx.queryCache.queries[cacheKey]
-	if !ok {
-		return &DBR{
-			previousErr: errors.NotFound.Newf("CacheKey %q not found", cacheKey),
-		}
-	}
-	l := tx.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	stmt, err := tx.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: err,
-		isPrepared:  true,
-	}
+func (tx *Tx) WithPrepareCacheKey(ctx context.Context, cacheKey string, opts ...DBRFunc) *DBR {
+	return tx.queryCache.initDBRCacheKey(ctx, tx.Log, "Tx", cacheKey, true, tx.DB, opts)
 }
 
 // WithPrepare executes the statement represented by the Select to create a
@@ -1135,37 +1008,8 @@ func (tx *Tx) WithPrepareCacheKey(ctx context.Context, cacheKey string) *DBR {
 // use, despite the underlying *sql.Stmt is. You must close DBR after its use.
 // It generates a unique cache key based on the SQL string. The cache key can be
 // retrieved via DBR object.
-func (tx *Tx) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
-	prepareQueryBuilder(tx.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	tx.queryCache.mu.Lock()
-	defer tx.queryCache.mu.Unlock()
-	sqlCache, ok := tx.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := tx.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		tx.queryCache.queries[key] = sqlCache
-	}
-	l := tx.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", true),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	stmt, err := tx.DB.PrepareContext(ctx, sqlCache.rawSQL)
-	return &DBR{
-		cachedSQL:   *sqlCache,
-		log:         l,
-		DB:          stmtWrapper{stmt: stmt},
-		previousErr: errors.WithStack(err),
-		isPrepared:  true,
-	}
+func (tx *Tx) WithPrepare(ctx context.Context, qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return tx.queryCache.initDBRQB(ctx, tx.Log, "Tx", true, qb, tx.DB, opts)
 }
 
 // WithQueryBuilder creates a new DBR for handling the arguments with the
@@ -1173,34 +1017,8 @@ func (tx *Tx) WithPrepare(ctx context.Context, qb QueryBuilder) *DBR {
 // errors of the QueryBuilder will be forwarded to the DBR type. It generates a
 // unique cache key based on the SQL string. The cache key can be retrieved via
 // DBR object.
-func (tx *Tx) WithQueryBuilder(qb QueryBuilder) *DBR {
-	prepareQueryBuilder(tx.queryCache.mapTableName, qb)
-	rawSQL, _, err := qb.ToSQL()
-	if err != nil {
-		return &DBR{
-			previousErr: errors.WithStack(err),
-		}
-	}
-
-	key := hashSQL(rawSQL)
-	tx.queryCache.mu.Lock()
-	defer tx.queryCache.mu.Unlock()
-	sqlCache, ok := tx.queryCache.queries[key]
-	if !ok {
-		id, rawSQL := tx.queryCache.prependUniqueID(rawSQL)
-		sqlCache = makeCachedSQL(qb, rawSQL, id)
-		tx.queryCache.queries[key] = sqlCache
-	}
-	l := tx.Log
-	if l != nil {
-		l = l.With(log.String("conn_source", "Tx"), log.Bool("is_prepared", false),
-			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
-	}
-	return &DBR{
-		cachedSQL: *sqlCache,
-		log:       l,
-		DB:        tx.DB,
-	}
+func (tx *Tx) WithQueryBuilder(qb QueryBuilder, opts ...DBRFunc) *DBR {
+	return tx.queryCache.initDBRQB(context.Background(), tx.Log, "Tx", false, qb, tx.DB, opts)
 }
 
 // Commit finishes the transaction. It logs the time taken, if a logger has been

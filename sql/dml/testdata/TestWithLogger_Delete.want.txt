@@ -1,12 +1,17 @@
+DEBUG Prepare conn_pool_id: "UNIQUEID01" duration: 0
 DEBUG Exec conn_pool_id: "UNIQUEID01" conn_source: "ConnPool" is_prepared: false query_id: "UNIQUEID02" query: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" duration: 0 sql: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" length_args: 0 length_raw_args: 0 source: "d" error: "<nil>"
 DEBUG BeginTx conn_pool_id: "UNIQUEID01" tx_id: "UNIQUEID04"
+DEBUG Prepare conn_pool_id: "UNIQUEID01" tx_id: "UNIQUEID04" duration: 0
 DEBUG Exec conn_pool_id: "UNIQUEID01" tx_id: "UNIQUEID04" conn_source: "Tx" is_prepared: false query_id: "UNIQUEID02" query: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" duration: 0 sql: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" length_args: 0 length_raw_args: 0 source: "d" error: "<nil>"
 DEBUG Commit conn_pool_id: "UNIQUEID01" tx_id: "UNIQUEID04" duration: 0
+DEBUG Prepare conn_pool_id: "UNIQUEID01" duration: 0
 DEBUG Exec conn_pool_id: "UNIQUEID01" conn_source: "ConnPool" is_prepared: false query_id: "UNIQUEID03" query: "/*$ID$UNIQUEID03*/DELETE FROM `dml_people` WHERE (`id` >= ?)" duration: 0 sql: "/*$ID$UNIQUEID03*/DELETE FROM `dml_people` WHERE (`id` >= 39.56)" length_args: 0 length_raw_args: 1 source: "d" error: "<nil>"
 DEBUG Exec conn_pool_id: "UNIQUEID01" conn_source: "ConnPool" is_prepared: false query_id: "UNIQUEID03" query: "/*$ID$UNIQUEID03*/DELETE FROM `dml_people` WHERE (`id` >= ?)" duration: 0 sql: "" length_args: 1 length_raw_args: 1 source: "d" error: "<nil>"
 DEBUG BeginTx conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID06"
+DEBUG Prepare conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID06" duration: 0
 DEBUG Exec conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID06" conn_source: "Tx" is_prepared: false query_id: "UNIQUEID02" query: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" duration: 0 sql: "/*$ID$UNIQUEID02*/DELETE FROM `dml_people` WHERE (`id` >= 34.56)" length_args: 0 length_raw_args: 0 source: "d" error: "<nil>"
 DEBUG Commit conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID06" duration: 0
 DEBUG BeginTx conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID07"
+DEBUG Prepare conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID07" duration: 0
 DEBUG Exec conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID07" conn_source: "Tx" is_prepared: false query_id: "UNIQUEID03" query: "/*$ID$UNIQUEID03*/DELETE FROM `dml_people` WHERE (`id` >= ?)" duration: 0 sql: "/*$ID$UNIQUEID03*/DELETE FROM `dml_people` WHERE (`id` >= ?)" length_args: 0 length_raw_args: 0 source: "d" error: "<nil>"
 DEBUG Rollback conn_pool_id: "UNIQUEID01" conn_id: "UNIQUEID05" tx_id: "UNIQUEID07" duration: 0

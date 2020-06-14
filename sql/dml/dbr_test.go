@@ -329,7 +329,7 @@ func TestDBR_OrderByLimit(t *testing.T) {
 			)
 		})
 		t.Run("DESC", func(t *testing.T) {
-			a.cachedSQL.OrderBys = a.cachedSQL.OrderBys[:1]
+			a.OrderBys = a.OrderBys[:1]
 			a.OrderByDesc("firstname")
 			compareToSQL2(t, a, errors.NoKind,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > 221) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
@@ -349,7 +349,7 @@ func TestDBR_OrderByLimit(t *testing.T) {
 			)
 		})
 		t.Run("DESC", func(t *testing.T) {
-			a.cachedSQL.OrderBys = a.cachedSQL.OrderBys[:1]
+			a.OrderBys = a.OrderBys[:1]
 			a.OrderByDesc("firstname")
 			compareToSQL2(t, a, errors.NoKind,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
