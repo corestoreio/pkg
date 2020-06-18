@@ -610,6 +610,8 @@ func (qc *queryCache) initDBRQB(
 			log.String("query_id", sqlCache.id), log.String("query", sqlCache.rawSQL))
 	}
 	dbr.cachedSQL = *sqlCache
+	// https://github.com/go101/go101/wiki
+	dbr.cachedSQL.qualifiedColumns = append(sqlCache.qualifiedColumns[:0:0], sqlCache.qualifiedColumns...)
 	dbr.log = l
 
 	return dbr
