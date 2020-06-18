@@ -159,9 +159,10 @@ func TestNewDBManager_Manual(t *testing.T) {
 	t.Run("Entity", func(t *testing.T) {
 		var eFake CoreConfiguration // e=entity => entityFake or entityLoaded
 		assert.NoError(t, ps.FakeData(&eFake))
+		eFake.ConfigID = 0
 
-		t.Run("Insert", func(t *testing.T) {
-			res, err := eFake.Insert(ctx, dbm, shouldInterpolateFn)
+		t.Run("Insert All columns", func(t *testing.T) {
+			res, err := eFake.Insert(ctx, dbm) // shouldInterpolateFn
 			assert.NoError(t, err)
 
 			assert.NoError(t, dml.ExecValidateOneAffectedRow(res, err))
@@ -172,6 +173,35 @@ func TestNewDBManager_Manual(t *testing.T) {
 			assert.True(t, ra > 0, "RowsAffected should be greater than 0")
 			t.Logf("LastInsertId(%d) RowsAffected(%d)", lid, ra)
 		})
+
+		t.Run("Insert partial columns", func(t *testing.T) {
+			err := dbm.ConnPool.RegisterByQueryBuilder(map[string]dml.QueryBuilder{
+				"CoreConfigurationInsert_ConfigIDPath": dml.NewInsert(TableNameCoreConfiguration).AddColumns(
+					Columns.CoreConfiguration.ConfigID, Columns.CoreConfiguration.Path,
+				),
+			})
+			assert.NoError(t, err)
+
+			var eFake2 CoreConfiguration // e=entity => entityFake or entityLoaded
+			assert.NoError(t, ps.FakeData(&eFake2))
+			eFake2.ConfigID = 0
+			res, err := eFake2.Insert(ctx, dbm, func(dbr *dml.DBR) {
+				dbr.WithCacheKey("CoreConfigurationInsert_ConfigIDPath")
+			})
+			lid := dmltest.CheckLastInsertID(t)(res, err)
+
+			var eFakeLoaded CoreConfiguration
+			assert.NoError(t, eFakeLoaded.Load(ctx, dbm, uint32(lid)))
+
+			assert.Exactly(t, "default", eFakeLoaded.Scope)
+			assert.NotEmpty(t, eFakeLoaded.Path)
+			assert.Exactly(t, eFake2.Path, eFakeLoaded.Path)
+			assert.Exactly(t, eFake2.ConfigID, eFakeLoaded.ConfigID)
+			assert.True(t, eFake2.ConfigID > 0 && eFakeLoaded.ConfigID > 0)
+			assert.True(t, eFakeLoaded.Expires.Time.IsZero())
+			assert.True(t, eFakeLoaded.Value.IsZero())
+		})
+
 		t.Run("Upsert", func(t *testing.T) {
 			// this test, runs the ON DUPLICATE KEY clause as the table core_config_data has a unique key.
 			res, err := eFake.Upsert(ctx, dbm, shouldInterpolateFn)
@@ -203,6 +233,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 		assert.Exactly(t, []string{
 			"CoreConfigurationDeleteByPK::DELETE FROM `core_configuration` WHERE (`config_id` IN ?)",
 			"CoreConfigurationInsert::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES ",
+			"CoreConfigurationInsert_ConfigIDPath::INSERT INTO `core_configuration` (`config_id`,`path`) VALUES ",
 			"CoreConfigurationSelectByPK::SELECT `config_id`, `scope`, `scope_id`, `expires`, `path`, `value` FROM `core_configuration` AS `main_table` WHERE (`config_id` = ?) LIMIT 0,1000",
 			"CoreConfigurationUpdateByPK::UPDATE `core_configuration` SET `scope`=?, `scope_id`=?, `expires`=?, `path`=?, `value`=? WHERE (`config_id` = ?)",
 			"CoreConfigurationUpsertByPK::INSERT INTO `core_configuration` (`scope`,`scope_id`,`expires`,`path`,`value`) VALUES  ON DUPLICATE KEY UPDATE `scope`=VALUES(`scope`), `scope_id`=VALUES(`scope_id`), `expires`=VALUES(`expires`), `path`=VALUES(`path`), `value`=VALUES(`value`)",
@@ -216,8 +247,9 @@ func TestNewDBManager_Manual(t *testing.T) {
 			"ViewCustomerAutoIncrementsSelectByPK::SELECT `ce_entity_id`, `email`, `firstname`, `lastname`, `city` FROM `view_customer_auto_increment` AS `main_table` WHERE (`ce_entity_id` IN ?) LIMIT 0,1000",
 		}, queries)
 
-		for _, eventID := range availableEvents {
-			assert.Exactly(t, 1, calledEvents[eventIdxEntity][eventID])
-		}
+		assert.Exactly(t, [eventIdxMax][dml.EventFlagMax]int{
+			{0, 2, 2, 2, 2, 0, 0, 1, 1, 0, 0},
+			{0, 3, 3, 1, 1, 0, 0, 1, 1, 0, 0},
+		}, calledEvents)
 	})
 }

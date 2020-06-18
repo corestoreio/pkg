@@ -20,6 +20,78 @@ const (
 	TableNameViewCustomerAutoIncrement = "view_customer_auto_increment"
 )
 
+// Columns struct provides for all tables the name of the columns. Allows type
+// safety.
+var Columns = struct {
+	CoreConfiguration struct {
+		ConfigID  string
+		Scope     string
+		ScopeID   string
+		Expires   string
+		Path      string
+		Value     string
+		VersionTs string
+		VersionTe string
+	}
+	SalesOrderStatusState struct {
+		Status         string
+		State          string
+		IsDefault      string
+		VisibleOnFront string
+	}
+	ViewCustomerAutoIncrement struct {
+		CeEntityID string
+		Email      string
+		Firstname  string
+		Lastname   string
+		City       string
+	}
+}{
+	CoreConfiguration: struct {
+		ConfigID  string
+		Scope     string
+		ScopeID   string
+		Expires   string
+		Path      string
+		Value     string
+		VersionTs string
+		VersionTe string
+	}{
+		ConfigID:  "config_id",
+		Scope:     "scope",
+		ScopeID:   "scope_id",
+		Expires:   "expires",
+		Path:      "path",
+		Value:     "value",
+		VersionTs: "version_ts",
+		VersionTe: "version_te",
+	},
+	SalesOrderStatusState: struct {
+		Status         string
+		State          string
+		IsDefault      string
+		VisibleOnFront string
+	}{
+		Status:         "status",
+		State:          "state",
+		IsDefault:      "is_default",
+		VisibleOnFront: "visible_on_front",
+	},
+	ViewCustomerAutoIncrement: struct {
+		CeEntityID string
+		Email      string
+		Firstname  string
+		Lastname   string
+		City       string
+	}{
+		CeEntityID: "ce_entity_id",
+		Email:      "email",
+		Firstname:  "firstname",
+		Lastname:   "lastname",
+		City:       "city",
+	},
+}
+
 var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
 	// do nothing because Clone gets called automatically
 }}
