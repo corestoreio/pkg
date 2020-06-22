@@ -1,0 +1,18 @@
+// +build go2
+
+package conv
+
+import (
+	"testing"
+)
+
+func TestGeneric_Int(t *testing.T) {
+	const want = 34123412342
+	got, err := Int(int, uint64)(uint64(want))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != want {
+		t.Fatalf("Have %#v Want %#v", got, want)
+	}
+}

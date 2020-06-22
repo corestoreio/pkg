@@ -1,0 +1,24 @@
+// +build go2
+
+package conv
+
+import (
+	"github.com/corestoreio/errors"
+)
+
+type integer interface {
+	type int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr
+}
+
+func Int(type To, From integer)(from From) (To, error) {
+	var zero To
+	to := To(from)
+	if From(to) != from {
+		return zero, errors.NotValid.Newf("[conv] conversion out of range")
+	}
+	return to, nil
+}
+
+type floating interface {
+  type float32, float64
+}
