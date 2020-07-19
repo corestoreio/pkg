@@ -47,23 +47,23 @@ type fakePerson struct {
 
 // MapColumns implements interface ColumnMapper only partially.
 func (p *fakePerson) MapColumns(cm *dml.ColumnMap) error {
-	for cm.Next() {
+	for cm.Next(8) {
 		switch c := cm.Column(); c {
-		case "id":
+		case "id", "0":
 			cm.Int(&p.ID)
-		case "first_name":
+		case "first_name", "1":
 			cm.String(&p.FirstName)
-		case "last_name":
+		case "last_name", "2":
 			cm.String(&p.LastName)
-		case "sex":
+		case "sex", "3":
 			cm.String(&p.Sex)
-		case "birth_date":
+		case "birth_date", "4":
 			cm.Time(&p.BirthDate)
-		case "weight":
+		case "weight", "5":
 			cm.Int(&p.Weight)
-		case "height":
+		case "height", "6":
 			cm.Int(&p.Height)
-		case "update_time":
+		case "update_time", "7":
 			cm.Time(&p.UpdateTime)
 		default:
 			return errors.NotFound.Newf("[dml_test] fakePerson Column %q not found", c)
@@ -165,20 +165,17 @@ type TableCoreConfigData struct {
 }
 
 func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&p.ConfigID).String(&p.Scope).Int64(&p.ScopeID).String(&p.Path).NullString(&p.Value).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "config_id":
+		case "config_id", "0":
 			cm.Int64(&p.ConfigID)
-		case "scope":
+		case "scope", "1":
 			cm.String(&p.Scope)
-		case "scope_id":
+		case "scope_id", "2":
 			cm.Int64(&p.ScopeID)
-		case "path":
+		case "path", "3":
 			cm.String(&p.Path)
-		case "value":
+		case "value", "4":
 			cm.NullString(&p.Value)
 		default:
 			return errors.NotFound.Newf("[dml] Field %q not found", c)

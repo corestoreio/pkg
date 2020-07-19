@@ -102,61 +102,53 @@ type baseTest struct {
 
 // TODO add null types of the u/int
 func (bt *baseTest) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Bool(&bt.Bool).NullBool(&bt.NullBool).
-			Int(&bt.Int).Int8(&bt.Int8).Int16(&bt.Int16).Int32(&bt.Int32).Int64(&bt.Int64).NullInt64(&bt.NullInt64).
-			Float64(&bt.Float64).NullFloat64(&bt.NullFloat64).
-			Uint(&bt.Uint).Uint8(&bt.Uint8).Uint16(&bt.Uint16).Uint32(&bt.Uint32).Uint64(&bt.Uint64).
-			Byte(&bt.Byte).String(&bt.Str).NullString(&bt.NullString).
-			Time(&bt.Time).NullTime(&bt.NullTime).Err()
-	}
-	for cm.Next() {
+	for cm.Next(23) {
 		switch c := cm.Column(); c {
-		case "bool":
+		case "bool", "0":
 			cm.Bool(&bt.Bool)
-		case "null_bool":
+		case "null_bool", "1":
 			cm.NullBool(&bt.NullBool)
-		case "int":
+		case "int", "2":
 			cm.Int(&bt.Int)
-		case "int8":
+		case "int8", "3":
 			cm.Int8(&bt.Int8)
-		case "int16":
+		case "int16", "4":
 			cm.Int16(&bt.Int16)
-		case "int32":
+		case "int32", "5":
 			cm.Int32(&bt.Int32)
-		case "int64":
+		case "int64", "6":
 			cm.Int64(&bt.Int64)
-		case "null_int64":
+		case "null_int64", "7":
 			cm.NullInt64(&bt.NullInt64)
-		case "float64":
+		case "float64", "8":
 			cm.Float64(&bt.Float64)
-		case "null_float64":
+		case "null_float64", "9":
 			cm.NullFloat64(&bt.NullFloat64)
-		case "uint":
+		case "uint", "10":
 			cm.Uint(&bt.Uint)
-		case "uint8":
+		case "uint8", "11":
 			cm.Uint8(&bt.Uint8)
-		case "uint16":
+		case "uint16", "12":
 			cm.Uint16(&bt.Uint16)
-		case "uint32":
+		case "uint32", "13":
 			cm.Uint32(&bt.Uint32)
-		case "uint64":
+		case "uint64", "14":
 			cm.Uint64(&bt.Uint64)
-		case "byte":
+		case "byte", "15":
 			cm.Byte(&bt.Byte)
-		case "str":
+		case "str", "16":
 			cm.String(&bt.Str)
-		case "null_string":
+		case "null_string", "17":
 			cm.NullString(&bt.NullString)
-		case "time":
+		case "time", "18":
 			cm.Time(&bt.Time)
-		case "null_time":
+		case "null_time", "19":
 			cm.NullTime(&bt.NullTime)
-		case "decimal":
+		case "decimal", "20":
 			cm.Decimal(&bt.Decimal)
-		case "text":
+		case "text", "21":
 			cm.Text(&bt.Text)
-		case "binary":
+		case "binary", "22":
 			cm.Binary(&bt.Binary)
 		default:
 			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)

@@ -38,20 +38,17 @@ type salesOrder struct {
 }
 
 func (so *salesOrder) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&so.EntityID).String(&so.State).Int64(&so.StoreID).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Int64(&so.EntityID)
-		case "state":
+		case "state", "1":
 			cm.String(&so.State)
-		case "store_id":
+		case "store_id", "2":
 			cm.Int64(&so.StoreID)
-		case "customer_id":
+		case "customer_id", "3":
 			cm.Int64(&so.CustomerID)
-		case "grand_total":
+		case "grand_total", "4":
 			cm.NullFloat64(&so.GrandTotal)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)

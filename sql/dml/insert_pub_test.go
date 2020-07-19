@@ -37,16 +37,13 @@ type someRecord struct {
 }
 
 func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
-	}
-	for cm.Next() {
+	for cm.Next(3) {
 		switch c := cm.Column(); c {
-		case "something_id":
+		case "something_id", "0":
 			cm.Int(&sr.SomethingID)
-		case "user_id":
+		case "user_id", "1":
 			cm.Int64(&sr.UserID)
-		case "other":
+		case "other", "2":
 			cm.Bool(&sr.Other)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
@@ -418,4 +415,21 @@ func TestInsert_Clone(t *testing.T) {
 		assert.Exactly(t, i.IsOnDuplicateKey, i2.IsOnDuplicateKey)
 		notEqualPointers(t, i.OnDuplicateKeys, i2.OnDuplicateKeys)
 	})
+}
+
+func TestInsert_WithArgs_record(t *testing.T) {
+	objs := []productEntity{
+		{1, 5, "simple", null.MakeString("SOA9"), false},
+		{2, 5, "virtual", null.String{}, true},
+	}
+
+	i := dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).
+		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]))
+
+	compareToSQL(t, i, errors.NoKind,
+		"INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)",
+		"INSERT INTO `catalog_product_entity` VALUES (1,5,'simple','SOA9',0),(2,5,'virtual',NULL,1)",
+		int64(1), int64(5), "simple", "SOA9", false,
+		int64(2), int64(5), "virtual", nil, true,
+	)
 }

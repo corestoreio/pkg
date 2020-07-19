@@ -67,21 +67,17 @@ func newCustomerEntity() *customerEntity {
 
 // MapColumns implements interface ColumnMapper only partially.
 func (p *customerEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		voucherCodes := p.VoucherCodes.ToString()
-		return cm.Uint64(&p.EntityID).String(&p.Firstname).Uint16(&p.StoreID).NullFloat64(&p.LifetimeSales).String(&voucherCodes).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "entity_id", "customer_id": // customer_id is an alias
+		case "entity_id", "customer_id", "0": // customer_id is an alias
 			cm.Uint64(&p.EntityID)
-		case "firstname":
+		case "firstname", "1":
 			cm.String(&p.Firstname)
-		case "store_id":
+		case "store_id", "2":
 			cm.Uint16(&p.StoreID)
-		case "lifetime_sales":
+		case "lifetime_sales", "3":
 			cm.NullFloat64(&p.LifetimeSales)
-		case "voucher_codes":
+		case "voucher_codes", "4":
 			if cm.Mode() == dml.ColumnMapScan {
 				var voucherCodes string
 				cm.String(&voucherCodes)
@@ -118,7 +114,7 @@ func (cc *customerCollection) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, p)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "entity_id", "customer_id":
 				cm.Uint64s(cc.EntityIDs()...)

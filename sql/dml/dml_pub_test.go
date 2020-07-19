@@ -58,24 +58,21 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 }
 
 func (p *dmlPerson) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int64(&p.StoreID).Time(&p.CreatedAt).Float64(&p.TotalIncome).Err()
-	}
-	for cm.Next() {
+	for cm.Next(7) {
 		switch c := cm.Column(); c {
-		case "id":
+		case "id", "0":
 			cm.Int64(&p.ID)
-		case "name", "name2": // name2 used in TestWithLogger_WithCTE
+		case "name", "name2", "1": // name2 used in TestWithLogger_WithCTE
 			cm.String(&p.Name)
-		case "email", "email2": // email2 used in TestWithLogger_WithCTE
+		case "email", "email2", "2": // email2 used in TestWithLogger_WithCTE
 			cm.NullString(&p.Email)
-		case "key":
+		case "key", "3":
 			cm.NullString(&p.Key)
-		case "store_id":
+		case "store_id", "4":
 			cm.Int64(&p.StoreID)
-		case "created_at":
+		case "created_at", "5":
 			cm.Time(&p.CreatedAt)
-		case "total_income":
+		case "total_income", "6":
 			cm.Float64(&p.TotalIncome)
 		default:
 			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)

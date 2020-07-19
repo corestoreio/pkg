@@ -69,8 +69,9 @@ type ColumnMap struct {
 	// scanErr is a delayed error and also used to avoid `if err != nil` in
 	// generated code. This reduces the boiler plate code a lot! A trade off
 	// between chainable API and too verbose error checking.
-	scanErr error
-	index   int // current column index
+	scanErr    error
+	index      int // current column index
+	fieldCount int
 }
 
 // NewColumnMap exported for testing reasons.
@@ -298,14 +299,25 @@ func (b *ColumnMap) Err() error {
 
 // Column returns the current column name after calling `Next`.
 func (b *ColumnMap) Column() string {
+	if b.index == -1 {
+		b.index++ // in case of collections
+	}
+	if b.columnsLen == 0 && b.fieldCount > 0 {
+		return strconv.FormatInt(int64(b.index), 10)
+	}
 	return b.columns[b.index]
 }
 
 // Next moves the internal index to the next position. It may return false if
 // during RawBytes scanning an error has occurred.
-func (b *ColumnMap) Next() bool {
+func (b *ColumnMap) Next(fieldCount int) bool {
+	b.fieldCount = fieldCount
 	b.index++
-	ok := b.index < b.columnsLen && b.scanErr == nil
+	columnsLen := b.columnsLen
+	if columnsLen == 0 {
+		columnsLen = fieldCount
+	}
+	ok := b.index < columnsLen && b.scanErr == nil
 	if !ok && b.scanErr == nil {
 		// reset because the next row from the result-set will start or the next
 		// Record/ColumnMapper collects the arguments. Only reset the index in

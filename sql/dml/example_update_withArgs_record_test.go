@@ -39,20 +39,17 @@ type categoryEntity struct {
 }
 
 func (pe *categoryEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.ParentID).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Int64(&pe.EntityID)
-		case "attribute_set_id":
+		case "attribute_set_id", "1":
 			cm.Int64(&pe.AttributeSetID)
-		case "parent_id":
+		case "parent_id", "2":
 			cm.String(&pe.ParentID)
-		case "path":
+		case "path", "3":
 			cm.NullString(&pe.Path)
-		case "teaser_id_s":
+		case "teaser_id_s", "4":
 			if pe.TeaserIDs == nil {
 				cm.String(nil)
 			} else {

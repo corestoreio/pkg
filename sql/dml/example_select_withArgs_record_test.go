@@ -39,24 +39,19 @@ type catalogCategoryEntity struct {
 }
 
 func (ce *catalogCategoryEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns, hence it requests all columns.
-		return cm.Int64(&ce.EntityID).Int64(&ce.AttributeSetID).Int64(&ce.ParentID).String(&ce.Path).Int(&ce.Position).Time(&ce.CreatedAt).Err()
-	}
-	for cm.Next() {
+	for cm.Next(6) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Int64(&ce.EntityID)
-		case "attribute_set_id":
+		case "attribute_set_id", "1":
 			cm.Int64(&ce.AttributeSetID)
-		case "parent_id":
+		case "parent_id", "2":
 			cm.Int64(&ce.ParentID)
-		case "path":
+		case "path", "3":
 			cm.String(&ce.Path)
-		case "position":
+		case "position", "4":
 			cm.Int(&ce.Position)
-		case "created_at":
+		case "created_at", "5":
 			cm.Time(&ce.CreatedAt)
 		default:
 			return errors.NotFound.Newf("[dml_test] %T: Column %q not found", ce, c)
@@ -75,22 +70,17 @@ type tableStore struct {
 }
 
 func (ts *tableStore) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns, hence it requests all columns.
-		return cm.Int64(&ts.StoreID).String(&ts.Code).Int64(&ts.WebsiteID).Int64(&ts.GroupID).String(&ts.Name).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) { // 5 = total amount of fields
 		switch c := cm.Column(); c {
-		case "store_id":
+		case "store_id", "0":
 			cm.Int64(&ts.StoreID)
-		case "code":
+		case "code", "1":
 			cm.String(&ts.Code)
-		case "website_id":
+		case "website_id", "2":
 			cm.Int64(&ts.WebsiteID)
-		case "group_id":
+		case "group_id", "3":
 			cm.Int64(&ts.GroupID)
-		case "name":
+		case "name", "4":
 			cm.String(&ts.Name)
 		default:
 			return errors.NotFound.Newf("[dml_test] %T: Column %q not found", ts, c)

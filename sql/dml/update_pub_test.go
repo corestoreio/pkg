@@ -223,21 +223,21 @@ type salesInvoice struct {
 }
 
 func (so *salesInvoice) MapColumns(cm *dml.ColumnMap) error {
-	for cm.Next() {
+	for cm.Next(6) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Int64(&so.EntityID)
-		case "state":
+		case "state", "1":
 			cm.String(&so.State)
-		case "store_id":
+		case "store_id", "2":
 			cm.Int64(&so.StoreID)
-		case "customer_id":
+		case "customer_id", "3":
 			cm.Int64(&so.CustomerID)
-		case "alias_customer_id":
+		case "alias_customer_id", "4":
 			// Here can be a special treatment implemented like encoding to JSON
 			// or encryption
 			cm.Int64(&so.CustomerID)
-		case "grand_total":
+		case "grand_total", "5":
 			cm.NullFloat64(&so.GrandTotal)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)

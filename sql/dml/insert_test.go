@@ -34,16 +34,13 @@ type someRecord struct {
 }
 
 func (sr someRecord) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == ColumnMapEntityReadAll {
-		return cm.Int(&sr.SomethingID).Int64(&sr.UserID).Bool(&sr.Other).Err()
-	}
-	for cm.Next() {
+	for cm.Next(3) {
 		switch c := cm.Column(); c {
-		case "something_id":
+		case "something_id", "0":
 			cm.Int(&sr.SomethingID)
-		case "user_id":
+		case "user_id", "1":
 			cm.Int64(&sr.UserID)
-		case "other":
+		case "other", "2":
 			cm.Bool(&sr.Other)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)

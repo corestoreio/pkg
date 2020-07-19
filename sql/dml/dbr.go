@@ -638,7 +638,6 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 						if err := qRec.MapColumns(cm); err != nil {
 							return collectedArgs, errors.WithStack(err)
 						}
-
 					}
 				}
 				if !found {
@@ -778,7 +777,7 @@ func (a *DBR) mapColumns(containsQualifiedRecords int, args []interface{}, cm *C
 	if containsQualifiedRecords > 0 {
 		cm2 = NewColumnMap(1)
 	}
-	for cm.Next() {
+	for cm.Next(1) {
 		// now a bit slow ...
 		c := cm.Column()
 		if containsQualifiedRecords > 0 {

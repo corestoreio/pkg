@@ -35,21 +35,17 @@ type productEntity struct {
 }
 
 func (pe productEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		// This case gets executed when an INSERT statement doesn't contain any
-		// columns.
-		return cm.Int64(&pe.EntityID).Int64(&pe.AttributeSetID).String(&pe.TypeID).NullString(&pe.SKU).Bool(&pe.HasOptions).Err()
-	}
-	// This case gets executed when an INSERT statement requests specific columns.
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "attribute_set_id":
+		case "entity_id", "0":
+			cm.Int64(&pe.EntityID)
+		case "attribute_set_id", "1":
 			cm.Int64(&pe.AttributeSetID)
-		case "type_id":
+		case "type_id", "2":
 			cm.String(&pe.TypeID)
-		case "sku":
+		case "sku", "3":
 			cm.NullString(&pe.SKU)
-		case "has_options":
+		case "has_options", "4":
 			cm.Bool(&pe.HasOptions)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)

@@ -84,21 +84,17 @@ func (p *dmlPerson) AssignLastInsertID(id int64) {
 
 // RowScan loads a single row from a SELECT statement returning only one row
 func (p *dmlPerson) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == ColumnMapEntityReadAll {
-		return cm.Uint64(&p.ID).String(&p.Name).NullString(&p.Email).NullString(&p.Key).Int(&p.Dob).Err()
-	}
-	for cm.Next() {
-		c := cm.Column()
-		switch c {
-		case "id":
+	for cm.Next(5) {
+		switch c := cm.Column(); c {
+		case "id", "0":
 			cm.Uint64(&p.ID)
-		case "name":
+		case "name", "1":
 			cm.String(&p.Name)
-		case "email":
+		case "email", "2":
 			cm.NullString(&p.Email)
-		case "key":
+		case "key", "3":
 			cm.NullString(&p.Key)
-		case "dob":
+		case "dob", "4":
 			cm.Int(&p.Dob)
 		case "store_id", "created_at", "total_income", "avg_income":
 			// noop don't trigger the default case
@@ -136,18 +132,18 @@ func (ps *dmlPersons) MapColumns(cm *ColumnMap) error {
 	case ColumnMapCollectionReadSet: // See Test in select_test.go:TestSelect_SetRecord
 		// SELECT, DELETE or UPDATE or INSERT with n columns
 		// TODO in some INSERT statements this slice building code might not be needed.
-		for cm.Next() {
-			switch c := cm.Column(); c {
-			case "id":
-				cm.Uint64s(ps.IDs()...)
-			case "name":
-				cm.Strings(ps.Names()...)
-			case "email":
-				cm.NullStrings(ps.Emails()...)
-			default:
-				return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
-			}
+
+		switch c := cm.Column(); c {
+		case "id":
+			cm.Uint64s(ps.IDs()...)
+		case "name":
+			cm.Strings(ps.Names()...)
+		case "email":
+			cm.NullStrings(ps.Emails()...)
+		default:
+			return errors.NotFound.Newf("[dml_test] dmlPerson Column %q not found", c)
 		}
+
 	default:
 		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
 	}
@@ -204,25 +200,21 @@ type nullTypedRecord struct {
 }
 
 func (p *nullTypedRecord) MapColumns(cm *ColumnMap) error {
-	if cm.Mode() == ColumnMapEntityReadAll {
-		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Decimal(&p.DecimalVal).Err()
-	}
-	for cm.Next() {
-		c := cm.Column()
-		switch c {
-		case "id":
+	for cm.Next(5) {
+		switch c := cm.Column(); c {
+		case "id", "0":
 			cm.Int64(&p.ID)
-		case "string_val":
+		case "string_val", "1":
 			cm.NullString(&p.StringVal)
-		case "int64_val":
+		case "int64_val", "2":
 			cm.NullInt64(&p.Int64Val)
-		case "float64_val":
+		case "float64_val", "3":
 			cm.NullFloat64(&p.Float64Val)
-		case "time_val":
+		case "time_val", "4":
 			cm.NullTime(&p.TimeVal)
-		case "bool_val":
+		case "bool_val", "5":
 			cm.NullBool(&p.BoolVal)
-		case "decimal_val":
+		case "decimal_val", "6":
 			cm.Decimal(&p.DecimalVal)
 		default:
 			return errors.NotFound.Newf("[dml_test] Column %q not found", c)
