@@ -104,7 +104,7 @@ func (g *Go) GenerateFile(w io.Writer) error {
 
 	g.Buffer.WriteTo(&buf)
 
-	fmted, err := format.Source(buf.Bytes(), "") // no version == newest version
+	fmted, err := format.Source(buf.Bytes(), format.Options{}) // no version == newest version
 	if err != nil {
 		return &FormatError{
 			error: err,
