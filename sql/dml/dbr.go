@@ -120,9 +120,6 @@ func makeCachedSQL(qb QueryBuilder, rawSQL, id string) *cachedSQL {
 			sqlCache.source = dmlSourceInsertSelect
 		}
 		sqlCache.insertColumnCount = uint(len(qbs.Columns))
-		if qbs.RecordPlaceHolderCount > 0 {
-			sqlCache.insertColumnCount = uint(qbs.RecordPlaceHolderCount)
-		}
 		sqlCache.tupleRowCount = uint(qbs.RowCount)
 		sqlCache.insertIsBuildValues = qbs.IsBuildValues
 		sqlCache.containsTuples = qbs.BuilderBase.containsTuples
@@ -425,8 +422,8 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	}
 	lenExtArgs := len(extArgs)
 	var hasNamedArgs uint8
-	var containsQualifiedRecords int
-	var primitiveCounts int
+	var qualifiedRecordCount int
+	var primitiveCount int
 	var args []interface{}
 	if lenExtArgs > 0 {
 		args = pooledInterfacesGet()
@@ -436,27 +433,30 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 			switch eaTypeValue := ea.(type) {
 			case nil:
 				args = append(args, internalNULLNIL{})
-				primitiveCounts++
+				primitiveCount++
 			case QualifiedRecord, ColumnMapper:
-				containsQualifiedRecords++
+				qualifiedRecordCount++
 				args = append(args, eaTypeValue)
 			case sql.NamedArg:
 				args = append(args, ea)
 				hasNamedArgs = 2
-				primitiveCounts++
+				primitiveCount++
 			case []sql.NamedArg: // insert statement with key/value pairs
 				for _, na := range eaTypeValue {
 					args = append(args, na.Value)
-					primitiveCounts++
+					primitiveCount++
 				}
 			default:
 				args = append(args, ea)
-				primitiveCounts++ // contains slices and all other stuff
+				primitiveCount++ // contains slices and all other stuff
 			}
 		}
 	}
 	if a.cachedSQL.source == dmlSourceInsert {
-		return a.prepareQueryAndArgsInsert(args, primitiveCounts)
+		if a.cachedSQL.tupleRowCount == 0 && a.cachedSQL.insertColumnCount == 0 && qualifiedRecordCount > 0 {
+			a.cachedSQL.tupleRowCount = uint(qualifiedRecordCount)
+		}
+		return a.prepareQueryAndArgsInsert(args, primitiveCount)
 	}
 
 	cachedSQL := a.cachedSQL.rawSQL
@@ -464,7 +464,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 		return "", nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
 	}
 
-	if a.cachedSQL.templateStmtCount < 2 && hasNamedArgs == 0 && containsQualifiedRecords == 0 &&
+	if a.cachedSQL.templateStmtCount < 2 && hasNamedArgs == 0 && qualifiedRecordCount == 0 &&
 		a.Options == 0 && !a.cachedSQL.containsTuples { // no options and qualified records provided
 
 		if a.isPrepared {
@@ -494,7 +494,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 
-	if args, err = a.appendConvertedRecordsToArguments(hasNamedArgs, args, containsQualifiedRecords); err != nil {
+	if args, err = a.appendConvertedRecordsToArguments(hasNamedArgs, args, qualifiedRecordCount); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
@@ -514,7 +514,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	sqlWriteLimitOffset(sqlBuf.First, a.LimitValid, a.OffsetValid, a.OffsetCount, a.LimitCount)
 
 	// `switch` statement no suitable.
-	if a.Options > 0 && lenExtArgs > 0 && containsQualifiedRecords == 0 && len(args) == 0 {
+	if a.Options > 0 && lenExtArgs > 0 && qualifiedRecordCount == 0 && len(args) == 0 {
 		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
 	}
 

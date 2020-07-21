@@ -69,7 +69,7 @@ func ExampleInsert_WithArgs_record() {
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
-	i = dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).
+	i = dml.NewInsert("catalog_product_entity").
 		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]))
 	writeToSQLAndInterpolate(i)
 

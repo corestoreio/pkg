@@ -165,12 +165,10 @@ func (b *Insert) SetRowCount(rows int) *Insert {
 }
 
 // SetRecordPlaceHolderCount number of expected place holders within each set.
-// Must be applied if a call to AddColumns has been omitted and WithRecords gets
-// called or Records gets set in a different way.
+// Only needed in case the SQL string gets build without any arguments.
 //		INSERT INTO tableX (?,?,?)
 // SetRecordPlaceHolderCount would now be 3 because of the three place holders.
 func (b *Insert) SetRecordPlaceHolderCount(valueCount int) *Insert {
-	// maybe we can do better and remove this method ...
 	b.RecordPlaceHolderCount = valueCount
 	return b
 }

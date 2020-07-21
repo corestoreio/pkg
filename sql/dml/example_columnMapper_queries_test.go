@@ -129,10 +129,6 @@ func ExampleColumnMapper_insertEntitiesWithColumns() {
 // including the autoincrement field.
 func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 	q := dml.NewInsert("customer_entity").
-		// SetRecordPlaceHolderCount mandatory because no columns provided!
-		// customerEntity has five fields and all fields are requested. For
-		// now a hard coded 5.
-		SetRecordPlaceHolderCount(5).
 		WithDBR(dbMock{}).TestWithArgs(
 		dml.Qualify("", cmCustomers.Data[0]),
 		dml.Qualify("", cmCustomers.Data[1]),
@@ -151,8 +147,7 @@ func ExampleColumnMapper_insertEntitiesWithoutColumns() {
 }
 
 func ExampleColumnMapper_insertCollectionWithoutColumns() {
-	q := dml.NewInsert("customer_entity"). // AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes").
-						SetRecordPlaceHolderCount(5).
+	q := dml.NewInsert("customer_entity"). // AddColumns("firstname", "lifetime_sales", "store_id", "voucher_codes"). .
 						SetRowCount(len(cmCustomers.Data)).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", cmCustomers))
 
 	writeToSQLAndInterpolate(q)

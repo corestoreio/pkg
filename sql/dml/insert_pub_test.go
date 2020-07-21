@@ -73,7 +73,6 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("without columns, all columns requested, with AddOnDuplicateKey", func(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("a").
-				SetRecordPlaceHolderCount(3).
 				AddOnDuplicateKey(
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
@@ -93,7 +92,6 @@ func TestInsert_Bind(t *testing.T) {
 
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
-				SetRecordPlaceHolderCount(5). // mandatory because no columns provided!
 				WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", customers[0]), dml.Qualify("", customers[1]), dml.Qualify("", customers[2])),
 			errors.NoKind,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
@@ -423,7 +421,7 @@ func TestInsert_WithArgs_record(t *testing.T) {
 		{2, 5, "virtual", null.String{}, true},
 	}
 
-	i := dml.NewInsert("catalog_product_entity").SetRecordPlaceHolderCount(5).
+	i := dml.NewInsert("catalog_product_entity").
 		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]))
 
 	compareToSQL(t, i, errors.NoKind,
