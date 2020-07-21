@@ -361,37 +361,37 @@ func (cs Columns) JoinFields(sep string) string {
 // its bytes into the type Column.
 func newColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 	c = new(Column)
-	for rc.Next() {
+	for rc.Next(15) {
 		switch col := rc.Column(); col {
-		case "TABLE_NAME":
+		case "TABLE_NAME", "0":
 			rc.String(&tableName)
-		case "COLUMN_NAME":
+		case "COLUMN_NAME", "1":
 			rc.String(&c.Field)
-		case "ORDINAL_POSITION":
+		case "ORDINAL_POSITION", "2":
 			rc.Uint64(&c.Pos)
-		case "COLUMN_DEFAULT":
+		case "COLUMN_DEFAULT", "3":
 			rc.NullString(&c.Default)
-		case "IS_NULLABLE":
+		case "IS_NULLABLE", "4":
 			rc.String(&c.Null)
-		case "DATA_TYPE":
+		case "DATA_TYPE", "5":
 			rc.String(&c.DataType)
-		case "CHARACTER_MAXIMUM_LENGTH":
+		case "CHARACTER_MAXIMUM_LENGTH", "6":
 			rc.NullInt64(&c.CharMaxLength)
-		case "NUMERIC_PRECISION":
+		case "NUMERIC_PRECISION", "7":
 			rc.NullInt64(&c.Precision)
-		case "NUMERIC_SCALE":
+		case "NUMERIC_SCALE", "8":
 			rc.NullInt64(&c.Scale)
-		case "COLUMN_TYPE":
+		case "COLUMN_TYPE", "9":
 			rc.String(&c.ColumnType)
-		case "COLUMN_KEY":
+		case "COLUMN_KEY", "10":
 			rc.String(&c.Key)
-		case "EXTRA":
+		case "EXTRA", "11":
 			rc.String(&c.Extra)
-		case "COLUMN_COMMENT":
+		case "COLUMN_COMMENT", "12":
 			rc.String(&c.Comment)
-		case "IS_GENERATED":
+		case "IS_GENERATED", "13":
 			rc.String(&c.Generated)
-		case "GENERATION_EXPRESSION":
+		case "GENERATION_EXPRESSION", "14":
 			rc.NullString(&c.GenerationExpression)
 		case "aliases":
 			// TODO the query must be extendable for all three columns to attach any table from any DB.

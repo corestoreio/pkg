@@ -143,11 +143,11 @@ func (vs *Variables) ToSQL() (string, []interface{}, error) {
 // the database query result.
 func (vs *Variables) MapColumns(rc *dml.ColumnMap) error {
 	name, value := "", ""
-	for rc.Next() {
+	for rc.Next(2) {
 		switch col := rc.Column(); col {
-		case "Variable_name":
+		case "Variable_name", "0":
 			rc.String(&name)
-		case "Value":
+		case "Value", "1":
 			rc.String(&value)
 		default:
 			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW VARIABLES", col)

@@ -118,51 +118,51 @@ func NewTable(tableName string, cs ...*Column) *Table {
 
 func newTable(rc *dml.ColumnMap) (*Table, error) {
 	t := new(Table)
-	for rc.Next() {
+	for rc.Next(22) {
 		switch col := rc.Column(); col {
-		case "TABLE_CATALOG":
+		case "TABLE_CATALOG", "0":
 			rc.String(&t.Catalog)
-		case "TABLE_SCHEMA":
+		case "TABLE_SCHEMA", "1":
 			rc.String(&t.Schema)
-		case "TABLE_NAME":
+		case "TABLE_NAME", "2":
 			rc.String(&t.Name)
-		case "TABLE_TYPE":
+		case "TABLE_TYPE", "3":
 			rc.String(&t.Type)
-		case "ENGINE":
+		case "ENGINE", "4":
 			rc.NullString(&t.Engine)
-		case "VERSION":
+		case "VERSION", "5":
 			rc.NullUint64(&t.Version)
-		case "ROW_FORMAT":
+		case "ROW_FORMAT", "6":
 			rc.NullString(&t.RowFormat)
-		case "TABLE_ROWS":
+		case "TABLE_ROWS", "7":
 			rc.NullUint64(&t.TableRows)
-		case "AVG_ROW_LENGTH":
+		case "AVG_ROW_LENGTH", "8":
 			rc.NullUint64(&t.AvgRowLength)
-		case "DATA_LENGTH":
+		case "DATA_LENGTH", "9":
 			rc.NullUint64(&t.DataLength)
-		case "MAX_DATA_LENGTH":
+		case "MAX_DATA_LENGTH", "10":
 			rc.NullUint64(&t.MaxDataLength)
-		case "INDEX_LENGTH":
+		case "INDEX_LENGTH", "11":
 			rc.NullUint64(&t.IndexLength)
-		case "DATA_FREE":
+		case "DATA_FREE", "12":
 			rc.NullUint64(&t.DataFree)
-		case "AUTO_INCREMENT":
+		case "AUTO_INCREMENT", "13":
 			rc.NullUint64(&t.AutoIncrement)
-		case "CREATE_TIME":
+		case "CREATE_TIME", "14":
 			rc.NullTime(&t.CreateTime)
-		case "UPDATE_TIME":
+		case "UPDATE_TIME", "15":
 			rc.NullTime(&t.UpdateTime)
-		case "CHECK_TIME":
+		case "CHECK_TIME", "16":
 			rc.NullTime(&t.CheckTime)
-		case "TABLE_COLLATION":
+		case "TABLE_COLLATION", "17":
 			rc.NullString(&t.TableCollation)
-		case "CHECKSUM":
+		case "CHECKSUM", "18":
 			rc.NullUint64(&t.Checksum)
-		case "CREATE_OPTIONS":
+		case "CREATE_OPTIONS", "19":
 			rc.NullString(&t.CreateOptions)
-		case "TABLE_COMMENT":
+		case "TABLE_COMMENT", "20":
 			rc.String(&t.TableComment)
-		case "MAX_INDEX_LENGTH":
+		case "MAX_INDEX_LENGTH", "21":
 			rc.NullUint64(&t.MaxIndexLength)
 		default:
 			return nil, errors.NotSupported.Newf("[ddl] Column %q not supported", col)

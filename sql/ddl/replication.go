@@ -49,17 +49,17 @@ func (ms MasterStatus) ToSQL() (string, []interface{}, error) {
 // MapColumns implements dml.ColumnMapper interface to scan a row returned from
 // a database query.
 func (ms *MasterStatus) MapColumns(rc *dml.ColumnMap) error {
-	for rc.Next() {
+	for rc.Next(5) {
 		switch col := rc.Column(); col {
-		case "File":
+		case "File", "0":
 			rc.String(&ms.File)
-		case "Position":
+		case "Position", "1":
 			rc.Uint(&ms.Position)
-		case "Binlog_Do_DB":
+		case "Binlog_Do_DB", "2":
 			rc.String(&ms.BinlogDoDB)
-		case "Binlog_Ignore_DB":
+		case "Binlog_Ignore_DB", "3":
 			rc.String(&ms.BinlogIgnoreDB)
-		case "Executed_Gtid_Set":
+		case "Executed_Gtid_Set", "4":
 			rc.String(&ms.ExecutedGTIDSet)
 		default:
 			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW MASTER STATUS", col)

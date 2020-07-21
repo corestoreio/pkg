@@ -44,34 +44,31 @@ type KeyColumnUsage struct {
 
 // MapColumns implements interface ColumnMapper only partially.
 func (e *KeyColumnUsage) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.String(&e.ConstraintCatalog).String(&e.ConstraintSchema).String(&e.ConstraintName).String(&e.TableCatalog).String(&e.TableSchema).String(&e.TableName).String(&e.ColumnName).Int64(&e.OrdinalPosition).NullInt64(&e.PositionInUniqueConstraint).NullString(&e.ReferencedTableSchema).NullString(&e.ReferencedTableName).NullString(&e.ReferencedColumnName).Err()
-	}
-	for cm.Next() {
+	for cm.Next(12) {
 		switch c := cm.Column(); c {
-		case "CONSTRAINT_CATALOG":
+		case "CONSTRAINT_CATALOG", "0":
 			cm.String(&e.ConstraintCatalog)
-		case "CONSTRAINT_SCHEMA":
+		case "CONSTRAINT_SCHEMA", "1":
 			cm.String(&e.ConstraintSchema)
-		case "CONSTRAINT_NAME":
+		case "CONSTRAINT_NAME", "2":
 			cm.String(&e.ConstraintName)
-		case "TABLE_CATALOG":
+		case "TABLE_CATALOG", "3":
 			cm.String(&e.TableCatalog)
-		case "TABLE_SCHEMA":
+		case "TABLE_SCHEMA", "4":
 			cm.String(&e.TableSchema)
-		case "TABLE_NAME":
+		case "TABLE_NAME", "5":
 			cm.String(&e.TableName)
-		case "COLUMN_NAME":
+		case "COLUMN_NAME", "6":
 			cm.String(&e.ColumnName)
-		case "ORDINAL_POSITION":
+		case "ORDINAL_POSITION", "7":
 			cm.Int64(&e.OrdinalPosition)
-		case "POSITION_IN_UNIQUE_CONSTRAINT":
+		case "POSITION_IN_UNIQUE_CONSTRAINT", "8":
 			cm.NullInt64(&e.PositionInUniqueConstraint)
-		case "REFERENCED_TABLE_SCHEMA":
+		case "REFERENCED_TABLE_SCHEMA", "9":
 			cm.NullString(&e.ReferencedTableSchema)
-		case "REFERENCED_TABLE_NAME":
+		case "REFERENCED_TABLE_NAME", "10":
 			cm.NullString(&e.ReferencedTableName)
-		case "REFERENCED_COLUMN_NAME":
+		case "REFERENCED_COLUMN_NAME", "11":
 			cm.NullString(&e.ReferencedColumnName)
 		default:
 			return errors.NotFound.Newf("[testdata] KeyColumnUsage Column %q not found", c)
@@ -133,7 +130,7 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "TABLE_NAME":
 				cm.Strings(cc.TableNames()...)
