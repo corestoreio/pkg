@@ -91,7 +91,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testAll_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated",
@@ -201,7 +201,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	assert.NoError(t, err)
 
 	g.ImportPathsTesting = append(g.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	g.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	g.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated/output_gen.go", g.GenerateGo)
 	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
@@ -350,7 +350,7 @@ func TestNewGenerator_NoDB(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testAll_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated2",
@@ -373,7 +373,7 @@ func TestNewGenerator_NoDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	ts.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated2/no_db_gen.go", ts.GenerateGo)
 }
@@ -382,7 +382,7 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testAll_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated3",
@@ -434,7 +434,7 @@ func TestNewGenerator_ReversedForeignKeys(t *testing.T) {
 	assert.NoError(t, err)
 
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	ts.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated3/rev_fk_gen.go", ts.GenerateGo)
 }
@@ -443,7 +443,7 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testAll_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgeneratedMToM",
@@ -490,7 +490,7 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 	assert.NoError(t, err)
 
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	ts.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgeneratedMToM/fkm2n_gen.go", ts.GenerateGo)
 }
@@ -499,7 +499,7 @@ func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
 
-	defer dmltest.SQLDumpLoad(t, "testdata/test_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+	defer dmltest.SQLDumpLoad(t, "testdata/testAll_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
 
 	ctx := context.Background()
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated4",
@@ -521,7 +521,53 @@ func TestNewGenerator_DB_Partial_SQL_Queries(t *testing.T) {
 	assert.NoError(t, err)
 
 	ts.ImportPathsTesting = append(ts.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
-	ts.TestSQLDumpGlobPath = "../testdata/test_*_tables.sql"
+	ts.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated4/db_part_query_gen.go", ts.GenerateGo)
+}
+
+func TestCustomerEntity_Relations(t *testing.T) {
+	db := dmltest.MustConnectDB(t)
+	defer dmltest.Close(t, db)
+
+	defer dmltest.SQLDumpLoad(t, "testdata/testCust_*.sql", &dmltest.SQLDumpOptions{DSN: db.DSN()}).Deferred()
+
+	featuresInclude := dmlgen.FeatureDB | dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct |
+		dmlgen.FeatureDBSelect | dmlgen.FeatureDBUpdate | dmlgen.FeatureDBUpsert | dmlgen.FeatureDBInsert |
+		dmlgen.FeatureDBDelete | dmlgen.FeatureEntityRelationships | dmlgen.FeatureCollectionEach
+
+	ctx := context.Background()
+	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated5",
+
+		dmlgen.WithTablesFromDB(ctx, db,
+			"customer_entity", "customer_address_entity",
+		),
+		dmlgen.WithForeignKeyRelationships(ctx, db.DB, dmlgen.ForeignKeyOptions{
+			ExcludeRelationships: []string{
+				"customer_address_entity.parent_id", "customer_entity.entity_id",
+			},
+		}),
+		dmlgen.WithTableConfig(
+			"customer_entity", &dmlgen.TableConfig{
+				StructTags:      []string{"max_len"},
+				PrivateFields:   []string{"password_hash"},
+				FeaturesInclude: featuresInclude,
+			}),
+		dmlgen.WithTableConfig(
+			"customer_address_entity", &dmlgen.TableConfig{
+				StructTags:      []string{"max_len"},
+				FeaturesInclude: featuresInclude,
+			}),
+		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
+		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
+			return nil, nil
+		}),
+`),
+	)
+	assert.NoError(t, err)
+
+	g.ImportPathsTesting = append(g.ImportPathsTesting, "fmt") // only needed for pseudo functional options.
+	g.TestSQLDumpGlobPath = "../testdata/testCust_*_tables.sql"
+
+	writeFile(t, "dmltestgenerated5/tables_gen.go", g.GenerateGo)
 }

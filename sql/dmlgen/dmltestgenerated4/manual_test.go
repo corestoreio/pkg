@@ -22,7 +22,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
-	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "../testdata/testAll_*_tables.sql", nil).Deferred()
 
 	availableEvents := []dml.EventFlag{
 		dml.EventFlagBeforeInsert, dml.EventFlagAfterInsert,

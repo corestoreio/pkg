@@ -270,26 +270,23 @@ func (e *CoreConfiguration) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.ConfigID).String(&e.Scope).Int32(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
-	}
-	for cm.Next() {
+	for cm.Next(8) {
 		switch c := cm.Column(); c {
-		case "config_id":
+		case "config_id", "0":
 			cm.Uint32(&e.ConfigID)
-		case "scope":
+		case "scope", "1":
 			cm.String(&e.Scope)
-		case "scope_id":
+		case "scope_id", "2":
 			cm.Int32(&e.ScopeID)
-		case "expires":
+		case "expires", "3":
 			cm.NullTime(&e.Expires)
-		case "path":
+		case "path", "4":
 			cm.String(&e.Path)
-		case "value":
+		case "value", "5":
 			cm.NullString(&e.Value)
-		case "version_ts":
+		case "version_ts", "6":
 			cm.Time(&e.VersionTs)
-		case "version_te":
+		case "version_te", "7":
 			cm.Time(&e.VersionTe)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated4] CoreConfiguration Column %q not found", c)
@@ -431,7 +428,7 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "config_id":
 				cm = cm.Uint32s(cc.ConfigIDs()...)
@@ -580,18 +577,15 @@ type SalesOrderStatusState struct {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.String(&e.Status).String(&e.State).Bool(&e.IsDefault).Uint16(&e.VisibleOnFront).Err()
-	}
-	for cm.Next() {
+	for cm.Next(4) {
 		switch c := cm.Column(); c {
-		case "status":
+		case "status", "0":
 			cm.String(&e.Status)
-		case "state":
+		case "state", "1":
 			cm.String(&e.State)
-		case "is_default":
+		case "is_default", "2":
 			cm.Bool(&e.IsDefault)
-		case "visible_on_front":
+		case "visible_on_front", "3":
 			cm.Uint16(&e.VisibleOnFront)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated4] SalesOrderStatusState Column %q not found", c)
@@ -668,7 +662,7 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "status":
 				cm = cm.Strings(cc.Statuss()...)
@@ -772,20 +766,17 @@ type ViewCustomerAutoIncrement struct {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.CeEntityID).NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "ce_entity_id":
+		case "ce_entity_id", "0":
 			cm.Uint32(&e.CeEntityID)
-		case "email":
+		case "email", "1":
 			cm.NullString(&e.Email)
-		case "firstname":
+		case "firstname", "2":
 			cm.String(&e.Firstname)
-		case "lastname":
+		case "lastname", "3":
 			cm.String(&e.Lastname)
-		case "city":
+		case "city", "4":
 			cm.String(&e.City)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated4] ViewCustomerAutoIncrement Column %q not found", c)

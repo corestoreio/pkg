@@ -97,7 +97,7 @@ var Columns = struct {
 		Lastname               string
 		Suffix                 string
 		Dob                    string
-		passwordHash           string
+		PasswordHash           string
 		RpToken                string
 		RpTokenCreatedAt       string
 		DefaultBilling         string
@@ -275,7 +275,7 @@ var Columns = struct {
 		Lastname               string
 		Suffix                 string
 		Dob                    string
-		passwordHash           string
+		PasswordHash           string
 		RpToken                string
 		RpTokenCreatedAt       string
 		DefaultBilling         string
@@ -304,7 +304,7 @@ var Columns = struct {
 		Lastname:               "lastname",
 		Suffix:                 "suffix",
 		Dob:                    "dob",
-		passwordHash:           "password_hash",
+		PasswordHash:           "password_hash",
 		RpToken:                "rp_token",
 		RpTokenCreatedAt:       "rp_token_created_at",
 		DefaultBilling:         "default_billing",
@@ -802,20 +802,17 @@ func (e *CatalogProductIndexEAVDecimalIDX) Copy() *CatalogProductIndexEAVDecimal
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CatalogProductIndexEAVDecimalIDX) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.EntityID).Uint32(&e.AttributeID).Uint32(&e.StoreID).Uint32(&e.SourceID).Decimal(&e.Value).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Uint32(&e.EntityID)
-		case "attribute_id":
+		case "attribute_id", "1":
 			cm.Uint32(&e.AttributeID)
-		case "store_id":
+		case "store_id", "2":
 			cm.Uint32(&e.StoreID)
-		case "source_id":
+		case "source_id", "3":
 			cm.Uint32(&e.SourceID)
-		case "value":
+		case "value", "4":
 			cm.Decimal(&e.Value)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CatalogProductIndexEAVDecimalIDX Column %q not found", c)
@@ -1024,7 +1021,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) erro
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
@@ -1349,26 +1346,23 @@ func (e *CoreConfiguration) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CoreConfiguration) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.ConfigID).String(&e.Scope).Int32(&e.ScopeID).NullTime(&e.Expires).String(&e.Path).NullString(&e.Value).Time(&e.VersionTs).Time(&e.VersionTe).Err()
-	}
-	for cm.Next() {
+	for cm.Next(8) {
 		switch c := cm.Column(); c {
-		case "config_id":
+		case "config_id", "0":
 			cm.Uint32(&e.ConfigID)
-		case "scope":
+		case "scope", "1":
 			cm.String(&e.Scope)
-		case "scope_id":
+		case "scope_id", "2":
 			cm.Int32(&e.ScopeID)
-		case "expires":
+		case "expires", "3":
 			cm.NullTime(&e.Expires)
-		case "path", "storage_location", "config_directory":
+		case "path", "storage_location", "config_directory", "4":
 			cm.String(&e.Path)
-		case "value":
+		case "value", "5":
 			cm.NullString(&e.Value)
-		case "version_ts":
+		case "version_ts", "6":
 			cm.Time(&e.VersionTs)
-		case "version_te":
+		case "version_te", "7":
 			cm.Time(&e.VersionTe)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CoreConfiguration Column %q not found", c)
@@ -1585,7 +1579,7 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "config_id":
 				cm = cm.Uint32s(cc.ConfigIDs()...)
@@ -1880,60 +1874,57 @@ func (e *CustomerAddressEntity) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.EntityID).NullString(&e.IncrementID).NullUint32(&e.ParentID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).String(&e.City).NullString(&e.Company).String(&e.CountryID).NullString(&e.Fax).String(&e.Firstname).String(&e.Lastname).NullString(&e.Middlename).NullString(&e.Postcode).NullString(&e.Prefix).NullString(&e.Region).NullUint32(&e.RegionID).String(&e.Street).NullString(&e.Suffix).String(&e.Telephone).NullString(&e.VatID).NullBool(&e.VatIsValid).NullString(&e.VatRequestDate).NullString(&e.VatRequestID).NullUint32(&e.VatRequestSuccess).Err()
-	}
-	for cm.Next() {
+	for cm.Next(25) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Uint32(&e.EntityID)
-		case "increment_id":
+		case "increment_id", "1":
 			cm.NullString(&e.IncrementID)
-		case "parent_id":
+		case "parent_id", "2":
 			cm.NullUint32(&e.ParentID)
-		case "created_at":
+		case "created_at", "3":
 			cm.Time(&e.CreatedAt)
-		case "updated_at":
+		case "updated_at", "4":
 			cm.Time(&e.UpdatedAt)
-		case "is_active":
+		case "is_active", "5":
 			cm.Bool(&e.IsActive)
-		case "city":
+		case "city", "6":
 			cm.String(&e.City)
-		case "company":
+		case "company", "7":
 			cm.NullString(&e.Company)
-		case "country_id":
+		case "country_id", "8":
 			cm.String(&e.CountryID)
-		case "fax":
+		case "fax", "9":
 			cm.NullString(&e.Fax)
-		case "firstname":
+		case "firstname", "10":
 			cm.String(&e.Firstname)
-		case "lastname":
+		case "lastname", "11":
 			cm.String(&e.Lastname)
-		case "middlename":
+		case "middlename", "12":
 			cm.NullString(&e.Middlename)
-		case "postcode":
+		case "postcode", "13":
 			cm.NullString(&e.Postcode)
-		case "prefix":
+		case "prefix", "14":
 			cm.NullString(&e.Prefix)
-		case "region":
+		case "region", "15":
 			cm.NullString(&e.Region)
-		case "region_id":
+		case "region_id", "16":
 			cm.NullUint32(&e.RegionID)
-		case "street":
+		case "street", "17":
 			cm.String(&e.Street)
-		case "suffix":
+		case "suffix", "18":
 			cm.NullString(&e.Suffix)
-		case "telephone":
+		case "telephone", "19":
 			cm.String(&e.Telephone)
-		case "vat_id":
+		case "vat_id", "20":
 			cm.NullString(&e.VatID)
-		case "vat_is_valid":
+		case "vat_is_valid", "21":
 			cm.NullBool(&e.VatIsValid)
-		case "vat_request_date":
+		case "vat_request_date", "22":
 			cm.NullString(&e.VatRequestDate)
-		case "vat_request_id":
+		case "vat_request_id", "23":
 			cm.NullString(&e.VatRequestID)
-		case "vat_request_success":
+		case "vat_request_success", "24":
 			cm.NullUint32(&e.VatRequestSuccess)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CustomerAddressEntity Column %q not found", c)
@@ -2171,7 +2162,7 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
@@ -2450,66 +2441,63 @@ func (e *CustomerEntity) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.EntityID).NullUint32(&e.WebsiteID).NullString(&e.Email).Uint32(&e.GroupID).NullString(&e.IncrementID).NullUint32(&e.StoreID).Time(&e.CreatedAt).Time(&e.UpdatedAt).Bool(&e.IsActive).Uint32(&e.DisableAutoGroupChange).NullString(&e.CreatedIn).NullString(&e.Prefix).NullString(&e.Firstname).NullString(&e.Middlename).NullString(&e.Lastname).NullString(&e.Suffix).NullTime(&e.Dob).NullString(&e.passwordHash).NullString(&e.RpToken).NullTime(&e.RpTokenCreatedAt).NullUint32(&e.DefaultBilling).NullUint32(&e.DefaultShipping).NullString(&e.Taxvat).NullString(&e.Confirmation).NullUint32(&e.Gender).NullInt32(&e.FailuresNum).NullTime(&e.FirstFailure).NullTime(&e.LockExpires).Err()
-	}
-	for cm.Next() {
+	for cm.Next(28) {
 		switch c := cm.Column(); c {
-		case "entity_id":
+		case "entity_id", "0":
 			cm.Uint32(&e.EntityID)
-		case "website_id":
+		case "website_id", "1":
 			cm.NullUint32(&e.WebsiteID)
-		case "email":
+		case "email", "2":
 			cm.NullString(&e.Email)
-		case "group_id":
+		case "group_id", "3":
 			cm.Uint32(&e.GroupID)
-		case "increment_id":
+		case "increment_id", "4":
 			cm.NullString(&e.IncrementID)
-		case "store_id":
+		case "store_id", "5":
 			cm.NullUint32(&e.StoreID)
-		case "created_at":
+		case "created_at", "6":
 			cm.Time(&e.CreatedAt)
-		case "updated_at":
+		case "updated_at", "7":
 			cm.Time(&e.UpdatedAt)
-		case "is_active":
+		case "is_active", "8":
 			cm.Bool(&e.IsActive)
-		case "disable_auto_group_change":
+		case "disable_auto_group_change", "9":
 			cm.Uint32(&e.DisableAutoGroupChange)
-		case "created_in":
+		case "created_in", "10":
 			cm.NullString(&e.CreatedIn)
-		case "prefix":
+		case "prefix", "11":
 			cm.NullString(&e.Prefix)
-		case "firstname":
+		case "firstname", "12":
 			cm.NullString(&e.Firstname)
-		case "middlename":
+		case "middlename", "13":
 			cm.NullString(&e.Middlename)
-		case "lastname":
+		case "lastname", "14":
 			cm.NullString(&e.Lastname)
-		case "suffix":
+		case "suffix", "15":
 			cm.NullString(&e.Suffix)
-		case "dob":
+		case "dob", "16":
 			cm.NullTime(&e.Dob)
-		case "password_hash":
+		case "password_hash", "17":
 			cm.NullString(&e.passwordHash)
-		case "rp_token":
+		case "rp_token", "18":
 			cm.NullString(&e.RpToken)
-		case "rp_token_created_at":
+		case "rp_token_created_at", "19":
 			cm.NullTime(&e.RpTokenCreatedAt)
-		case "default_billing":
+		case "default_billing", "20":
 			cm.NullUint32(&e.DefaultBilling)
-		case "default_shipping":
+		case "default_shipping", "21":
 			cm.NullUint32(&e.DefaultShipping)
-		case "taxvat":
+		case "taxvat", "22":
 			cm.NullString(&e.Taxvat)
-		case "confirmation":
+		case "confirmation", "23":
 			cm.NullString(&e.Confirmation)
-		case "gender":
+		case "gender", "24":
 			cm.NullUint32(&e.Gender)
-		case "failures_num":
+		case "failures_num", "25":
 			cm.NullInt32(&e.FailuresNum)
-		case "first_failure":
+		case "first_failure", "26":
 			cm.NullTime(&e.FirstFailure)
-		case "lock_expires":
+		case "lock_expires", "27":
 			cm.NullTime(&e.LockExpires)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CustomerEntity Column %q not found", c)
@@ -2756,7 +2744,7 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "entity_id":
 				cm = cm.Uint32s(cc.EntityIDs()...)
@@ -3046,92 +3034,89 @@ func (e *DmlgenTypes) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *DmlgenTypes) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Int32(&e.ID).NullInt64(&e.ColBigint1).Int64(&e.ColBigint2).NullUint64(&e.ColBigint3).Uint64(&e.ColBigint4).Byte(&e.ColBlob).NullTime(&e.ColDate1).Time(&e.ColDate2).NullTime(&e.ColDatetime1).Time(&e.ColDatetime2).Decimal(&e.ColDecimal101).Decimal(&e.ColDecimal124).Decimal(&e.PriceA124).Decimal(&e.PriceB124).Decimal(&e.ColDecimal123).Decimal(&e.ColDecimal206).Decimal(&e.ColDecimal2412).NullInt32(&e.ColInt1).Int32(&e.ColInt2).NullUint32(&e.ColInt3).Uint32(&e.ColInt4).NullString(&e.ColLongtext1).String(&e.ColLongtext2).Byte(&e.ColMediumblob).NullString(&e.ColMediumtext1).String(&e.ColMediumtext2).NullInt32(&e.ColSmallint1).Int32(&e.ColSmallint2).NullUint32(&e.ColSmallint3).Uint32(&e.ColSmallint4).Bool(&e.HasSmallint5).NullBool(&e.IsSmallint5).NullString(&e.ColText).Time(&e.ColTimestamp1).NullTime(&e.ColTimestamp2).Int32(&e.ColTinyint1).String(&e.ColVarchar1).NullString(&e.ColVarchar100).String(&e.ColVarchar16).NullString(&e.ColChar1).String(&e.ColChar2).Err()
-	}
-	for cm.Next() {
+	for cm.Next(41) {
 		switch c := cm.Column(); c {
-		case "id":
+		case "id", "0":
 			cm.Int32(&e.ID)
-		case "col_bigint_1":
+		case "col_bigint_1", "1":
 			cm.NullInt64(&e.ColBigint1)
-		case "col_bigint_2":
+		case "col_bigint_2", "2":
 			cm.Int64(&e.ColBigint2)
-		case "col_bigint_3":
+		case "col_bigint_3", "3":
 			cm.NullUint64(&e.ColBigint3)
-		case "col_bigint_4":
+		case "col_bigint_4", "4":
 			cm.Uint64(&e.ColBigint4)
-		case "col_blob":
+		case "col_blob", "5":
 			cm.Byte(&e.ColBlob)
-		case "col_date_1":
+		case "col_date_1", "6":
 			cm.NullTime(&e.ColDate1)
-		case "col_date_2":
+		case "col_date_2", "7":
 			cm.Time(&e.ColDate2)
-		case "col_datetime_1":
+		case "col_datetime_1", "8":
 			cm.NullTime(&e.ColDatetime1)
-		case "col_datetime_2":
+		case "col_datetime_2", "9":
 			cm.Time(&e.ColDatetime2)
-		case "col_decimal_10_1":
+		case "col_decimal_10_1", "10":
 			cm.Decimal(&e.ColDecimal101)
-		case "col_decimal_12_4":
+		case "col_decimal_12_4", "11":
 			cm.Decimal(&e.ColDecimal124)
-		case "price_a_12_4":
+		case "price_a_12_4", "12":
 			cm.Decimal(&e.PriceA124)
-		case "price_b_12_4":
+		case "price_b_12_4", "13":
 			cm.Decimal(&e.PriceB124)
-		case "col_decimal_12_3":
+		case "col_decimal_12_3", "14":
 			cm.Decimal(&e.ColDecimal123)
-		case "col_decimal_20_6":
+		case "col_decimal_20_6", "15":
 			cm.Decimal(&e.ColDecimal206)
-		case "col_decimal_24_12":
+		case "col_decimal_24_12", "16":
 			cm.Decimal(&e.ColDecimal2412)
-		case "col_int_1":
+		case "col_int_1", "17":
 			cm.NullInt32(&e.ColInt1)
-		case "col_int_2":
+		case "col_int_2", "18":
 			cm.Int32(&e.ColInt2)
-		case "col_int_3":
+		case "col_int_3", "19":
 			cm.NullUint32(&e.ColInt3)
-		case "col_int_4":
+		case "col_int_4", "20":
 			cm.Uint32(&e.ColInt4)
-		case "col_longtext_1":
+		case "col_longtext_1", "21":
 			cm.NullString(&e.ColLongtext1)
-		case "col_longtext_2":
+		case "col_longtext_2", "22":
 			cm.String(&e.ColLongtext2)
-		case "col_mediumblob":
+		case "col_mediumblob", "23":
 			cm.Byte(&e.ColMediumblob)
-		case "col_mediumtext_1":
+		case "col_mediumtext_1", "24":
 			cm.NullString(&e.ColMediumtext1)
-		case "col_mediumtext_2":
+		case "col_mediumtext_2", "25":
 			cm.String(&e.ColMediumtext2)
-		case "col_smallint_1":
+		case "col_smallint_1", "26":
 			cm.NullInt32(&e.ColSmallint1)
-		case "col_smallint_2":
+		case "col_smallint_2", "27":
 			cm.Int32(&e.ColSmallint2)
-		case "col_smallint_3":
+		case "col_smallint_3", "28":
 			cm.NullUint32(&e.ColSmallint3)
-		case "col_smallint_4":
+		case "col_smallint_4", "29":
 			cm.Uint32(&e.ColSmallint4)
-		case "has_smallint_5":
+		case "has_smallint_5", "30":
 			cm.Bool(&e.HasSmallint5)
-		case "is_smallint_5":
+		case "is_smallint_5", "31":
 			cm.NullBool(&e.IsSmallint5)
-		case "col_text":
+		case "col_text", "32":
 			cm.NullString(&e.ColText)
-		case "col_timestamp_1":
+		case "col_timestamp_1", "33":
 			cm.Time(&e.ColTimestamp1)
-		case "col_timestamp_2":
+		case "col_timestamp_2", "34":
 			cm.NullTime(&e.ColTimestamp2)
-		case "col_tinyint_1":
+		case "col_tinyint_1", "35":
 			cm.Int32(&e.ColTinyint1)
-		case "col_varchar_1":
+		case "col_varchar_1", "36":
 			cm.String(&e.ColVarchar1)
-		case "col_varchar_100":
+		case "col_varchar_100", "37":
 			cm.NullString(&e.ColVarchar100)
-		case "col_varchar_16":
+		case "col_varchar_16", "38":
 			cm.String(&e.ColVarchar16)
-		case "col_char_1":
+		case "col_char_1", "39":
 			cm.NullString(&e.ColChar1)
-		case "col_char_2":
+		case "col_char_2", "40":
 			cm.String(&e.ColChar2)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] DmlgenTypes Column %q not found", c)
@@ -3382,7 +3367,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "id":
 				cm = cm.Int32s(cc.IDs()...)
@@ -3750,18 +3735,15 @@ func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *SalesOrderStatusState) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.String(&e.Status).String(&e.State).Bool(&e.IsDefault).Uint32(&e.VisibleOnFront).Err()
-	}
-	for cm.Next() {
+	for cm.Next(4) {
 		switch c := cm.Column(); c {
-		case "status":
+		case "status", "0":
 			cm.String(&e.Status)
-		case "state":
+		case "state", "1":
 			cm.String(&e.State)
-		case "is_default":
+		case "is_default", "2":
 			cm.Bool(&e.IsDefault)
-		case "visible_on_front":
+		case "visible_on_front", "3":
 			cm.Uint32(&e.VisibleOnFront)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] SalesOrderStatusState Column %q not found", c)
@@ -3976,7 +3958,7 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 		}
 		cc.Data = append(cc.Data, &e)
 	case dml.ColumnMapCollectionReadSet:
-		for cm.Next() {
+		for cm.Next(0) {
 			switch c := cm.Column(); c {
 			case "status":
 				cm = cm.Strings(cc.Statuss()...)
@@ -4252,20 +4234,17 @@ func (e *ViewCustomerAutoIncrement) Copy() *ViewCustomerAutoIncrement {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *ViewCustomerAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.Uint32(&e.CeEntityID).NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
-	}
-	for cm.Next() {
+	for cm.Next(5) {
 		switch c := cm.Column(); c {
-		case "ce_entity_id":
+		case "ce_entity_id", "0":
 			cm.Uint32(&e.CeEntityID)
-		case "email":
+		case "email", "1":
 			cm.NullString(&e.Email)
-		case "firstname":
+		case "firstname", "2":
 			cm.String(&e.Firstname)
-		case "lastname":
+		case "lastname", "3":
 			cm.String(&e.Lastname)
-		case "city":
+		case "city", "4":
 			cm.String(&e.City)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerAutoIncrement Column %q not found", c)
@@ -4546,18 +4525,15 @@ func (e *ViewCustomerNoAutoIncrement) Copy() *ViewCustomerNoAutoIncrement {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *ViewCustomerNoAutoIncrement) MapColumns(cm *dml.ColumnMap) error {
-	if cm.Mode() == dml.ColumnMapEntityReadAll {
-		return cm.NullString(&e.Email).String(&e.Firstname).String(&e.Lastname).String(&e.City).Err()
-	}
-	for cm.Next() {
+	for cm.Next(4) {
 		switch c := cm.Column(); c {
-		case "email":
+		case "email", "0":
 			cm.NullString(&e.Email)
-		case "firstname":
+		case "firstname", "1":
 			cm.String(&e.Firstname)
-		case "lastname":
+		case "lastname", "2":
 			cm.String(&e.Lastname)
-		case "city":
+		case "city", "3":
 			cm.String(&e.City)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] ViewCustomerNoAutoIncrement Column %q not found", c)

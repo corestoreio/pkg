@@ -172,7 +172,7 @@ func TestNewDBManagerNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
-	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
+	defer dmltest.SQLDumpLoad(t, "../testdata/testAll_*_tables.sql", &dmltest.SQLDumpOptions{
 		SkipDBCleanup: true,
 	}).Deferred()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)

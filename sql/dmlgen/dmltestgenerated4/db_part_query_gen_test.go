@@ -18,7 +18,7 @@ import (
 func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
-	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", &dmltest.SQLDumpOptions{
+	defer dmltest.SQLDumpLoad(t, "../testdata/testAll_*_tables.sql", &dmltest.SQLDumpOptions{
 		SkipDBCleanup: true,
 	}).Deferred()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)

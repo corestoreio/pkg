@@ -216,6 +216,46 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 	return nil
 }
 
+// serializerCustomType switches the default type from function serializerType
+// to the new type. For now supports only protobuf.
+func (g *Generator) serializerCustomType(c *ddl.Column) []string {
+	pt := g.toSerializerType(c, true)
+	var buf []string
+	if pt == "google.protobuf.Timestamp" {
+		buf = append(buf, "(gogoproto.stdtime)=true")
+	}
+	if pt == "bytes" {
+		return nil // bytes can be null
+	}
+	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
+		// Indeed nullable Go Types must be not-nullable in HasSerializer because we
+		// have a non-pointer struct type which contains the field Valid.
+		// HasSerializer treats nullable fields as pointer fields, but that is
+		// ridiculous.
+		buf = append(buf, "(gogoproto.nullable)=false")
+	}
+	return buf
+}
+
+// GenerateSerializer writes the protocol buffer specifications into `w` and its test
+// sources into wTest, if there are any tests.
+func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
+	switch g.Serializer {
+	case "protobuf":
+		if err := g.generateProto(wMain); err != nil {
+			return errors.WithStack(err)
+		}
+	case "fbs":
+
+	case "", "default", "none":
+		return nil // do nothing
+	default:
+		return errors.NotAcceptable.Newf("[dmlgen] Serializer %q not supported.", g.Serializer)
+	}
+
+	return nil
+}
+
 func (g *Generator) generateProto(w io.Writer) error {
 	pPkg := g.PackageSerializer
 	if pPkg == "" {

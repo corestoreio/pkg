@@ -15,4 +15,8 @@
 // Package dmlgen generates Go code and protocol buffer files from database tables.
 //
 // TODO check for https://github.com/improbable-eng/ts-protoc-gen and https://github.com/improbable-eng/grpc-web
+//
+// Join Preload
+// Preload loads the association data in a separate query, Join Preload will
+// loads association data using inner join It can handle null association
 package dmlgen

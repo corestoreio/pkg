@@ -21,31 +21,25 @@ const (
 	EventFlagMax // indicates maximum events available. Might change without notice.
 )
 
-type (
-	ctxSkipEvents     struct{}
-	ctxSkipTimestamps struct{}
-)
+type ctxKeyQueryOption uint8
 
-// SkipEvents modifies a context to prevent events from running for any query it
-// encounters.
-func SkipEvents(ctx context.Context) context.Context {
-	return context.WithValue(ctx, ctxSkipEvents{}, true)
+// QueryOptions provides different options while executing code for SQL queries.
+type QueryOptions struct {
+	SkipEvents     bool // skips above defined EventFlag
+	SkipTimestamps bool // skips generating timestamps (TODO)
+	SkipRelations  bool // skips executing relation based SQL code
 }
 
-// EventsAreSkipped returns true if the context skips events.
-func EventsAreSkipped(ctx context.Context) bool {
-	skip := ctx.Value(ctxSkipEvents{})
-	return skip != nil && skip.(bool)
+// WithContextQueryOptions adds options for executing queries, mostly in generated code.
+func WithContextQueryOptions(ctx context.Context, qo QueryOptions) context.Context {
+	return context.WithValue(ctx, ctxKeyQueryOption(0), qo)
 }
 
-// SkipTimestamps modifies a context to prevent events from running for any
-// query it encounters.
-func SkipTimestamps(ctx context.Context) context.Context {
-	return context.WithValue(ctx, ctxSkipTimestamps{}, true)
-}
-
-// TimestampsAreSkipped returns true if the context skips events.
-func TimestampsAreSkipped(ctx context.Context) bool {
-	skip := ctx.Value(ctxSkipTimestamps{})
-	return skip != nil && skip.(bool)
+// FromContextQueryOptions returns the options from the context.
+func FromContextQueryOptions(ctx context.Context) QueryOptions {
+	v := ctx.Value(ctxKeyQueryOption(0))
+	if qo, ok := v.(QueryOptions); ok {
+		return qo
+	}
+	return QueryOptions{}
 }

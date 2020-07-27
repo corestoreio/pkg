@@ -413,19 +413,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
 			fn(g, t, mainGen)
 		}
 
-		mainGen.In()
-		mainGen.Pln(`if cm.Mode() == dml.ColumnMapEntityReadAll {`)
-		{
-			mainGen.In()
-			mainGen.P(`return cm`)
-			t.Table.Columns.Each(func(c *ddl.Column) {
-				mainGen.P(`.`, g.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
-			})
-			mainGen.Pln(`.Err()`)
-			mainGen.Out()
-		}
-		mainGen.Pln(`}`)
-		mainGen.Pln(`for cm.Next() {`)
+		mainGen.Pln(`for cm.Next(`, t.Table.Columns.Len(), `) {`)
 		{
 			mainGen.In()
 			mainGen.Pln(`switch c := cm.Column(); c {`)
@@ -436,7 +424,7 @@ func (t *Table) fnEntityDBMapColumns(mainGen *codegen.Go, g *Generator) {
 					for _, a := range c.Aliases {
 						mainGen.P(`,`, strconv.Quote(a))
 					}
-					mainGen.Pln(`:`)
+					mainGen.Pln(codegen.SkipWS(`,"`, c.Pos-1, `"`), `:`)
 					mainGen.Pln(`cm.`, g.goFuncNull(c), `(&e.`, t.GoCamelMaybePrivate(c.Field), `)`)
 				})
 				mainGen.Pln(`default:`)
@@ -843,7 +831,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 		unqiueCols := t.Table.Columns.UniqueColumns()
 		hasUniqueCols := unqiueCols.Len() > 0
 		mainGen.Pln(hasUniqueCols, `case dml.ColumnMapCollectionReadSet:
-							for cm.Next() {
+							for cm.Next(0) {
 								switch c := cm.Column(); c {`)
 		unqiueCols.Each(func(c *ddl.Column) {
 			if !c.IsFloat() {
@@ -921,9 +909,10 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `// put the IDs`, bufPKNames.String(), `into the context as value to search for a cache entry in the event function.
-	if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -963,7 +952,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		mainGen.Pln(dmlEnabled, `}`)
 	}
 
-	mainGen.Pln(dmlEnabled, `return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, cc, nil))
+	mainGen.Pln(dmlEnabled, `return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, qo.SkipEvents,cc, nil))
 }`)
 
 	if t.Table.IsView() {
@@ -979,14 +968,15 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, qo.SkipEvents,cc, nil)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1000,8 +990,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 			return errors.WithStack(err)
 		}`)
 
@@ -1021,7 +1012,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 		}
 	}`)
 
-	mainGen.Pln(dmlEnabled, `return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	mainGen.Pln(dmlEnabled, `return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents,cc, nil))
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBInsert)
@@ -1032,14 +1023,15 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, cc); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, qo.SkipEvents,cc, nil)); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1053,14 +1045,15 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if cc == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents,cc, nil); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1129,9 +1122,10 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `// put the IDs`, bufPKNames.String(), `into the context as value to search for a cache entry in the event function.
-	if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -1140,7 +1134,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	if _, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).Load(ctx, e, `, &bufPKNames, `); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterSelect, qo.SkipEvents,nil, e))
 }`)
 
 	if t.Table.IsView() {
@@ -1156,14 +1150,15 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, `, bufPKNamesAsArgs.String(), `); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterDelete, qo.SkipEvents,nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1177,14 +1172,15 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents,nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1198,14 +1194,15 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, qo.SkipEvents,nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil
@@ -1219,14 +1216,15 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, entityFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents,nil, e); err != nil {
 			return nil, errors.WithStack(err)
 		}
 		return res, nil

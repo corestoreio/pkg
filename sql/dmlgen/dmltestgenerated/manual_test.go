@@ -4,16 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/conv"
-
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/pseudo"
 )
 
-func TestNewDBManager_Manual_Tuples(t *testing.T) {
+func TestManualNewDBManager_Tuples_SalesOrderStatusState(t *testing.T) {
 	// var logbuf bytes.Buffer
 	// defer func() { println("\n", logbuf.String(), "\n") }()
 	// l := logw.NewLog(logw.WithLevel(logw.LevelDebug), logw.WithWriter(&logbuf))
@@ -21,7 +20,7 @@ func TestNewDBManager_Manual_Tuples(t *testing.T) {
 
 	db := dmltest.MustConnectDB(t)
 	defer dmltest.Close(t, db)
-	defer dmltest.SQLDumpLoad(t, "../testdata/test_*_tables.sql", nil).Deferred()
+	defer dmltest.SQLDumpLoad(t, "../testdata/testAll_*_tables.sql", nil).Deferred()
 
 	availableEvents := []dml.EventFlag{
 		dml.EventFlagBeforeInsert, dml.EventFlagAfterInsert,
@@ -137,7 +136,7 @@ func TestNewDBManager_Manual_Tuples(t *testing.T) {
 		t.Run("DBLoad All", func(t *testing.T) {
 			var eca SalesOrderStatusStates
 			assert.NoError(t, eca.DBLoad(ctx, dbm, nil))
-			// 10 = previous rows in the DB loaded from the testdata/test_01_....sql file
+			// 10 = previous rows in the DB loaded from the testdata/testAll_01_....sql file
 			assert.Exactly(t, len(ec.Data)+11, len(eca.Data), "former collection must have the same length as the loaded one")
 		})
 		t.Run("DBLoad partial IDs", func(t *testing.T) {

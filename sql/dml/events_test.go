@@ -21,14 +21,11 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-func TestSkipEvents(t *testing.T) {
-	ctx := SkipEvents(context.Background())
-	assert.True(t, EventsAreSkipped(ctx))
-	assert.False(t, EventsAreSkipped(context.Background()))
-}
-
-func TestSkipTimestamps(t *testing.T) {
-	ctx := SkipTimestamps(context.Background())
-	assert.True(t, TimestampsAreSkipped(ctx))
-	assert.False(t, TimestampsAreSkipped(context.Background()))
+func TestQueryOptions(t *testing.T) {
+	ctx := WithContextQueryOptions(context.Background(), QueryOptions{
+		SkipEvents:     true,
+		SkipTimestamps: true,
+		SkipRelations:  true,
+	})
+	assert.True(t, FromContextQueryOptions(ctx).SkipEvents)
 }

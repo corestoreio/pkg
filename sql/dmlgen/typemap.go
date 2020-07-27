@@ -488,6 +488,16 @@ func (g *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
 	return t
 }
 
+// serializerType converts the column type to the supported type of the current
+// serializer. For now supports only protobuf.
+func (g *Generator) serializerType(c *ddl.Column) string {
+	pt := g.toSerializerType(c, true)
+	if strings.IndexByte(pt, '/') > 0 { // slash identifies an import path
+		return "bytes"
+	}
+	return pt
+}
+
 func mySQLType2GoComparisonOperator(c *ddl.Column) string {
 	switch c.DataType {
 
