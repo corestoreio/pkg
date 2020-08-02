@@ -21,6 +21,26 @@ import (
 	"unicode"
 )
 
+// LcFirst transforms the first character of a string to lower case.
+func LcFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	sr := []rune(s)
+	sr[0] = unicode.ToLower(sr[0])
+	return string(sr)
+}
+
+// UcFirst transforms the first character of a string to upper case.
+func UcFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	sr := []rune(s)
+	sr[0] = unicode.ToUpper(sr[0])
+	return string(sr)
+}
+
 // IsAlNum returns true if an alpha numeric string consists of characters a-zA-Z0-9_
 func IsAlNum(s string) bool {
 	c := 0

@@ -203,3 +203,51 @@ func TestCutToLength(t *testing.T) {
 	assert.Exactly(t, "aa", strs.CutToLength("aa", 2))
 	assert.Exactly(t, "bb", strs.CutToLength("bbb", 2))
 }
+
+func TestLcFirst(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "empty", args: args{s: ""}, want: ""},
+		{name: "LC first1", args: args{s: "HEllo"}, want: "hEllo"},
+		{name: "LC first2", args: args{s: "ello"}, want: "ello"},
+		{name: "LC first3", args: args{s: "…"}, want: "…"},
+		{name: "LC first5", args: args{s: "ΠΠ"}, want: "πΠ"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := strs.LcFirst(tt.args.s); got != tt.want {
+				t.Errorf("LcFirst() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUcFirst(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "empty", args: args{s: ""}, want: ""},
+		{name: "first1", args: args{s: "eEllo"}, want: "EEllo"},
+		{name: "first2", args: args{s: "Ello"}, want: "Ello"},
+		{name: "first3", args: args{s: "γlo"}, want: "Γlo"},
+		{name: "first4", args: args{s: "…"}, want: "…"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := strs.UcFirst(tt.args.s); got != tt.want {
+				t.Errorf("LcFirst() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
