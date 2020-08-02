@@ -18,7 +18,7 @@ before running `go generate`. (TODO)
 `CS_DSN` the environment variable for the MySQL connection.
 
 ```shell
-$ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
+$ export CS_DSN='username:pa55w0rd@tcp(localhost:3306)/databaseName?parseTime=true&loc=UTC&collation=utf8mb4_unicode_ci'
 ```
 
 ```
