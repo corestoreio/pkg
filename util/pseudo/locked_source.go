@@ -8,7 +8,6 @@ import (
 
 // lockedSource is an implementation of Source that is concurrency-safe.
 // It is just a standard Source with its operations protected by a sync.Mutex.
-// CSC: That is stupid to copy the locked source ...
 type lockedSource struct {
 	lk  sync.Mutex
 	src rand.Source

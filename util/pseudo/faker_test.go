@@ -127,7 +127,10 @@ type NotTaggedStruct struct {
 }
 
 func TestFakerData(t *testing.T) {
-	s := MustNewService(0, nil)
+	s := MustNewService(0, &Options{
+		MaxLenStringLimit: 12,
+		MaxFloatDecimals:  0,
+	})
 	var a SomeStruct
 	err := s.FakeData(&a)
 	assert.NoError(t, err, "\n%+v", err)
@@ -249,16 +252,18 @@ func TestStructPointer(t *testing.T) {
 	// t.Logf(" tagged value: %+v , TaggedStruct Value: %+v  ", a, a.PointA.SomeStruct)
 }
 
-type CustomString string
-type CustomInt int
-type CustomMap map[string]string
-type CustomPointerStruct PointerStructB
-type CustomTypeStruct struct {
-	CustomString        CustomString
-	CustomInt           CustomInt
-	CustomMap           CustomMap
-	CustomPointerStruct CustomPointerStruct
-}
+type (
+	CustomString        string
+	CustomInt           int
+	CustomMap           map[string]string
+	CustomPointerStruct PointerStructB
+	CustomTypeStruct    struct {
+		CustomString        CustomString
+		CustomInt           CustomInt
+		CustomMap           CustomMap
+		CustomPointerStruct CustomPointerStruct
+	}
+)
 
 func TestCustomType(t *testing.T) {
 	a := new(CustomTypeStruct)
@@ -334,8 +339,8 @@ func TestExtend(t *testing.T) {
 	a := struct {
 		ID string `faker:"test"`
 	}{}
-	s := MustNewService(0, nil, WithTagFakeFunc("test", func(maxLen int) (interface{}, error) {
-		return "test", nil
+	s := MustNewService(0, nil, WithTagFakeFunc("test", func(maxLen int) interface{} {
+		return "test"
 	}))
 
 	assert.NoError(t, s.FakeData(&a))
@@ -343,7 +348,7 @@ func TestExtend(t *testing.T) {
 }
 
 func TestTagAlreadyExists(t *testing.T) {
-	s := MustNewService(0, nil, WithTagFakeFunc("email", func(maxLen int) (interface{}, error) { return "", nil }))
+	s := MustNewService(0, nil, WithTagFakeFunc("email", func(maxLen int) interface{} { return "" }))
 	assert.NotNil(t, s)
 }
 
@@ -553,9 +558,8 @@ func TestService_CustomFakeFunc_DateTime(t *testing.T) {
 	// iterated to the next time.Time field? becuase ColDatetime1 has null.Time
 	// which is later just Time because the pkg path is not prefiexed
 	s := MustNewService(0, nil,
-		WithTagFakeFunc("col_date2", func(maxLen int) (interface{}, error) {
-			x := "2018-04-30"
-			return x, nil
+		WithTagFakeFunc("col_date2", func(maxLen int) interface{} {
+			return "2018-04-30"
 		}),
 	)
 
@@ -577,13 +581,13 @@ type testServiceDecimal struct {
 
 func TestService_CustomFakeFunc_Decimal(t *testing.T) {
 	s := MustNewService(0, nil,
-		WithTagFakeFunc("col_price1", func(maxLen int) (interface{}, error) {
+		WithTagFakeFunc("col_price1", func(maxLen int) interface{} {
 			x := "123.4567"
-			return x, nil
+			return x
 		}),
 		WithTagFakeFuncAlias("col_price2", "col_price1"),
-		WithTagFakeFunc("pseudo.testServiceDecimal.ID", func(maxLen int) (interface{}, error) {
-			return 999, nil
+		WithTagFakeFunc("pseudo.testServiceDecimal.ID", func(maxLen int) interface{} {
+			return 999
 		}),
 	)
 	for i := 0; i < 20; i++ {

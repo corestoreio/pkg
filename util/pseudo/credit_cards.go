@@ -1,9 +1,10 @@
 package pseudo
 
 import (
-	"strings"
-
+	"fmt"
+	"math"
 	"strconv"
+	"strings"
 )
 
 type creditCard struct {
@@ -12,22 +13,24 @@ type creditCard struct {
 	prefixes []int
 }
 
+const ccVendorCount = 4
+
+var (
+	ccVendorKey  = [...]string{"visa", "mastercard", "amex", "discover"}
+	ccVendorName = [...]string{"VISA", "MasterCard", "American Express", "Discover"}
+)
+
 var creditCards = map[string]creditCard{
-	"visa":       {"VISA", 16, []int{4539, 4556, 4916, 4532, 4929, 40240071, 4485, 4716, 4}},
-	"mastercard": {"MasterCard", 16, []int{51, 52, 53, 54, 55}},
-	"amex":       {"American Express", 15, []int{34, 37}},
-	"discover":   {"Discover", 16, []int{6011}},
+	ccVendorKey[0]: {ccVendorName[0], 16, []int{4539, 4556, 4916, 4532, 4929, 40240071, 4485, 4716, 4}},
+	ccVendorKey[1]: {ccVendorName[1], 16, []int{51, 52, 53, 54, 55}},
+	ccVendorKey[2]: {ccVendorName[2], 15, []int{34, 37}},
+	ccVendorKey[3]: {ccVendorName[3], 16, []int{6011}},
 }
 
 // CreditCardType returns one of the following credit values:
 // VISA, MasterCard, American Express and Discover
 func (s *Service) CreditCardType() string {
-	n := len(creditCards)
-	var vendors []string
-	for _, cc := range creditCards {
-		vendors = append(vendors, cc.vendor)
-	}
-	return vendors[s.r.Intn(n)]
+	return ccVendorName[s.r.Intn(ccVendorCount)]
 }
 
 // CreditCardNum generated credit card number according to the card number rules
@@ -35,34 +38,33 @@ func (s *Service) CreditCardNum(vendor string) string {
 	if vendor != "" {
 		vendor = strings.ToLower(vendor)
 	} else {
-		var vendors []string
-		for v := range creditCards {
-			vendors = append(vendors, v)
-		}
-		vendor = vendors[s.r.Intn(len(vendors))]
+		vendor = ccVendorKey[s.r.Intn(ccVendorCount)]
 	}
-	card := creditCards[vendor]
+	card, ok := creditCards[vendor]
+	if !ok {
+		return fmt.Sprintf("CC Vendor %q not found, available: %v", vendor, ccVendorKey)
+	}
 	prefix := strconv.Itoa(card.prefixes[s.r.Intn(len(card.prefixes))])
-	num := []rune(prefix)
-	for i := 0; i < card.length-len(prefix); i++ {
-		num = append(num, genCCDigit(num))
+	var buf strings.Builder
+	buf.WriteString(prefix)
+	for i := 1; i < card.length-len(prefix); i++ { // start 1 because last digit is check number
+		fmt.Fprintf(&buf, "%d", s.r.Intn(10))
 	}
-	return string(num)
+	fmt.Fprintf(&buf, "%d", getCheckDigit(buf.String()))
+	return buf.String()
 }
 
-func genCCDigit(num []rune) rune {
-	sum := 0
-	for i := len(num) - 1; i >= 0; i-- {
-		n := int(num[i])
-		if i%2 != 0 {
-			sum += n
-		} else {
-			if n*2 > 9 {
-				sum += n*2 - 9
-			} else {
-				sum += n * 2
+func getCheckDigit(number string) int {
+	var sum int
+	for i := len(number) - 1; i >= 0; i-- { // reversed iteration
+		digit, _ := strconv.Atoi(number[i : i+1])
+		if (i % 2) == 0 {
+			digit = digit * 2
+			if digit > 9 {
+				digit -= 9
 			}
 		}
+		sum += digit
 	}
-	return rune(((sum/10+1)*10 - sum) % 10)
+	return ((int(math.Floor(float64(sum)/10))+1)*10 - sum) % 10
 }

@@ -72,7 +72,7 @@ const (
 
 // FakeFunc generates new specific fake values. The returned interface{} type
 // can only contain primitive types and time.Time.
-type FakeFunc func(maxLen int) (interface{}, error)
+type FakeFunc func(maxLen int) interface{}
 
 // Options applied for the Service type.
 type Options struct {
@@ -94,9 +94,9 @@ type Options struct {
 	// MaxLenStringLimit defines the upper bound of the maximal length for a
 	// string. If not set, defaults to 512.
 	MaxLenStringLimit uint64
-	// FloatMaxDecimals limits the float generation to this amount of decimals.
+	// MaxFloatDecimals limits the float generation to this amount of decimals.
 	// Useful for MySQL/MariaDB float column type.
-	FloatMaxDecimals int
+	MaxFloatDecimals int
 	// MaxRecursionLevel default see DefaultMaxRecursionLevel
 	MaxRecursionLevel int
 }
@@ -196,154 +196,64 @@ func NewService(seed uint64, o *Options, opts ...optionFn) (*Service, error) {
 	}
 
 	s.funcs = map[string]FakeFunc{
-		"id": func(maxLen int) (interface{}, error) {
-			return s.ID(), nil
+		"id":          func(maxLen int) interface{} { return s.ID() },
+		"uuid":        func(maxLen int) interface{} { return s.UUID() },
+		"uuid_string": func(maxLen int) interface{} { return s.UUIDString() },
+		"ulid":        func(maxLen int) interface{} { return s.ULID().String() },
+		"mac_address": func(maxLen int) interface{} { return s.MacAddress() },
+		"domain_name": func(maxLen int) interface{} { return s.DomainName() },
+		"username":    func(maxLen int) interface{} { return s.UserName() },
+		"url":         func(maxLen int) interface{} { return s.URL() },
+		"ipv4":        func(maxLen int) interface{} { return s.IPv4() },
+		"ipv6":        func(maxLen int) interface{} { return s.IPv6() },
+		"password": func(maxLen int) interface{} {
+			if maxLen > 64 {
+				maxLen = 64
+			}
+			return s.Password(8, maxLen, true, true, true)
 		},
-		"uuid": func(maxLen int) (interface{}, error) {
-			return s.UUID(), nil
+		"email":             func(maxLen int) interface{} { return s.EmailAddress() },
+		"lat":               func(maxLen int) interface{} { return s.Latitude() },
+		"long":              func(maxLen int) interface{} { return s.Longitude() },
+		"cc_number":         func(maxLen int) interface{} { return s.CreditCardNum("") },
+		"cc_type":           func(maxLen int) interface{} { return s.CreditCardType() },
+		"phone_number":      func(maxLen int) interface{} { return s.Phone() },
+		"male_first_name":   func(maxLen int) interface{} { return s.MaleFirstName() },
+		"female_first_name": func(maxLen int) interface{} { return s.FemaleFirstName() },
+		"name":              func(maxLen int) interface{} { return s.FullName() },
+		"last_name":         func(maxLen int) interface{} { return s.LastName() },
+		"first_name":        func(maxLen int) interface{} { return s.FirstName() },
+		"prefix":            func(maxLen int) interface{} { return s.Prefix() },
+		"suffix":            func(maxLen int) interface{} { return s.Suffix() },
+		"date":              func(maxLen int) interface{} { return s.Date() },
+		"clock":             func(maxLen int) interface{} { return s.Clock() },
+		"time":              func(maxLen int) interface{} { return s.Time() },
+		"timestamp":         func(maxLen int) interface{} { return s.TimeStamp() },
+		"dob":               func(maxLen int) interface{} { return s.Dob18() },
+		"timezone":          func(maxLen int) interface{} { return s.TimeZone() },
+		"unix_time":         func(maxLen int) interface{} { return s.RandomUnixTime() },
+		"month_name":        func(maxLen int) interface{} { return s.Month() },
+		"month":             func(maxLen int) interface{} { return s.MonthNum() },
+		"year": func(maxLen int) interface{} {
+			ny := time.Now().Year()
+			y := s.Year(ny-30, ny+5)
+			return y
 		},
-		"uuid_string": func(maxLen int) (interface{}, error) {
-			return s.UUIDString(), nil
-		},
-		"ulid": func(maxLen int) (interface{}, error) {
-			return s.ULID().String(), nil
-		},
-		"mac_address": func(maxLen int) (interface{}, error) {
-			return s.MacAddress(), nil
-		},
-		"domain_name": func(maxLen int) (interface{}, error) {
-			return s.DomainName(), nil
-		},
-		"username": func(maxLen int) (interface{}, error) {
-			return s.UserName(), nil
-		},
-		"url": func(maxLen int) (interface{}, error) {
-			return s.URL(), nil
-		},
-		"ipv4": func(maxLen int) (interface{}, error) {
-			return s.IPv4(), nil
-		},
-		"ipv6": func(maxLen int) (interface{}, error) {
-			return s.IPv4(), nil
-		},
-		"password": func(maxLen int) (interface{}, error) {
-			return s.Password(6, int(maxLen), true, true, true), nil
-		},
-		"email": func(maxLen int) (interface{}, error) {
-			return s.EmailAddress(), nil
-		},
-		"lat": func(maxLen int) (interface{}, error) {
-			return s.Latitude(), nil
-		},
-		"long": func(maxLen int) (interface{}, error) {
-			return s.Longitude(), nil
-		},
-		"cc_number": func(maxLen int) (interface{}, error) {
-			return s.CreditCardNum(""), nil
-		},
-		"cc_type": func(maxLen int) (interface{}, error) {
-			return s.CreditCardType(), nil
-		},
-		"phone_number": func(maxLen int) (interface{}, error) {
-			return s.Phone(), nil
-		},
-		"male_first_name": func(maxLen int) (interface{}, error) {
-			return s.MaleFirstName(), nil
-		},
-		"female_first_name": func(maxLen int) (interface{}, error) {
-			return s.FemaleFirstName(), nil
-		},
-		"name": func(maxLen int) (interface{}, error) {
-			return s.FullName(), nil
-		},
-		"last_name": func(maxLen int) (interface{}, error) {
-			return s.LastName(), nil
-		},
-		"first_name": func(maxLen int) (interface{}, error) {
-			return s.FirstName(), nil
-		},
-		"prefix": func(maxLen int) (interface{}, error) {
-			return s.Prefix(), nil
-		},
-		"suffix": func(maxLen int) (interface{}, error) {
-			return s.Suffix(), nil
-		},
-		"date": func(maxLen int) (interface{}, error) {
-			return s.Date(), nil
-		},
-		"clock": func(maxLen int) (interface{}, error) {
-			return s.Clock(), nil
-		},
-		"time": func(maxLen int) (interface{}, error) {
-			return s.Time(), nil
-		},
-		"timestamp": func(maxLen int) (interface{}, error) {
-			return s.TimeStamp(), nil
-		},
-		"dob": func(maxLen int) (interface{}, error) {
-			return s.Dob18(), nil
-		},
-		"timezone": func(maxLen int) (interface{}, error) {
-			return s.TimeZone(), nil
-		},
-		"unix_time": func(maxLen int) (interface{}, error) {
-			return s.RandomUnixTime(), nil
-		},
-		"month_name": func(maxLen int) (interface{}, error) {
-			return s.Month(), nil
-		},
-		"month": func(maxLen int) (interface{}, error) {
-			return s.MonthNum(), nil
-		},
-		"year": func(maxLen int) (interface{}, error) {
-			return s.Year(1990, 2025), nil
-		},
-		"week_day": func(maxLen int) (interface{}, error) {
-			return s.WeekDay(), nil
-		},
-
-		"sentence": func(maxLen int) (interface{}, error) {
-			return s.Sentence(maxLen), nil
-		},
-		"paragraph": func(maxLen int) (interface{}, error) {
-			return s.Paragraph(maxLen), nil
-		},
-		"currency": func(maxLen int) (interface{}, error) {
-			return s.Currency(), nil
-		},
-		"currency_code": func(maxLen int) (interface{}, error) {
-			return s.CurrencyCode(), nil
-		},
-		"price": func(maxLen int) (interface{}, error) {
-			return s.Price(), nil
-		},
-		"price_currency": func(maxLen int) (interface{}, error) {
-			return s.PriceWithCurrency(), nil
-		},
-		"word": func(maxLen int) (interface{}, error) {
-			return s.Word(maxLen), nil
-		},
-		"city": func(maxLen int) (interface{}, error) {
-			return s.City(), nil
-		},
-		"postcode": func(maxLen int) (interface{}, error) {
-			return s.Zip(), nil
-		},
-		"street": func(maxLen int) (interface{}, error) {
-			return s.StreetAddress(), nil
-		},
-		"company": func(maxLen int) (interface{}, error) {
-			return s.CompanyLegal(), nil
-		},
-		"country": func(maxLen int) (interface{}, error) {
-			return s.Country(), nil
-		},
-		"country_id": func(maxLen int) (interface{}, error) {
-			return s.CountryISO2(), nil
-		},
-		"region": func(maxLen int) (interface{}, error) {
-			return s.State(), nil
-		},
+		"week_day":       func(maxLen int) interface{} { return s.WeekDay() },
+		"sentence":       func(maxLen int) interface{} { return s.Sentence(maxLen) },
+		"paragraph":      func(maxLen int) interface{} { return s.Paragraph(maxLen) },
+		"currency":       func(maxLen int) interface{} { return s.Currency() },
+		"currency_code":  func(maxLen int) interface{} { return s.CurrencyCode() },
+		"price":          func(maxLen int) interface{} { return s.Price() },
+		"price_currency": func(maxLen int) interface{} { return s.PriceWithCurrency() },
+		"word":           func(maxLen int) interface{} { return s.Word(maxLen) },
+		"city":           func(maxLen int) interface{} { return s.City() },
+		"postcode":       func(maxLen int) interface{} { return s.Zip() },
+		"street":         func(maxLen int) interface{} { return s.StreetAddress() },
+		"company":        func(maxLen int) interface{} { return s.CompanyLegal() },
+		"country":        func(maxLen int) interface{} { return s.Country() },
+		"country_id":     func(maxLen int) interface{} { return s.CountryISO2() },
+		"region":         func(maxLen int) interface{} { return s.State() },
 	}
 	s.funcsAliases = map[string]string{
 		"firstname":     "first_name",
@@ -563,12 +473,7 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 						sTag = toSnakeCase(tf.Name)
 					}
 
-					iFaceVal, ok, err := s.getFuncsValue(typeName, tf.Name, sTag, maxLen)
-					if err != nil {
-						return rVal, errors.WithStack(err)
-					}
-
-					if ok {
+					if iFaceVal, ok := s.getFuncsValue(typeName, tf.Name, sTag, maxLen); ok {
 						switch tFace := vf.Addr().Interface().(type) {
 						case *time.Time:
 							iFaceValTime, err := conv.ToTimeE(iFaceVal)
@@ -592,6 +497,10 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 							if err := tFace.UnmarshalText(bt); err != nil {
 								return rVal, errors.WithStack(err)
 							}
+							continue
+						case *string:
+							cv := conv.ToString(iFaceVal)
+							vf.Set(reflect.ValueOf(cv))
 							continue
 						default:
 							val := reflect.ValueOf(iFaceVal)
@@ -685,11 +594,12 @@ func (s *Service) getValue(t reflect.Type, maxLen uint64, recursionLevel int) (r
 		return reflect.ValueOf(int64(s.r.Uint64n(maxLen))), nil
 
 	case reflect.Float32:
-		return reflect.ValueOf(s.r.Float32()), nil
+		return reflect.ValueOf(float32(s.r.Int31()%100) + s.r.Float32()), nil
 	case reflect.Float64:
-		f := s.r.Float64()
-		if s.o.FloatMaxDecimals > 0 {
-			p10 := math.Pow10(s.o.FloatMaxDecimals)
+		m := int32(math.Pow10(int(s.r.Int31n(4))))
+		f := float64(s.r.Int31()%m) + s.r.Float64()
+		if s.o.MaxFloatDecimals > 0 {
+			p10 := math.Pow10(s.o.MaxFloatDecimals)
 			f = math.Round(f*p10) / p10
 		}
 		return reflect.ValueOf(f), nil
@@ -761,17 +671,12 @@ func isConvertibleType(k reflect.Kind) bool {
 	return false
 }
 
-func (s *Service) getFuncsValue(typeName, fieldName, tag string, maxLen uint64) (interface{}, bool, error) {
-	// typeName = testdata.CustomerAddressEntity
-	// fieldName = ParentID
-	// tag = parent_id
-
+func (s *Service) getFuncsValue(typeName, fieldName, tag string, maxLen uint64) (interface{}, bool) {
 	// fmt.Printf("%s.%s Tag:%s\n", typeName, fieldName, tag)
 
-	// testdata.CustomerAddressEntity.CountryID
 	if fn, ok := s.funcs[typeName+"."+fieldName]; ok {
-		iFaceVal, err := fn(int(maxLen))
-		return iFaceVal, true, err
+		iFaceVal := fn(int(maxLen))
+		return iFaceVal, true
 	}
 
 	// lookup an alias for parent_id
@@ -780,10 +685,10 @@ func (s *Service) getFuncsValue(typeName, fieldName, tag string, maxLen uint64) 
 	}
 	fn, ok := s.funcs[tag]
 	if !ok {
-		return nil, false, nil
+		return nil, false
 	}
-	iFaceVal, err := fn(int(maxLen))
-	return iFaceVal, true, err
+	iFaceVal := fn(int(maxLen))
+	return iFaceVal, true
 }
 
 func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tagIsFieldName bool) error {
@@ -802,10 +707,7 @@ func (s *Service) setDataWithTag(v reflect.Value, tag string, maxLen uint64, tag
 	if !ok && !tagIsFieldName {
 		return errors.NotFound.Newf("[pseudo] Tag %q not found in map", tag)
 	}
-	iFaceVal, err := fn(int(maxLen))
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	iFaceVal := fn(int(maxLen))
 
 	v = reflect.Indirect(v)
 	switch k := v.Kind(); k {
