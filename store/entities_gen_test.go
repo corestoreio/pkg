@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewTablesNonDB_8fbf75a91e4e6bd670de701be5c9ec85(t *testing.T) {
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6})
 	_ = ps
 	t.Run("Store_Empty", func(t *testing.T) {
 		e := new(Store)
