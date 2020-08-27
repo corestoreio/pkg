@@ -56,3 +56,25 @@ func TestColumnsIsEligibleForUpsert(t *testing.T) {
 	assert.False(t, columnsIsEligibleForUpsert(adminUserColumns.ByField("modified")), "timestamp modified")
 	assert.True(t, columnsIsEligibleForUpsert(adminUserColumns.ByField("password")), "timestamp modified")
 }
+
+func TestColumn_HasEqualType(t *testing.T) {
+	tests := []struct {
+		name   string
+		fields *Column
+		args   *Column
+		want   bool
+	}{
+		{name: "nil"},
+		{name: "ok1", fields: &Column{ColumnType: "a"}, args: &Column{ColumnType: "a"}, want: true},
+		{name: "ok2", fields: &Column{ColumnType: "a", Null: "y"}, args: &Column{ColumnType: "a", Null: "y"}, want: true},
+		{name: "nok1", fields: &Column{ColumnType: "b", Null: "y"}, args: &Column{ColumnType: "a", Null: "y"}},
+		{name: "nok2", fields: &Column{ColumnType: "a", Null: "n"}, args: &Column{ColumnType: "a", Null: "y"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.fields.HasEqualType(tt.args); got != tt.want {
+				t.Errorf("HasEqualType() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

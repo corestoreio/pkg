@@ -592,6 +592,11 @@ func (c *Column) IsBlobDataType() bool {
 		strings.Contains(dt, "binary") || strings.Contains(dt, "json")
 }
 
+// HasEqualType returns true if the type matches and nullable.
+func (c *Column) HasEqualType(c2 *Column) bool {
+	return c != nil && c2 != nil && c.ColumnType != "" && c.ColumnType == c2.ColumnType && c.Null == c2.Null
+}
+
 // columnTypes looks ugly but ... refactor later.
 // the slices in this struct are only for reading. no mutex protection required.
 // which partial column name triggers a specific type in Go or MySQL.
