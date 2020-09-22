@@ -66,6 +66,8 @@ type cachedSQL struct {
 
 func noopMapTableNameFn(oldName string) string { return oldName }
 
+func noopResultCheckFn(_ sql.Result, err error) error { return err }
+
 func prepareQueryBuilder(mapTableNameFn func(oldName string) (newName string), qb QueryBuilder) {
 	if mapTableNameFn == nil {
 		mapTableNameFn = noopMapTableNameFn
@@ -172,6 +174,9 @@ type DBR struct {
 	// Options like enable interpolation or expanding placeholders.
 	Options     uint
 	previousErr error
+	// ResultCheckFn custom function to check for affected rows or last insert ID.
+	// Only used in generated code.
+	ResultCheckFn func(sql.Result, error) error
 
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
 	// columns slice with custom names. Only in the use case when records are

@@ -529,6 +529,7 @@ func (qc *queryCache) initDBRCacheKey(
 	dbr := &DBR{
 		customCacheKey: cacheKey,
 		DB:             db,
+		ResultCheckFn:  noopResultCheckFn,
 		isPrepared:     isPrepared,
 	}
 	for _, opt := range opts {
@@ -590,6 +591,7 @@ func (qc *queryCache) initDBRQB(
 	dbr := &DBR{
 		customCacheKey: hashSQL(rawSQL),
 		DB:             db,
+		ResultCheckFn:  noopResultCheckFn,
 		isPrepared:     isPrepared,
 	}
 
