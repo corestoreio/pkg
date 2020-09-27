@@ -511,6 +511,13 @@ func (qc *queryCache) prependUniqueID(rawSQL string) (id, _rawSQL string) {
 	return id, rawSQL
 }
 
+func (qc *queryCache) cacheKeyExists(cacheKey string) bool {
+	qc.mu.RLock()
+	_, ok := qc.queries[cacheKey]
+	qc.mu.RUnlock()
+	return ok
+}
+
 func (qc *queryCache) initDBRCacheKey(
 	ctx context.Context,
 	l log.Logger,
@@ -803,19 +810,21 @@ func (c *ConnPool) RegisterByQueryBuilder(cacheKeyQB map[string]QueryBuilder) er
 	return nil
 }
 
-func (c *ConnPool) DeregisterByCacheKey(cacheKeys ...string) error {
+func (c *ConnPool) DeregisterByCacheKey(cacheKey string) error {
 	c.queryCache.mu.Lock()
-	defer c.queryCache.mu.Unlock()
-
-	for _, cacheKey := range cacheKeys {
-		delete(c.queryCache.queries, cacheKey)
-	}
+	delete(c.queryCache.queries, cacheKey)
+	c.queryCache.mu.Unlock()
 	return nil
 }
 
 // WithCacheKey creates a DBR object from a cached query.
 func (c *ConnPool) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
 	return c.queryCache.initDBRCacheKey(context.Background(), c.Log, "ConnPool", cacheKey, false, c.DB, opts)
+}
+
+// CacheKeyExists returns true if a given key already exists.
+func (c *ConnPool) CacheKeyExists(cacheKey string) bool {
+	return c.queryCache.cacheKeyExists(cacheKey)
 }
 
 // WithPrepareCacheKey creates a DBR object from a prepared cached query.
@@ -987,6 +996,11 @@ func (c *Conn) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
 	return c.queryCache.initDBRCacheKey(context.Background(), c.Log, "Conn", cacheKey, false, c.DB, opts)
 }
 
+// CacheKeyExists returns true if a given key already exists.
+func (c *Conn) CacheKeyExists(cacheKey string) bool {
+	return c.queryCache.cacheKeyExists(cacheKey)
+}
+
 // WithPrepareCacheKey creates a DBR object from a prepared cached query. The
 // statement must be closed after its use.
 func (c *Conn) WithPrepareCacheKey(ctx context.Context, cacheKey string, opts ...DBRFunc) *DBR {
@@ -996,6 +1010,11 @@ func (c *Conn) WithPrepareCacheKey(ctx context.Context, cacheKey string, opts ..
 // WithCacheKey creates a DBR object from a cached query.
 func (tx *Tx) WithCacheKey(cacheKey string, opts ...DBRFunc) *DBR {
 	return tx.queryCache.initDBRCacheKey(context.Background(), tx.Log, "Tx", cacheKey, false, tx.DB, opts)
+}
+
+// CacheKeyExists returns true if a given key already exists.
+func (tx *Tx) CacheKeyExists(cacheKey string) bool {
+	return tx.queryCache.cacheKeyExists(cacheKey)
 }
 
 // WithPrepareCacheKey creates a DBR object from a prepared cached query. After
