@@ -17,9 +17,12 @@ package dmltest
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/errors"
@@ -155,4 +158,43 @@ func CheckLastInsertID(t interface {
 		}
 		return lid
 	}
+}
+
+// WithSQLLog displays the SQL query and its named arguments on driver level.
+func WithSQLLog(buf io.Writer, printNamedArgs bool) dml.ConnPoolOption {
+	return dml.WithDriverCallBack(func(fnName string) func(error, string, []driver.NamedValue) error {
+		start := time.Now()
+		return func(err error, query string, namedArgs []driver.NamedValue) error {
+			fmt.Fprintf(buf, "%q Took: %s\n", fnName, time.Now().Sub(start))
+			if err != nil {
+				fmt.Fprintf(buf, "Error: %s\n", err)
+			}
+			if query != "" {
+				fmt.Fprintf(buf, "Query: %q\n", query)
+			}
+			if printNamedArgs && len(namedArgs) > 0 {
+				printNamedValues(buf, namedArgs)
+			}
+			fmt.Fprint(buf, "\n")
+			return err
+		}
+	})
+}
+
+func printNamedValues(w io.Writer, namedArgs []driver.NamedValue) {
+	fmt.Fprint(w, "NamedArgs:")
+	for _, na := range namedArgs {
+		fmt.Fprint(w, "{")
+		if na.Name != "" {
+			fmt.Fprintf(w, "Name:%q, ", na.Name)
+		}
+		if na.Ordinal != 0 {
+			fmt.Fprintf(w, "Ordinal:%d, ", na.Ordinal)
+		}
+		if na.Value != nil {
+			fmt.Fprintf(w, "Value:%#v", na.Value)
+		}
+		fmt.Fprint(w, "}, ")
+	}
+	fmt.Fprint(w, "\n")
 }
