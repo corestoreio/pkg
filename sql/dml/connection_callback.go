@@ -17,6 +17,7 @@ package dml
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 
 	"github.com/corestoreio/errors"
 )
@@ -24,8 +25,8 @@ import (
 // wrapDriver is used to create a new instrumented driver, it takes a vendor specific
 // driver, and a call back instance to produce a new driver instance. It's usually
 // used inside a sql.Register() statement
-func wrapDriver(drv driver.Driver, cb DriverCallBack) driver.Driver {
-	return cbDriver{drv: drv, cb: cb}
+func wrapDriver(drv driver.Driver, cb DriverCallBack, hasUniqueIDFn bool) driver.Driver {
+	return cbDriver{drv: drv, cb: cb, hasUniqueIDFn: hasUniqueIDFn}
 }
 
 // DriverCallBack defines the call back signature used in every driver function.
@@ -41,8 +42,9 @@ type DriverCallBack func(fnName string) func(err error, query string, args []dri
 
 // cbDriver implements a database/sql/driver.Driver
 type cbDriver struct {
-	drv driver.Driver
-	cb  DriverCallBack
+	drv           driver.Driver
+	cb            DriverCallBack
+	hasUniqueIDFn bool
 }
 
 func (drv cbDriver) Open(name string) (driver.Conn, error) {
@@ -54,7 +56,7 @@ func (drv cbDriver) Open(name string) (driver.Conn, error) {
 	if !ok {
 		return nil, errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullConner)")
 	}
-	return cbConn{fc, drv.cb}, nil
+	return cbConn{Conn: fc, cb: drv.cb, hasUniqueIDFn: drv.hasUniqueIDFn}, nil
 }
 
 type fullConner interface {
@@ -68,12 +70,20 @@ type fullConner interface {
 }
 
 type cbConn struct {
-	Conn fullConner
-	cb   DriverCallBack
+	Conn          fullConner
+	cb            DriverCallBack
+	hasUniqueIDFn bool
+}
+
+func (c cbConn) queryWithID(query *string) {
 }
 
 func (c cbConn) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
 	fn := c.cb("Conn.PrepareContext")
+	var id string
+	if c.hasUniqueIDFn {
+		id, _ = extractSQLIDPrefix(query)
+	}
 	defer func() {
 		if errFn := fn(err, query, nil); err == nil && errFn != nil {
 			err = errFn
@@ -82,12 +92,15 @@ func (c cbConn) PrepareContext(ctx context.Context, query string) (stmt driver.S
 	if stmt, err = c.Conn.PrepareContext(ctx, query); err != nil {
 		return nil, err
 	}
-	if fStmt, ok := stmt.(fullStmter); ok {
-		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
-	} else {
-		err = errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter)")
+
+	fStmt, ok := stmt.(fullStmter)
+	if !ok {
+		return nil, errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter) ID:%s", id)
 	}
-	return stmt, err
+	if id == "" {
+		id = query
+	}
+	return &cbStmt{Stmt: fStmt, cb: c.cb, query: fmt.Sprintf("Prepared ID:%s", id)}, nil
 }
 
 func (c cbConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
@@ -113,6 +126,11 @@ func (c cbConn) QueryContext(ctx context.Context, query string, args []driver.Na
 }
 
 func (c cbConn) Prepare(query string) (stmt driver.Stmt, err error) {
+	var id string
+	if c.hasUniqueIDFn {
+		id, _ = extractSQLIDPrefix(query)
+	}
+
 	fn := c.cb("Conn.Prepare")
 	defer func() {
 		if errFn := fn(err, query, nil); err == nil && errFn != nil {
@@ -122,13 +140,14 @@ func (c cbConn) Prepare(query string) (stmt driver.Stmt, err error) {
 	if stmt, err = c.Conn.Prepare(query); err != nil {
 		return nil, err
 	}
-
-	if fStmt, ok := stmt.(fullStmter); ok {
-		stmt = &cbStmt{Stmt: fStmt, cb: c.cb, query: query}
-	} else {
-		err = errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter)")
+	fStmt, ok := stmt.(fullStmter)
+	if !ok {
+		return nil, errors.NotSupported.Newf("[dml] Driver does not support all required interfaces (fullStmter) ID:%s", id)
 	}
-	return stmt, err
+	if id == "" {
+		id = query
+	}
+	return &cbStmt{Stmt: fStmt, cb: c.cb, query: fmt.Sprintf("Prepared ID:%s", id)}, nil
 }
 
 func (c cbConn) Close() (err error) {

@@ -151,7 +151,9 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 		sortOrder: 10,
 		fn: func(c *ConnPool) error {
 			c.queryCache.makeUniqueID = uniqueIDFn
-			c.Log = l.With(log.String("conn_pool_id", c.queryCache.makeUniqueID()))
+			if l != nil {
+				c.Log = l.With(log.String("conn_pool_id", c.queryCache.makeUniqueID()))
+			}
 			return nil
 		},
 	}
@@ -203,7 +205,7 @@ func WithCreateDatabase(ctx context.Context, databaseName string) ConnPoolOption
 
 			var drv driver.Driver = mysql.MySQLDriver{}
 			if c.driverCallBack != nil {
-				drv = wrapDriver(drv, c.driverCallBack)
+				drv = wrapDriver(drv, c.driverCallBack, c.queryCache.makeUniqueID != nil)
 			}
 			if c.dsn != nil {
 				dsn := c.dsn.FormatDSN()
@@ -290,7 +292,7 @@ func WithDB(db *sql.DB) ConnPoolOption {
 			if c.DB == nil && c.dsn != nil {
 				var drv driver.Driver = mysql.MySQLDriver{}
 				if c.driverCallBack != nil {
-					drv = wrapDriver(drv, c.driverCallBack)
+					drv = wrapDriver(drv, c.driverCallBack, c.queryCache.makeUniqueID != nil)
 				}
 
 				dsn := c.dsn.FormatDSN()
@@ -367,7 +369,7 @@ func WithDSNFromEnv(dsnEnvName string) ConnPoolOption {
 	return WithDSN(env)
 }
 
-// WithDriverCallBack allows t
+// WithDriverCallBack allows low level query logging and argument inspection.
 func WithDriverCallBack(cb DriverCallBack) ConnPoolOption {
 	return ConnPoolOption{
 		sortOrder: 0,
@@ -492,9 +494,30 @@ func (c *ConnPool) options(opts ...ConnPoolOption) error {
 }
 
 const (
-	sqlIDPrefix = "/*$ID$"
-	sqlIDSuffix = "*/"
+	sqlIDPrefix    = "/*$ID$"
+	sqlIDPrefixLen = 6
+	sqlIDSuffix    = "*/"
+	sqlIDSuffixLen = 2
 )
+
+func extractSQLIDPrefix(rawSQL string) (prefix string, lastPos int) {
+	if !strings.HasPrefix(rawSQL, sqlIDPrefix) {
+		return "", 0
+	}
+	// remove unique query ID /*$ID$....*/
+	lastPos = strings.Index(rawSQL, sqlIDSuffix)
+	if lastPos < 0 {
+		lastPos = 0
+	} else {
+		lastPos += sqlIDSuffixLen
+	}
+	if lastPos < sqlIDSuffixLen {
+		return "", 0
+	}
+	prefix = rawSQL[sqlIDPrefixLen : lastPos-sqlIDSuffixLen]
+
+	return prefix, lastPos
+}
 
 func (qc *queryCache) prependUniqueID(rawSQL string) (id, _rawSQL string) {
 	if qc.makeUniqueID != nil {

@@ -110,3 +110,50 @@ func Test_hashSQL(t *testing.T) {
 		})
 	}
 }
+
+func Test_extractSQLIDPrefix(t *testing.T) {
+	tests := []struct {
+		name        string
+		rawSQL      string
+		wantPrefix  string
+		wantLastPos int
+	}{
+		{
+			name:        "001",
+			rawSQL:      "/*$ID$7Q26wU5GR0*/UPDATE `customer_entity_int` SET `attribute_id`=?, `entity_id`=?, `value`=? WHERE (`value_id` = ?)",
+			wantPrefix:  "7Q26wU5GR0",
+			wantLastPos: 18,
+		},
+		{
+			name:        "002",
+			rawSQL:      "/*$ID$7*/UPDATE",
+			wantPrefix:  "7",
+			wantLastPos: 9,
+		},
+		{
+			name:        "003",
+			rawSQL:      "UPDATE",
+			wantPrefix:  "",
+			wantLastPos: 0,
+		},
+		{
+			name:        "004",
+			rawSQL:      "/*$ID$7 UPDATE",
+			wantPrefix:  "",
+			wantLastPos: 0,
+		},
+		{
+			name:        "005",
+			rawSQL:      "/*$ID$*/UPDATE",
+			wantPrefix:  "",
+			wantLastPos: 8,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotPrefix, gotLastPos := extractSQLIDPrefix(tt.rawSQL)
+			assert.Exactly(t, tt.wantLastPos, gotLastPos)
+			assert.Exactly(t, tt.wantPrefix, gotPrefix)
+		})
+	}
+}

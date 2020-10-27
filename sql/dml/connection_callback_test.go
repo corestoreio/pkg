@@ -47,7 +47,7 @@ func TestWrapDriver_Connection_Error(t *testing.T) {
 				return func(error, string, []driver.NamedValue) error {
 					return errors.AlreadyClosed.Newf("Connection closed")
 				}
-			})
+			}, false)
 		con, err := wrappedDrv.Open("nvr mind")
 		assert.NoError(t, err)
 		return con
@@ -118,7 +118,7 @@ func TestWrapDriver_Stmt_Error(t *testing.T) {
 				}
 				return err
 			}
-		})
+		}, false)
 		con, err := wrappedDrv.Open("nvr mind")
 		assert.NoError(t, err)
 		stmt, err := con.Prepare("")
