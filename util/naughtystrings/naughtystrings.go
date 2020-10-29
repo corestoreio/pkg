@@ -8,33 +8,38 @@ package naughtystrings
 
 import (
 	"encoding/json"
+	"sync"
 
 	"github.com/corestoreio/pkg/util/naughtystrings/internal"
 )
 
 var base64encoded, unencoded []string
 
+var loadOnce sync.Once
+
+func init() {
+	loadOnce.Do(func() {
+		if base64encoded == nil {
+			base64encoded = load("../blns.base64.json")
+		}
+		if unencoded == nil {
+			unencoded = load("../blns.json")
+		}
+	})
+}
+
 // Base64Encoded returns the strings encoded in base 64.
 func Base64Encoded() []string {
-	// TODO make thread safe!
-	if base64encoded == nil {
-		base64encoded = load("../blns.base64.json")
-	}
 	return base64encoded
 }
 
 // Unencoded returns the strings.
 func Unencoded() []string {
-	// TODO make thread safe!
-	if unencoded == nil {
-		unencoded = load("../blns.json")
-	}
 	return unencoded
 }
 
 func load(file string) []string {
 	asset, err := internal.Asset(file)
-
 	if err != nil {
 		panic(err)
 	}
