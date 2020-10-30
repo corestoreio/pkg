@@ -176,13 +176,13 @@ func (s State) DoneBytes(key []byte) error {
 // done.
 func (s State) Done(key uint64) error {
 	if !s.Initialized() {
-		return errors.NewFatalf("[suspend] State not initialized")
+		return errors.Fatal.Newf("[suspend] State not initialized")
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	st, ok := s.states[key]
 	if !ok {
-		return errors.NewFatalf("[suspend] Done(%s) called without calling CanRun(%s)", key, key)
+		return errors.Fatal.Newf("[suspend] Done(%s) called without calling CanRun(%s)", key, key)
 	}
 	atomic.StoreUint32(st.status, stateDone)
 	st.Broadcast()
@@ -205,7 +205,7 @@ type state struct {
 }
 
 func newRunningState() state {
-	var sr = stateRunning
+	sr := stateRunning
 	mu := &sync.Mutex{}
 	return state{
 		Mutex:  mu,

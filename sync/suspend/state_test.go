@@ -16,16 +16,18 @@ package suspend_test
 
 import (
 	"crypto/rand"
+	"fmt"
 	"hash"
 	"hash/fnv"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/corestoreio/pkg/sync/bgwork"
+
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/sync/suspend"
-	"github.com/corestoreio/errors"
 )
 
 const hashCount = 10
@@ -37,7 +39,7 @@ func generateHashes() (hashes [hashCount + 1]scope.TypeID) {
 	}
 	for i := 0; i < hashCount; i++ {
 		s := scopes[i%2]
-		hashes[i] = scope.MakeTypeID(s, int64(i))
+		hashes[i] = scope.MakeTypeID(s, uint32(i))
 	}
 	hashes[hashCount] = scope.DefaultTypeID
 	return hashes
@@ -48,7 +50,7 @@ func TestHashState_Initialized(t *testing.T) {
 	if hs.Initialized() {
 		t.Error("Should not be initialized")
 	}
-	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.IsFatal(err) {
+	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.Fatal.Match(err) {
 		t.Errorf("Expecting a Fatal error: %s", err)
 	}
 	if hs.ShouldWait(scope.DefaultTypeID.ToUint64()) {
@@ -59,7 +61,7 @@ func TestHashState_Initialized(t *testing.T) {
 	if !hs.Initialized() {
 		t.Error("Should be initialized")
 	}
-	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.IsFatal(err) {
+	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.Fatal.Match(err) {
 		t.Errorf("Expecting a Fatal error: %s", err)
 	}
 }
@@ -75,36 +77,24 @@ func TestHashState_CanRun(t *testing.T) {
 	hashes := generateHashes()
 
 	t.Run("Start", func(t *testing.T) {
-		var wg sync.WaitGroup
-		for i := 0; i < len(hashes); i++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, i int) {
-				defer wg.Done()
-				h := hashes[i]
-				if hs.ShouldWait(h.ToUint64()) {
-					t.Fatal("Should not run")
-				}
-				if !hs.ShouldStart(h.ToUint64()) {
-					t.Fatal("Should return true that it has been started")
-				}
-			}(&wg, i)
-		}
-		wg.Wait()
+		bgwork.Wait(len(hashes), func(i int) {
+			h := hashes[i]
+			if hs.ShouldWait(h.ToUint64()) {
+				panic("Should not run")
+			}
+			if !hs.ShouldStart(h.ToUint64()) {
+				panic("Should return true that it has been started")
+			}
+		})
 	})
 
 	t.Run("NoStart", func(t *testing.T) {
-		var wg sync.WaitGroup
-		for i := 0; i < len(hashes); i++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, i int) {
-				defer wg.Done()
-				h := hashes[i]
-				if hs.ShouldStart(h.ToUint64()) {
-					t.Fatal("Multiple starts not allowed")
-				}
-			}(&wg, i)
-		}
-		wg.Wait()
+		bgwork.Wait(len(hashes), func(i int) {
+			h := hashes[i]
+			if hs.ShouldStart(h.ToUint64()) {
+				panic("Multiple starts not allowed")
+			}
+		})
 	})
 
 	if have, want := hs.Len(), len(hashes); have != want {
@@ -123,37 +113,30 @@ func TestHashState_ShouldWait(t *testing.T) {
 	hashes := generateHashes()
 
 	const iterations = 23 // just a random number picked, this would be the expect # of http.requests
-	var countWaiter = new(uint32)
-	var countRun = new(uint32)
-	var wg sync.WaitGroup
+	countWaiter := new(uint32)
+	countRun := new(uint32)
 
 	for i := 0; i < len(hashes); i++ {
-		for j := 0; j < iterations; j++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, i, j int) {
-				defer wg.Done()
-				h := hashes[i]
-
-				switch {
-				// You should stick to the sequence of the cases: 1. Start 2. Running
-				case hs.ShouldStart(h.ToUint64()):
-					atomic.AddUint32(countRun, 1)
-					time.Sleep(time.Millisecond) // simulate race detector ;-)
-					if err := hs.Done(h.ToUint64()); err != nil {
-						t.Fatalf("%+v", err)
-					}
-				case hs.ShouldWait(h.ToUint64()): // this case is normally not needed
-					atomic.AddUint32(countWaiter, 1)
+		bgwork.Wait(iterations, func(j int) {
+			h := hashes[i]
+			switch {
+			// You should stick to the sequence of the cases: 1. Start 2. Running
+			case hs.ShouldStart(h.ToUint64()):
+				atomic.AddUint32(countRun, 1)
+				time.Sleep(2 * time.Millisecond) // simulate race detector ;-)
+				if err := hs.Done(h.ToUint64()); err != nil {
+					panic(fmt.Sprintf("%+v", err))
 				}
+			case hs.ShouldWait(h.ToUint64()): // this case is normally not needed
+				atomic.AddUint32(countWaiter, 1)
+			}
 
-				if hs.ShouldWait(h.ToUint64()) {
-					t.Fatalf("Should not be running, because it should have ran "+
-						"already, so now we're waiting. Iteration %d Hash %s", j, h)
-				}
-			}(&wg, i, j)
-		}
+			if hs.ShouldWait(h.ToUint64()) {
+				println(fmt.Sprintf("Should not be running, because it should have ran "+
+					"already, so now we're waiting. Iteration %d Hash %s", j, h))
+			}
+		})
 	}
-	wg.Wait()
 
 	if have, want := atomic.LoadUint32(countRun), uint32(len(hashes)); have != want {
 		t.Errorf("Runner: Have %d Want %d", have, want)
@@ -175,46 +158,40 @@ func TestHashState_ShouldWait(t *testing.T) {
 }
 
 func TestHashStateBytes_ShouldWait(t *testing.T) {
-
 	hs := suspend.NewStateWithHash(fnv.New64a())
 
 	const randBytesGenerate = 11
 
 	const iterations = 5 // just a random number picked, this would be the expect # of http.requests
-	var countWaiter = new(uint32)
-	var countRun = new(uint32)
-	var wg sync.WaitGroup
+	countWaiter := new(uint32)
+	countRun := new(uint32)
 
 	for i := 0; i < randBytesGenerate; i++ {
-		var key = make([]byte, 32)
+		key := make([]byte, 32)
 		if n, err := rand.Read(key); err != nil || n == 0 {
 			t.Fatalf("Failed to random Bytes: %s Read Count: %d", err, n)
 		}
 
-		for j := 0; j < iterations; j++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, i, j int, key []byte) {
-				defer wg.Done()
-				switch {
-				// You should stick to the sequence of the cases: 1. Start 2. Running
-				case hs.ShouldStartBytes(key):
-					atomic.AddUint32(countRun, 1)
-					time.Sleep(time.Millisecond) // simulate race detector ;-)
-					if err := hs.DoneBytes(key); err != nil {
-						t.Fatalf("%+v", err)
-					}
-				case hs.ShouldWaitBytes(key): // this case is normally not needed
-					atomic.AddUint32(countWaiter, 1)
+		bgwork.Wait(iterations, func(j int) {
+			switch {
+			// You should stick to the sequence of the cases: 1. Start 2. Running
+			case hs.ShouldStartBytes(key):
+				atomic.AddUint32(countRun, 1)
+				time.Sleep(time.Millisecond) // simulate race detector ;-)
+				if err := hs.DoneBytes(key); err != nil {
+					panic(fmt.Sprintf("%+v", err))
 				}
+			case hs.ShouldWaitBytes(key): // this case is normally not needed
+				atomic.AddUint32(countWaiter, 1)
+			}
 
-				if hs.ShouldWaitBytes(key) {
-					t.Fatalf("Should not be running, because it should have ran "+
-						"already, so now we're waiting. Iteration %d Hash %x", j, key)
-				}
-			}(&wg, i, j, key)
-		}
+			if hs.ShouldWaitBytes(key) {
+				panic(fmt.Sprintf("Should not be running, because it should have ran "+
+					"already, so now we're waiting. Iteration %d Hash %x", j, key))
+			}
+		})
+
 	}
-	wg.Wait()
 
 	if have, want := atomic.LoadUint32(countRun), uint32(randBytesGenerate); have != want {
 		t.Errorf("Runner: Have %d Want %d", have, want)
@@ -245,9 +222,8 @@ func (hm hashMock) Reset()        {}
 func (hm hashMock) Sum64() uint64 { return 0 }
 
 func TestHashStateBytes_Error(t *testing.T) {
-
 	hs := suspend.NewStateWithHash(hashMock{
-		err: errors.NewWriteFailedf("Write failed"),
+		err: errors.WriteFailed.Newf("Write failed"),
 	})
 	key := []byte(`I'm writing Go code`)
 	if hs.ShouldWaitBytes(key) {
@@ -256,5 +232,4 @@ func TestHashStateBytes_Error(t *testing.T) {
 	if have, want := hs.Len(), 0; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
-
 }
