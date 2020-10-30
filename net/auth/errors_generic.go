@@ -16,6 +16,8 @@ package auth
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[auth] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[auth] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[auth] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[auth] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[auth] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[auth] Scoped configuration %s marked as partially loaded.`
+)

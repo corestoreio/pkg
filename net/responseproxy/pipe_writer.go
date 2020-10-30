@@ -108,10 +108,12 @@ func (f *pipedFancyWriter) CloseNotify() <-chan bool {
 	cn := f.pipedWriter.ResponseWriter.(http.CloseNotifier)
 	return cn.CloseNotify()
 }
+
 func (f *pipedFancyWriter) Flush() {
 	fl := f.pipedWriter.ResponseWriter.(http.Flusher)
 	fl.Flush()
 }
+
 func (f *pipedFancyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	hj := f.pipedWriter.ResponseWriter.(http.Hijacker)
 	return hj.Hijack()
@@ -122,11 +124,13 @@ func (f *pipedFancyWriter) ReadFrom(r io.Reader) (int64, error) {
 	return io.Copy(&f.pipedWriter, r)
 }
 
-var _ http.CloseNotifier = &pipedFancyWriter{}
-var _ http.Flusher = &pipedFancyWriter{}
-var _ http.Hijacker = &pipedFancyWriter{}
-var _ io.ReaderFrom = &pipedFancyWriter{}
-var _ http.Flusher = &flushWriter{}
+var (
+	_ http.CloseNotifier = &pipedFancyWriter{}
+	_ http.Flusher       = &pipedFancyWriter{}
+	_ http.Hijacker      = &pipedFancyWriter{}
+	_ io.ReaderFrom      = &pipedFancyWriter{}
+	_ http.Flusher       = &flushWriter{}
+)
 
 // pipedFlushWriter implements only http.Flusher mostly used
 type pipedFlushWriter struct {

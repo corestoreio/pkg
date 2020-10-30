@@ -158,7 +158,7 @@ func convertAllowedOrigins(domains ...string) (allowedOriginsAll bool, allowedOr
 func convertAllowedHeaders(headers ...string) (allowedHeadersAll bool, allowedHeaders []string) {
 	allowedHeaders = convert(append(headers, "Origin"), http.CanonicalHeaderKey)
 	// Origin is always appended as some browsers will always request for this header at preflight
-	//c.allowedHeaders = convert(append(headers, "Origin"), http.CanonicalHeaderKey)
+	// c.allowedHeaders = convert(append(headers, "Origin"), http.CanonicalHeaderKey)
 	for _, h := range headers {
 		if h == "*" {
 			allowedHeadersAll = true

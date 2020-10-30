@@ -44,9 +44,9 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/corestoreio/errors"
 	csnet "github.com/corestoreio/pkg/net"
 	"github.com/corestoreio/pkg/util/bufferpool"
-	"github.com/corestoreio/errors"
 )
 
 const indexFile = "index.html"

@@ -51,13 +51,12 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 }
 
 func BenchmarkExposedHeader_WebsiteScope_AllowOriginRegex(b *testing.B) {
-
 	s := newCorsService(cfgmock.PathValue{
 		backend.AllowOriginRegex.MustFQWebsite(2): "^http://foo",
 	})
 	req := reqWithStore("GET")
 	req.Header.Set("Origin", "http://foobar.com")
-	//req.Header.Set("Origin", "http://barfoo.com") // not allowed
+	// req.Header.Set("Origin", "http://barfoo.com") // not allowed
 	// res := httptest.NewRecorder() // only for debugging
 
 	handler := s.WithCORS(testHandler(b))

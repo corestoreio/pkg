@@ -27,9 +27,9 @@ import (
 	"github.com/corestoreio/pkg/net/compress"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/response"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 var testJson string
@@ -54,10 +54,8 @@ func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 
 func TestWithCompressorNone(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		assert.Empty(t, w.Header().Get(csnet.ContentEncoding))
 		assert.Empty(t, w.Header().Get(csnet.Vary))
-
 	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
@@ -66,10 +64,8 @@ func TestWithCompressorNone(t *testing.T) {
 
 func TestWithCompressorGZIPHeader(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		assert.Exactly(t, csnet.CompressGZIP, w.Header().Get(csnet.ContentEncoding))
 		assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
-
 	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
@@ -81,7 +77,6 @@ func TestWithCompressorDeflateHeader(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Exactly(t, csnet.CompressDeflate, w.Header().Get(csnet.ContentEncoding))
 		assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
-
 	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
@@ -97,7 +92,7 @@ func TestWithCompressorDeflateConcrete(t *testing.T) {
 				t.Fatal(err)
 			}
 		}()
-		var un = make([]byte, len(testJson))
+		un := make([]byte, len(testJson))
 		rl, err := fr.Read(un)
 		if err != nil && err != io.EOF {
 			t.Error(err)
@@ -129,7 +124,6 @@ func TestWithCompressorGZIPConcrete(t *testing.T) {
 }
 
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
-
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			t.Fatal(err)
@@ -150,12 +144,10 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 	assert.Exactly(t, header, w.Header().Get(csnet.ContentEncoding))
 	assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
 	assert.Exactly(t, csnet.TextPlain, w.Header().Get(csnet.ContentType))
-
 }
 
 // BenchmarkWithCompressorGZIP_1024B-4	   20000	     81916 ns/op	    1330 B/op	       5 allocs/op
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
-
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			b.Fatal(err)

@@ -24,12 +24,12 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 func TestWithErrorHandler(t *testing.T) {
-	var eh = func(error) http.Handler { return nil }
+	eh := func(error) http.Handler { return nil }
 	s, err := newService(nil, WithErrorHandler(eh, scope.Store.WithID(44)))
 	assert.NoError(t, err, "%+v", err)
 	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
@@ -40,7 +40,7 @@ func TestWithErrorHandler(t *testing.T) {
 }
 
 func TestWithServiceErrorHandler(t *testing.T) {
-	var eh = func(error) http.Handler { return nil }
+	eh := func(error) http.Handler { return nil }
 	s, err := newService(nil, WithServiceErrorHandler(eh))
 	assert.NoError(t, err)
 	assert.Same(t, s.ErrorHandler, eh)
@@ -55,7 +55,6 @@ func TestOptionsError(t *testing.T) {
 }
 
 func TestOptionFactories(t *testing.T) {
-
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
 			withString("a value for the store 1 scope", scope.Store.WithID(1)),
@@ -77,7 +76,6 @@ func TestOptionFactories(t *testing.T) {
 }
 
 func TestNewScopedConfigGeneric(t *testing.T) {
-
 	scg := newScopedConfigGeneric(0, 0)
 	assert.Exactly(t, scope.TypeID(0), scg.ParentID)
 	assert.Exactly(t, scope.TypeID(0), scg.ScopeID)

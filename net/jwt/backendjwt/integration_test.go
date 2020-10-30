@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/jwt"
@@ -30,17 +31,15 @@ import (
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/store/storemock"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
-
 	// allow all scopes for testing
-	//backend.Skew.Field.Scopes = scope.PermStoreReverse
+	// backend.Skew.Field.Scopes = scope.PermStoreReverse
 
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		backend.SingleTokenUsage.MustFQ():     `1`,
@@ -78,8 +77,8 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		pb.SingleTokenUsage.MustFQ():         0, // disabled
 		pb.SingleTokenUsage.MustFQWebsite(1): 1, // enabled
 
-		//pb.Disabled.MustFQ():         0, // disable: disabled 8-)
-		//pb.Disabled.MustFQWebsite(1): 1, // disable: enabled 8-)
+		// pb.Disabled.MustFQ():         0, // disable: disabled 8-)
+		// pb.Disabled.MustFQWebsite(1): 1, // disable: enabled 8-)
 
 		pb.Expiration.MustFQ():         "2m",
 		pb.Expiration.MustFQWebsite(1): "5m1s",
@@ -118,7 +117,6 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 }
 
 func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
-
 	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -175,7 +173,6 @@ func getJwts(opts ...cfgmodel.Option) (jwts *jwt.Service, pb *backendjwt.Configu
 }
 
 func TestServiceWithBackend_MissingSectionSlice(t *testing.T) {
-
 	pb := backendjwt.New(nil)
 	jwts := jwt.MustNew(jwt.WithOptionFactory(pb.PrepareOptionFactory()))
 
@@ -188,7 +185,6 @@ func TestServiceWithBackend_MissingSectionSlice(t *testing.T) {
 }
 
 func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
-
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
@@ -200,7 +196,6 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 }
 
 func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
-
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
@@ -217,7 +212,6 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 }
 
 func TestServiceWithBackend_InvalidSkew(t *testing.T) {
-
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
@@ -230,7 +224,6 @@ func TestServiceWithBackend_InvalidSkew(t *testing.T) {
 }
 
 func TestServiceWithBackend_InvalidJTI(t *testing.T) {
-
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
@@ -242,7 +235,6 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 }
 
 func TestServiceWithBackend_RSAFail(t *testing.T) {
-
 	jwts, pb := getJwts(
 		cfgmodel.WithEncrypter(noopCrypt{}),
 		cfgmodel.WithDecrypter(noopCrypt{}),
@@ -262,7 +254,6 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 // contains a valid token, loads atomically the backend configuration and
 // switches the stores
 func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
-
 	// setup overall configuration structure
 	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {

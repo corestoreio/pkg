@@ -23,19 +23,18 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis"
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/net/geoip/backendgeoip"
 	"github.com/corestoreio/pkg/net/geoip/maxmindwebservice"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 var backend *backendgeoip.Configuration
 
 func init() {
-
 	cfgStruct, err := backendgeoip.NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -44,7 +43,6 @@ func init() {
 }
 
 func TestConfiguration_WithGeoIP2Webservice_Redis(t *testing.T) {
-
 	t.Run("Error_API", testBackend_WithGeoIP2Webservice_Redis(
 		func() *http.Client {
 			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
@@ -100,7 +98,6 @@ func testBackend_WithGeoIP2Webservice_Redis(
 	finalHandler func(t *testing.T) http.Handler,
 	wantCode int,
 ) func(*testing.T) {
-
 	return func(t *testing.T) {
 		rd := miniredis.NewMiniRedis()
 		if err := rd.Start(); err != nil {
@@ -112,7 +109,7 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		// test if we get the correct country and if the country has
 		// been successfully stored in redis and can be retrieved.
 
-		//be.WebServiceClient = hcf()
+		// be.WebServiceClient = hcf()
 		backend.Register(maxmindwebservice.NewOptionFactory(
 			hcf(),
 			backend.MaxmindWebserviceUserID,
@@ -153,7 +150,6 @@ func testBackend_WithGeoIP2Webservice_Redis(
 }
 
 func TestConfiguration_Path_Errors(t *testing.T) {
-
 	backend.Register(maxmindwebservice.NewOptionFactory(
 		&http.Client{},
 		backend.MaxmindWebserviceUserID,
@@ -190,7 +186,6 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 }
 
 func TestNewOptionFactory_Invalid_ConfigValue(t *testing.T) {
-
 	backend.Register(maxmindwebservice.NewOptionFactory(
 		&http.Client{},
 		backend.MaxmindWebserviceUserID,
@@ -207,7 +202,7 @@ func TestNewOptionFactory_Invalid_ConfigValue(t *testing.T) {
 		geoip.WithRootConfig(cfgSrv),
 		geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
-	//assert.NoError(t, gs.ClearCache())
+	// assert.NoError(t, gs.ClearCache())
 	_, err := gs.ConfigByScope(1, 0)
 	assert.True(t, errors.IsNotValid(err), " Error: %+v", err)
 	assert.Contains(t, err.Error(), `Incomplete WebService configuration: User: "" License "" Ti`)

@@ -85,7 +85,6 @@ func (w *writer) CloseNotify() <-chan bool {
 // preserved. No header set, no compression takes place. GZIP has priority
 // before deflate.
 func WithCompressor() mw.Middleware {
-
 	// todo(cs): maybe the sync.Pools can be put in here because then
 	// the developer can set the deflate compression level.
 	// todo(cs) handle compression depending on the website ...

@@ -23,9 +23,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-var (
-	cc *grpc.ClientConn
-)
+var cc *grpc.ClientConn
 
 func parseToken(token string) (struct{}, error) {
 	return struct{}{}, nil

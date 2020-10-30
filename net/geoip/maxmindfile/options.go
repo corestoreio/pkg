@@ -17,10 +17,10 @@ package maxmindfile
 import (
 	"os"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/geoip"
-	"github.com/corestoreio/errors"
 )
 
 // WithCountryFinder creates a new GeoIP2.Reader which reads the geo information

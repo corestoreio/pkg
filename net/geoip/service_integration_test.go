@@ -25,14 +25,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/net/geoip/maxmindfile"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 var _ io.Closer = (*geoip.Service)(nil)
@@ -170,14 +170,14 @@ func TestService_WithIsCountryAllowedByIP_ErrorWithContextCountryByIP(t *testing
 }
 
 func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
-	var logBuf = new(log.MutexBuffer)
+	logBuf := new(log.MutexBuffer)
 	s, closeFn := mustGetTestService(
 		geoip.WithDebugLog(logBuf),
 	)
 	defer closeFn()
 
 	var calledAltHndlr int32
-	var altHndlr = func(err error) http.Handler {
+	altHndlr := func(err error) http.Handler {
 		if !errors.IsUnauthorized(err) {
 			panic(fmt.Sprintf("Expecting an IsUnauthorized error:\n%+v", err))
 		}
@@ -188,7 +188,7 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	}
 
 	var calledFinalTestHandler int32
-	var finalTestHandler = func(i int, wantCountryISO string) http.Handler {
+	finalTestHandler := func(i int, wantCountryISO string) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted) // just write a random status
 			ipc, ok := geoip.FromContextCountry(r.Context())
@@ -231,50 +231,60 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 		wantCode       int
 	}{
 		// scope configuration websiteID& storeID not found
-		0: {func() *http.Request {
-			return httptest.NewRequest("GET", "http://corestore.io", nil)
+		0: {
+			func() *http.Request {
+				return httptest.NewRequest("GET", "http://corestore.io", nil)
+			},
+			"", http.StatusGatewayTimeout,
 		},
-			"", http.StatusGatewayTimeout},
 
 		// IP detected as origin from Finland
-		1: {func() *http.Request {
-			req := httptest.NewRequest("GET", "http://corestore.io", nil)
-			req.Header.Set("X-Forwarded-For", "2a02:d200::")
-			return req.WithContext(scope.WithContext(req.Context(), 1, 1)) // euro website / german store
+		1: {
+			func() *http.Request {
+				req := httptest.NewRequest("GET", "http://corestore.io", nil)
+				req.Header.Set("X-Forwarded-For", "2a02:d200::")
+				return req.WithContext(scope.WithContext(req.Context(), 1, 1)) // euro website / german store
+			},
+			"FI", http.StatusAccepted,
 		},
-			"FI", http.StatusAccepted},
 
 		// IP detected as origin from AT and alternative handler for scope Store == 2 gets called but AT not allowed
-		2: {func() *http.Request {
-			req := httptest.NewRequest("GET", "http://corestore.io", nil)
-			req.RemoteAddr = "2a02:da80::"
-			return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // euro website / austrian store
+		2: {
+			func() *http.Request {
+				req := httptest.NewRequest("GET", "http://corestore.io", nil)
+				req.RemoteAddr = "2a02:da80::"
+				return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // euro website / austrian store
+			},
+			"AT", http.StatusBadGateway,
 		},
-			"AT", http.StatusBadGateway},
 
 		// IP detection errors and an error gets attached to the context
-		3: {func() *http.Request {
-			req := httptest.NewRequest("GET", "http://corestore.io", nil)
-			req.RemoteAddr = "Er00r"
-			return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // euro website / austrian store
+		3: {
+			func() *http.Request {
+				req := httptest.NewRequest("GET", "http://corestore.io", nil)
+				req.RemoteAddr = "Er00r"
+				return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // euro website / austrian store
+			},
+			"XX", http.StatusHTTPVersionNotSupported,
 		},
-			"XX", http.StatusHTTPVersionNotSupported},
 
 		// IP from Germany, scope config not available and hence fall back to default
-		4: {func() *http.Request {
-			req := httptest.NewRequest("GET", "http://corestore.io", nil)
-			req.RemoteAddr = "2a02:e240::"
-			return req.WithContext(scope.WithContext(req.Context(), 1, 1)) // euro website / german store
+		4: {
+			func() *http.Request {
+				req := httptest.NewRequest("GET", "http://corestore.io", nil)
+				req.RemoteAddr = "2a02:e240::"
+				return req.WithContext(scope.WithContext(req.Context(), 1, 1)) // euro website / german store
+			},
+			"DE", http.StatusAccepted,
 		},
-			"DE", http.StatusAccepted},
 	}
 	for i, test := range tests {
 		req := test.req() // within the loop we'll get a race condition
-		//hpu := cstesting.NewHTTPParallelUsers(1, 1, 200, time.Millisecond)
+		// hpu := cstesting.NewHTTPParallelUsers(1, 1, 200, time.Millisecond)
 		hpu := cstesting.NewHTTPParallelUsers(8, 15, 200, time.Millisecond)
 		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 			assert.Exactly(t, test.wantCode, rec.Code, "Index %d", i)
-			//t.Log(i, rec.Code, http.StatusText(rec.Code))
+			// t.Log(i, rec.Code, http.StatusText(rec.Code))
 		}
 		hpu.ServeHTTP(req,
 			s.WithIsCountryAllowedByIP(finalTestHandler(i, test.wantCountryISO)),

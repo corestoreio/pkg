@@ -25,15 +25,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/signed"
 	"github.com/corestoreio/pkg/storage/containable"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/hashpool"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
 	_ "golang.org/x/crypto/blake2b"
 )
 
@@ -59,8 +59,7 @@ func TestService_UnregisteredHash(t *testing.T) {
 }
 
 func TestService_WithResponseSignature_MissingContext(t *testing.T) {
-
-	var serviceErrorHandlerCalled = new(int32)
+	serviceErrorHandlerCalled := new(int32)
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
@@ -99,8 +98,7 @@ func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 }
 
 func TestService_WithResponseSignature_Disabled(t *testing.T) {
-
-	var nextHandlerCalled = new(int32)
+	nextHandlerCalled := new(int32)
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
@@ -139,8 +137,7 @@ func TestService_WithResponseSignature_Disabled(t *testing.T) {
 }
 
 func TestService_WithResponseSignature_Buffered(t *testing.T) {
-
-	var nextHandlerCalled = new(int32)
+	nextHandlerCalled := new(int32)
 	key := []byte(`My guinea p1g runs acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
@@ -190,8 +187,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 }
 
 func TestService_WithResponseSignature_Trailer(t *testing.T) {
-
-	var nextHandlerCalled = new(int32)
+	nextHandlerCalled := new(int32)
 	key := []byte(`My gu1n34 p1g run5 acro55 my k3yb0ard`)
 
 	srv := signed.MustNew(
@@ -233,7 +229,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 		assert.Exactly(t, http.StatusTeapot, w.Code)
 		assert.Exactly(t, string(testData), w.Body.String())
 		assert.Exactly(t, signed.HeaderContentHMAC, w.Header().Get("Trailer"))
-		//t.Logf("%#v", w.HeaderMap)
+		// t.Logf("%#v", w.HeaderMap)
 	}
 	hpu.ServeHTTP(r, handler)
 
@@ -243,7 +239,6 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 }
 
 func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
-
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
@@ -268,7 +263,7 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 		}),
 	)
 
-	var finalHandlerCalled = new(int32)
+	finalHandlerCalled := new(int32)
 	initReq := httptest.NewRequest("GET", "https://corestore.io/product/id/3456", nil)
 	initReq = initReq.WithContext(scope.WithContext(initReq.Context(), 1, 2))
 	initResp := httptest.NewRecorder()
@@ -330,7 +325,6 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 }
 
 func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
-
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
 	cache := set.NewInMemory()
@@ -358,7 +352,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 	)
 
 	// Generate a signature
-	var finalHandlerCalled = new(int32)
+	finalHandlerCalled := new(int32)
 	initReq := httptest.NewRequest("GET", "https://corestore.io/product/id/3456", nil)
 	initReq = initReq.WithContext(scope.WithContext(initReq.Context(), 1, 2))
 	initResp := httptest.NewRecorder()
@@ -420,10 +414,9 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 }
 
 func TestService_WithRequestSignatureValidation(t *testing.T) {
-
 	const hmacHeaderValue = `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
-	var finalHandlerCalled = new(int32)
+	finalHandlerCalled := new(int32)
 
 	tester := func(req *http.Request, opts ...signed.Option) func(*testing.T) {
 		defer atomic.StoreInt32(finalHandlerCalled, 0)
@@ -455,7 +448,6 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		}
 
 		return func(t *testing.T) {
-
 			rec := httptest.NewRecorder()
 			mw.Chain(
 				http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {

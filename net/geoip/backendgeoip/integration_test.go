@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/net/geoip/backendgeoip"
@@ -30,10 +32,8 @@ import (
 	"github.com/corestoreio/pkg/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 func init() {
@@ -53,7 +53,6 @@ func TestConfiguration_UnregisteredOptionFactoryFunc(t *testing.T) {
 }
 
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
-
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		backend.DataSource.MustFQ():                `file`,
 		backend.MaxmindLocalFile.MustFQ():          filePathGeoIP,
@@ -71,7 +70,6 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 }
 
 func TestConfiguration_WithAlternativeRedirect(t *testing.T) {
-
 	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		backend.DataSource.MustFQ():                      `file`,
@@ -161,7 +159,6 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 }
 
 func TestConfiguration_Path_Errors(t *testing.T) {
-
 	tests := []struct {
 		toPath string
 		val    interface{}

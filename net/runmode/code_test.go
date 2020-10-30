@@ -31,8 +31,7 @@ var _ store.CodeProcessor = (*runmode.ProcessStoreCodeCookie)(nil)
 const defaultCookieContent = `mage-translation-storage=%7B%7D; mage-translation-file-version=%7B%7D; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; PHPSESSID=ogb786ncug3gunsnoevjem7n32; form_key=6DnQ2Xiy2oMpp7FB`
 
 func TestProcessStoreCode_FromRequest(t *testing.T) {
-
-	var getCookieRequest = func(c *http.Cookie) *http.Request {
+	getCookieRequest := func(c *http.Cookie) *http.Request {
 		rootRequest, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
 			t.Fatalf("Root request error: %s", err)
@@ -43,7 +42,7 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 		return rootRequest
 	}
 
-	var getGETRequest = func(kv ...string) *http.Request {
+	getGETRequest := func(kv ...string) *http.Request {
 		reqURL := "http://corestore.io/"
 		var uv url.Values
 		if len(kv)%2 == 0 {
@@ -99,13 +98,12 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 
 var benchmarkProcessStoreCode_FromRequest_Cookie string
 
-//BenchmarkProcessStoreCode_FromRequest_Cookie/Found-4         	  500000	      3047 ns/op	     296 B/op	       3 allocs/op
-//BenchmarkProcessStoreCode_FromRequest_Cookie/NotFound-4      	10000000	       110 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkProcessStoreCode_FromRequest_Cookie/Found-4         	  500000	      3047 ns/op	     296 B/op	       3 allocs/op
+// BenchmarkProcessStoreCode_FromRequest_Cookie/NotFound-4      	10000000	       110 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 	c := &runmode.ProcessStoreCodeCookie{URLFieldName: store.CodeURLFieldName, FieldName: store.CodeFieldName}
 
 	b.Run("Found", func(b *testing.B) {
-
 		req := httptest.NewRequest("GET", "https://corestoreio.io?a=b", nil)
 		req.Header.Set("Cookie", defaultCookieContent)
 		req.AddCookie(&http.Cookie{Name: store.CodeFieldName, Value: "dede"})
@@ -135,7 +133,6 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 			}
 		}
 	})
-
 }
 
 func TestProcessStoreCode_ProcessDenied(t *testing.T) {

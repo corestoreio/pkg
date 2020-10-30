@@ -19,13 +19,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/storage/transcache"
 	"github.com/corestoreio/pkg/storage/transcache/tcbigcache"
 	"github.com/corestoreio/pkg/storage/transcache/tcredis"
-	"github.com/corestoreio/errors"
 )
 
 // required by the transcache package
@@ -68,7 +68,6 @@ const OptionName = `webservice`
 // gob.Register(geoip.Country{}) has already been called.
 func NewOptionFactory(hc *http.Client, userID, license cfgmodel.Str, timeout cfgmodel.Duration, redisURL cfgmodel.URL) (optionName string, _ geoip.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []geoip.Option {
-
 		vUserID, err := userID.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceUserID.Get"))

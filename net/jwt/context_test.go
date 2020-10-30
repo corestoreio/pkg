@@ -15,16 +15,14 @@
 package jwt
 
 import (
+	"context"
 	"testing"
 
-	"context"
-
-	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/csjwt"
 )
 
 func TestFromContext_Token(t *testing.T) {
-
 	ctx := withContext(context.Background(), csjwt.Token{})
 	assert.NotNil(t, ctx)
 

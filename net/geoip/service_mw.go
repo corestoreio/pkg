@@ -27,7 +27,6 @@ import (
 // CountryByIP searches a country by an IP address and returns the found
 // country. It only needs the functional options WithGeoIP*().
 func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
-
 	ip := request.RealIP(r, request.IPForwardedTrust) // todo make IPForwardedTrust configurable
 	if ip == nil {
 		nf := errors.NewNotFoundf(errCannotGetRemoteAddr)
@@ -83,7 +82,6 @@ func (s *Service) WithCountryByIP(next http.Handler) http.Handler {
 // allows geo blocking.
 func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		scpCfg, err := s.configByContext(r.Context())
 		if err != nil {
 			if s.Log.IsDebug() {

@@ -17,19 +17,17 @@ package signed_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"strings"
-
-	"github.com/corestoreio/pkg/net/signed"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/net/signed"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ signed.HeaderParseWriter = (*signed.ContentHMAC)(nil)
 
 func TestHMAC_Write(t *testing.T) {
-
 	w := httptest.NewRecorder()
 	sig := signed.ContentHMAC{
 		Algorithm: "sha512",
@@ -61,7 +59,7 @@ func BenchmarkHMAC_Write(b *testing.B) {
 }
 
 func TestHMAC_Parse(t *testing.T) {
-	var newReqHeader = func(value string) *http.Request {
+	newReqHeader := func(value string) *http.Request {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
 		req.Header.Set(signed.HeaderContentHMAC, value)
 		return req
@@ -127,7 +125,7 @@ func TestHMAC_Parse(t *testing.T) {
 		if test.wantErrBhf != nil {
 			assert.Nil(t, haveSig, "Index %d", i)
 			assert.True(t, test.wantErrBhf(haveErr), "Error: %+v", haveErr)
-			//t.Log(haveErr)
+			// t.Log(haveErr)
 			continue
 		}
 		assert.Exactly(t, test.wantAlgorithm, hm.Algorithm, "Index %d", i)
@@ -138,7 +136,6 @@ func TestHMAC_Parse(t *testing.T) {
 
 // 10000000	       173 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkHMAC_Parse(b *testing.B) {
-
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Content-S1gnatur3", `sha1 48656c6c6f20476f7068657273`)
 

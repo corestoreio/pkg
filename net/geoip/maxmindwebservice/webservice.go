@@ -24,7 +24,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/geoip"
-	"github.com/corestoreio/pkg/sync/singleflight"
+	"golang.org/x/sync/singleflight"
 )
 
 // TransCacher transcodes Go objects. It knows how to encode and cache any Go
@@ -67,8 +67,7 @@ func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 // request to MaxMind for an IP address. Those addresses gets cached in the
 // Transcache along with the retrieved country.
 func (mm *mmws) FindCountry(ipAddress net.IP) (*geoip.Country, error) {
-
-	var c = new(geoip.Country)
+	c := new(geoip.Country)
 	err := mm.TransCacher.Get(ipAddress, c)
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
@@ -115,7 +114,7 @@ func (mm *mmws) Close() error {
 //}
 
 func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*geoip.Country, error) {
-	var country = new(geoip.Country)
+	country := new(geoip.Country)
 	req, err := http.NewRequest("GET", MaxMindWebserviceBaseURL+ipAddress.String(), nil)
 	if err != nil {
 		return country, errors.Wrap(err, "[geoip] http.NewRequest")

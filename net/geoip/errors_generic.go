@@ -16,6 +16,8 @@ package geoip
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[geoip] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[geoip] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[geoip] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[geoip] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[geoip] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[geoip] Scoped configuration %s marked as partially loaded.`
+)

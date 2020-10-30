@@ -49,7 +49,6 @@ type ID struct {
 }
 
 func (iw *ID) newID() func(*http.Request) string {
-
 	// algorithm taken from https://github.com/zenazn/goji/blob/master/web/middleware/request_id.go#L40-L52
 	hostname, err := os.Hostname()
 	if hostname == "" || err != nil {

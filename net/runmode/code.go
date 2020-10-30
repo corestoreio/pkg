@@ -180,6 +180,7 @@ type nullCodeProcessor struct{}
 func (nc nullCodeProcessor) FromRequest(_ scope.TypeID, _ *http.Request) string { return "" }
 func (nc nullCodeProcessor) ProcessDenied(_ scope.TypeID, _, _ int64, _ http.ResponseWriter, _ *http.Request) {
 }
+
 func (nc nullCodeProcessor) ProcessAllowed(_ scope.TypeID, _, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
 }
 

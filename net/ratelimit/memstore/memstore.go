@@ -15,12 +15,12 @@
 package memstore
 
 import (
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
 
@@ -33,7 +33,6 @@ const OptionName = `memstore`
 // initialization. Configuration values are read from package backendratelimit.Configuration.
 func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, gcraMaxMemoryKeys cfgmodel.Int) (optionName string, _ ratelimit.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []ratelimit.Option {
-
 		burst, err := burst.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[memstore] RateLimitBurst.Get"))

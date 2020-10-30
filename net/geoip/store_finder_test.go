@@ -31,5 +31,7 @@ func (storeFinderMock) StoreIDbyCode(runMode scope.TypeID, storeCode string) (we
 }
 
 // verify that the interface stays the same across packages.
-var _ geoip.StoreFinder = (*storeFinderMock)(nil)
-var _ store.Finder = (*storeFinderMock)(nil)
+var (
+	_ geoip.StoreFinder = (*storeFinderMock)(nil)
+	_ store.Finder      = (*storeFinderMock)(nil)
+)

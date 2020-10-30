@@ -30,7 +30,6 @@ func getReq(accept string) *http.Request {
 }
 
 func TestAcceptsJSON(t *testing.T) {
-
 	t.Run("empty", func(t *testing.T) {
 		assert.True(t, request.AcceptsJSON(getReq("")))
 	})
@@ -49,7 +48,6 @@ func TestAcceptsJSON(t *testing.T) {
 }
 
 func TestAcceptsContentType(t *testing.T) {
-
 	t.Run("empty", func(t *testing.T) {
 		assert.True(t, request.AcceptsContentType(getReq(""), "text/plain"))
 	})

@@ -16,6 +16,8 @@ package scopedservice
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[scopedservice] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[scopedservice] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[scopedservice] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[scopedservice] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[scopedservice] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[scopedservice] Scoped configuration %s marked as partially loaded.`
+)

@@ -16,6 +16,8 @@ package cors
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[cors] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[cors] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[cors] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[cors] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[cors] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[cors] Scoped configuration %s marked as partially loaded.`
+)

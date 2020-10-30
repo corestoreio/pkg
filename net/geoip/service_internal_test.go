@@ -23,12 +23,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/net/geoip/maxmindfile"
 	"github.com/corestoreio/pkg/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -123,7 +123,6 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 	req.Header.Set("Forwarded-For", "2a02:d200::") // IP Range Finland
 
 	t.Run("Scope_Default", func(t *testing.T) {
-
 		if err := s.Options(geoip.WithAllowedCountryCodes([]string{"US"})); err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +141,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 	})
 
 	t.Run("Scope_Store", func(t *testing.T) {
-		var scopeID = scope.Store.WithID(331122)
+		scopeID := scope.Store.WithID(331122)
 
 		isAllowed := func(s scope.TypeID, c *geoip.Country, allowedCountries []string) error {
 			assert.Exactly(t, scopeID, s, "Scope_Store @ scope.Hash")

@@ -207,7 +207,6 @@ func TestWithTokenAuth(t *testing.T) {
 }
 
 func TestWithJWTAuth(t *testing.T) {
-
 	hs256 := csjwt.NewSigningMethodHS256()
 	hmacTestKey, err := ioutil.ReadFile("testdata/hmacTestKey")
 	assert.NoError(t, err)

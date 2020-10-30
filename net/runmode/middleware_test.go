@@ -20,14 +20,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/runmode"
 	"github.com/corestoreio/pkg/store"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/store/storemock"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -41,7 +41,6 @@ func getReq(m, t string, c *http.Cookie) *http.Request {
 
 func finalHandler(t *testing.T, wantRunMode scope.TypeID, wantStoreID, wantWebsiteID int64, wantStoreCtx bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		haveWebsiteID, haveStoreID, haveOK := scope.FromContext(r.Context())
 		assert.Exactly(t, wantStoreCtx, haveOK)
 		assert.Exactly(t, wantStoreID, haveStoreID)
@@ -54,8 +53,7 @@ func finalHandler(t *testing.T, wantRunMode scope.TypeID, wantStoreID, wantWebsi
 }
 
 func TestWithRunMode(t *testing.T) {
-
-	var withRunModeErrH = func(t assert.TestingT, errBhf errors.BehaviourFunc, wantStoreIDCtx bool) mw.ErrorHandler {
+	withRunModeErrH := func(t assert.TestingT, errBhf errors.BehaviourFunc, wantStoreIDCtx bool) mw.ErrorHandler {
 		return func(haveErr error) http.Handler {
 			code := http.StatusNoContent // just the default OK
 			if errBhf != nil {
@@ -72,7 +70,7 @@ func TestWithRunMode(t *testing.T) {
 		}
 	}
 
-	var testsWithRunMode = []struct {
+	testsWithRunMode := []struct {
 		req           *http.Request
 		storeFinder   store.Finder
 		options       runmode.Options
@@ -164,7 +162,6 @@ func TestWithRunMode(t *testing.T) {
 		}
 		assert.Exactly(t, http.StatusText(test.wantRespCode), http.StatusText(rec.Code), "Index %d", i)
 	}
-
 }
 
 func TestWithRunMode_StoreService(t *testing.T) {

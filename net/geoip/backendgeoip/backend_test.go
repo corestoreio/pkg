@@ -28,7 +28,6 @@ var filePathGeoIP string
 
 // this would belong into the test suit setup
 func init() {
-
 	filePathGeoIP = filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb")
 
 	cfgStruct, err := backendgeoip.NewConfigStructure()

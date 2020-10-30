@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -46,7 +46,6 @@ func TestCountry_JSON(t *testing.T) {
 }
 
 func TestMmdb_Country(t *testing.T) {
-
 	r, err := newMMDBByFile(filepath.Join("../", "testdata", "GeoIP2-Country-Test.mmdb"))
 	if err != nil {
 		t.Fatal(err)

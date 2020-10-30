@@ -59,7 +59,6 @@ func runModeFromIncomingContext(ctx context.Context) (scope.TypeID, error) {
 // mode to the context via function RunModeNewOutgoingContext.
 func UnaryServerInterceptor(sf store.Finder) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-
 		runMode, err := runModeFromIncomingContext(ctx)
 		if runMode == 0 && err == nil {
 			return nil, status.Error(codes.InvalidArgument, "[grpc_scope] Run mode in context not found. Client needs to add the run mode in the context with function grpc_scope.RunModeNewOutgoingContext")
@@ -84,7 +83,6 @@ func UnaryServerInterceptor(sf store.Finder) grpc.UnaryServerInterceptor {
 // mode to the context via function RunModeNewOutgoingContext.
 func StreamServerInterceptor(sf store.Finder) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-
 		runMode, err := runModeFromIncomingContext(stream.Context())
 		if runMode == 0 && err == nil {
 			return status.Error(codes.InvalidArgument, "[grpc_scope] Run mode in context not found. Client needs to add the run mode in the context with function grpc_scope.RunModeNewOutgoingContext")

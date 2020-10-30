@@ -75,6 +75,7 @@ func easyjson1f631ffDecodeGithubComCorestoreioCsfwNetProblem(in *jlexer.Lexer, o
 		in.Consumed()
 	}
 }
+
 func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer, in Detail) {
 	out.RawByte('{')
 	first := true

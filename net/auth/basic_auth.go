@@ -38,7 +38,7 @@ func basicAuthValidator(hashName, username, password string) (BasicAuthFunc, err
 }
 
 func basicAuth(baf BasicAuthFunc) ProviderFunc {
-	var errInvalidData = errors.Unauthorized.Newf("[auth] Invalid username or password")
+	errInvalidData := errors.Unauthorized.Newf("[auth] Invalid username or password")
 	return func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error) {
 		givenUser, givenPass, ok := r.BasicAuth()
 		if !ok {
@@ -50,6 +50,7 @@ func basicAuth(baf BasicAuthFunc) ProviderFunc {
 		return true, nil
 	}
 }
+
 func basicAuthHandler(realm string) mw.ErrorHandler {
 	return func(_ error) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

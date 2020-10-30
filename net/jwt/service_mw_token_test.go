@@ -19,14 +19,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/storage/containable"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 )
 
 func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
@@ -51,7 +51,6 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 }
 
 func TestService_WithToken_EmptyScope(t *testing.T) {
-
 	authHandler, _ := testAuth_WithToken(t,
 		jwt.WithErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

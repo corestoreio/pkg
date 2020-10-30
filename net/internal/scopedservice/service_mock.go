@@ -19,8 +19,10 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 )
 
-const configDefaultString = "Hello Default Gophers"
-const configDefaultInt int = 42
+const (
+	configDefaultString     = "Hello Default Gophers"
+	configDefaultInt    int = 42
+)
 
 // Service DO NOT USE
 type Service struct {

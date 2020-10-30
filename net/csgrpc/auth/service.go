@@ -194,7 +194,6 @@ func WithTokenAuth(to TokenOptions) Option {
 	return Option{
 		sortOrder: 9,
 		fn: func(s *service) error {
-
 			const schemeName = "Bearer"
 			if to.AuthorizeFunc == nil && to.Token == "" {
 				return errors.NotAcceptable.Newf("[grpc_auth] Either Token or AuthorizeFunc func field must be set")
@@ -251,7 +250,6 @@ func WithJWTAuth(keyFunc csjwt.Keyfunc, vf *csjwt.Verification, jo JWTOptions) O
 	return Option{
 		sortOrder: 10,
 		fn: func(s *service) error {
-
 			if jo.AuthorizeFunc == nil {
 				jo.AuthorizeFunc = func(ctx context.Context, fullMethodName string, jwtToken *csjwt.Token) (context.Context, error) {
 					return csjwt.WithContextToken(ctx, jwtToken), nil

@@ -17,9 +17,9 @@ package backendcors
 import (
 	"regexp"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/cors"
-	"github.com/corestoreio/errors"
 )
 
 // PrepareOptionFactory creates a closure around the type Backend. The closure

@@ -122,7 +122,6 @@ type Options struct {
 //	3. Retrieve all AllowedStoreIDs based on the runMode
 //	4. Check if the website/store ID
 func WithRunMode(sf store.Finder, o Options) mw.Middleware {
-
 	// todo: code/Magento/Store/App/Request/PathInfoProcessor.php => req.isDirectAccessFrontendName()
 
 	lg := o.Log
@@ -149,7 +148,6 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 			// set run mode
 			runMode := o.CalculateRunMode(r)
 			r = r.WithContext(WithContextRunMode(r.Context(), runMode))

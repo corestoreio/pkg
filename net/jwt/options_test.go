@@ -19,18 +19,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/pkg/util/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOptionWithTemplateToken(t *testing.T) {
-
 	jwts, err := jwt.New(
 		// jwt.WithKey(scope.Website.ToHash(3), csjwt.WithPasswordRandom()),
 		jwt.WithTemplateToken(func() csjwt.Token {
@@ -71,11 +70,9 @@ func TestOptionWithTemplateToken(t *testing.T) {
 	claimStore, err := tkWebsiteParsed.Claims.Get(jwtclaim.KeyStore)
 	require.NoError(t, err)
 	assert.Exactly(t, "potato", conv.ToString(claimStore))
-
 }
 
 func TestOptionWithTokenID(t *testing.T) {
-
 	jwts, err := jwt.New(
 		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(22)),
 	)
@@ -91,7 +88,6 @@ func TestOptionWithTokenID(t *testing.T) {
 }
 
 func TestOptionScopedDefaultExpire(t *testing.T) {
-
 	jwts, err := jwt.New(
 		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.WithID(33)),
 	)
@@ -147,11 +143,9 @@ func TestWithMaxSkew_NotValid(t *testing.T) {
 	parsedTK, err := jwts.Parse(newTK.Raw)
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.False(t, parsedTK.Valid, "Token must be NOT valid")
-
 }
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
-
 	jm, err := jwt.New(
 		jwt.WithKey(csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))), // scope.DefaultTypeID
 	)
@@ -168,7 +162,6 @@ var (
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
-
 	jm, err := jwt.New(keyRsaPrivateNoPassword)
 	assert.True(t, errors.IsEmpty(err), "Error: %+v", err)
 	assert.Nil(t, jm)

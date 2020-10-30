@@ -17,12 +17,12 @@ package memstore_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/net/ratelimit/backendratelimit"
 	"github.com/corestoreio/pkg/net/ratelimit/memstore"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -63,7 +63,6 @@ func TestWithGCRAMemStore(t *testing.T) {
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
-
 	cfgStruct, err := backendratelimit.NewConfigStructure()
 	if err != nil {
 		panic(err)

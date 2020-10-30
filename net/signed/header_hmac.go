@@ -15,10 +15,9 @@
 package signed
 
 import (
+	"encoding/hex"
 	"net/http"
 	"strings"
-
-	"encoding/hex"
 
 	"github.com/corestoreio/errors"
 )

@@ -29,7 +29,7 @@ import (
 // available sections, groups and fields.
 func NewConfigStructure() (element.Sections, error) {
 	sortIdx := 10
-	var iter = func() int {
+	iter := func() int {
 		sortIdx += 10
 		return sortIdx
 	}

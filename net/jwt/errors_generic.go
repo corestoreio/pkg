@@ -16,6 +16,8 @@ package jwt
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[jwt] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[jwt] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[jwt] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[jwt] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[jwt] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[jwt] Scoped configuration %s marked as partially loaded.`
+)

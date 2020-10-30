@@ -15,9 +15,9 @@
 package backendgeoip
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/geoip"
-	"github.com/corestoreio/errors"
 )
 
 // PrepareOptionFactory creates a closure around the type Backend. The closure

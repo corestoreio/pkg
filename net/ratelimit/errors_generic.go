@@ -16,6 +16,8 @@ package ratelimit
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-const errConfigNotFound = `[ratelimit] ScopedConfig for %s not available`
-const errConfigScopeIDNotSet = `[ratelimit] ScopeID not set`
-const errConfigMarkedAsPartiallyLoaded = `[ratelimit] Scoped configuration %s marked as partially loaded.`
+const (
+	errConfigNotFound                = `[ratelimit] ScopedConfig for %s not available`
+	errConfigScopeIDNotSet           = `[ratelimit] ScopeID not set`
+	errConfigMarkedAsPartiallyLoaded = `[ratelimit] Scoped configuration %s marked as partially loaded.`
+)

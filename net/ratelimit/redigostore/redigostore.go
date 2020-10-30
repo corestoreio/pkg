@@ -17,13 +17,13 @@ package redigostore
 import (
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/net/url"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/garyburd/redigo/redis"
 	throttledRedis "gopkg.in/throttled/throttled.v2/store/redigostore"
 )
@@ -37,7 +37,6 @@ const OptionName = `redigostore`
 // initialization. Configuration values are read from argument `be`.
 func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redisURL cfgmodel.Str) (string, ratelimit.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []ratelimit.Option {
-
 		burst, err := burst.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
@@ -90,7 +89,6 @@ func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redis
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 // This function implements a debug log.
 func WithGCRA(redisRawURL string, duration rune, requests, burst int, scopeIDs ...scope.TypeID) ratelimit.Option {
-
 	address, password, db, err := url.ParseRedis(redisRawURL)
 	if err != nil {
 		return func(s *ratelimit.Service) error {
@@ -117,7 +115,7 @@ func WithGCRA(redisRawURL string, duration rune, requests, burst int, scopeIDs .
 		scID = scopeIDs[0]
 	}
 
-	var keyPrefix = "ratelimit_" + scID.String()
+	keyPrefix := "ratelimit_" + scID.String()
 	return func(s *ratelimit.Service) error {
 		rs, err := throttledRedis.New(pool, keyPrefix, int(db))
 		if err != nil {

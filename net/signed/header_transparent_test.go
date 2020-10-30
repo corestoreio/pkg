@@ -23,11 +23,12 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ signed.Cacher = (*set.InMemory)(nil)
-var _ signed.Cacher = (*set.Mock)(nil)
+var (
+	_ signed.Cacher = (*set.InMemory)(nil)
+	_ signed.Cacher = (*set.Mock)(nil)
+)
 
 func TestMakeTransparent(t *testing.T) {
-
 	haveHash := []byte(`I'm your testing hash value`)
 	haveTTL := time.Millisecond * 333
 

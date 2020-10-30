@@ -116,7 +116,6 @@ func TestStreamServerInterceptor(t *testing.T) {
 		}
 		err := grpc_scope.StreamServerInterceptor(storeFinder{})(nil, mockSrvStream{ctx: context.Background()}, nil, handler)
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = [grpc_scope] Run mode in context not found. Client needs to add the run mode in the context with function grpc_scope.RunModeNewOutgoingContext")
-
 	})
 	t.Run("runmode not parsable", func(t *testing.T) {
 		handler := func(srv interface{}, stream grpc.ServerStream) error {
@@ -125,7 +124,6 @@ func TestStreamServerInterceptor(t *testing.T) {
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("csgrpc-store-scope", "sdasddfas"))
 		err := grpc_scope.StreamServerInterceptor(storeFinder{})(nil, mockSrvStream{ctx: ctx}, nil, handler)
 		assert.EqualError(t, err, `rpc error: code = InvalidArgument desc = [grpc_scope] Cannot parse run mode: [scope] MakeTypeIDString with text "sdasddfas": strconv.ParseUint: parsing "sdasddfas": invalid syntax`)
-
 	})
 	t.Run("runmode success", func(t *testing.T) {
 		called := false

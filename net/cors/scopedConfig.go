@@ -38,9 +38,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
+	"github.com/corestoreio/pkg/store/scope"
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your
@@ -138,7 +138,6 @@ func (sc *ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) 
 	// by Access-Control-Request-Method (if supported) can be enough
 	headers.Set("Access-Control-Allow-Methods", strings.ToUpper(reqMethod))
 	if len(reqHeaders) > 0 {
-
 		// Spec says: Since the list of headers can be unbounded, simply returning supported headers
 		// from Access-Control-Request-Headers can be enough
 		headers.Set("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))

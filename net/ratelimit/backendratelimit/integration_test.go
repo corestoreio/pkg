@@ -22,15 +22,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/net/ratelimit/memstore"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -75,7 +75,6 @@ func TestBackend_GCRA_Not_Registered(t *testing.T) {
 }
 
 func TestBackend_WithDisable(t *testing.T) {
-
 	testBackendConfiguration(t, "panic",
 		cfgmock.PathValue{
 			backend.Disabled.MustFQWebsite(1): 1,
@@ -93,8 +92,8 @@ func TestBackend_WithDisable(t *testing.T) {
 }
 
 func TestBackend_WithGCRAMemStore(t *testing.T) {
-	var countDenied = new(int32)
-	var countAllowed = new(int32)
+	countDenied := new(int32)
+	countAllowed := new(int32)
 
 	backend.Register(memstore.NewOptionFactory(backend.Burst, backend.Requests, backend.Duration, backend.StorageGCRAMaxMemoryKeys))
 	defer backend.Deregister(memstore.OptionName)
@@ -104,7 +103,7 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 		http.Error(w, "custom limit exceeded", http.StatusConflict)
 	})
 
-	//fmt.Printf("deniedH: Default: %#v CustomTest: %#v\n", ratelimit.DefaultDeniedHandler, deniedH)
+	// fmt.Printf("deniedH: Default: %#v CustomTest: %#v\n", ratelimit.DefaultDeniedHandler, deniedH)
 
 	testBackendConfiguration(t,
 		"http://corestore.io",
@@ -160,12 +159,11 @@ func testBackendConfiguration(
 	testLogger bool,
 	opts ...ratelimit.Option,
 ) {
-
 	var logBuf log.MutexBuffer
 	const httpUsers = 3
 	const httpLoops = 3
 
-	var baseOpts = []ratelimit.Option{
+	baseOpts := []ratelimit.Option{
 		ratelimit.WithRootConfig(cfgmock.NewService(pv)),
 		ratelimit.WithDebugLog(&logBuf),
 		ratelimit.WithOptionFactory(backend.PrepareOptionFactory()),
@@ -180,9 +178,9 @@ func testBackendConfiguration(
 		})
 	}
 
-	//buf := new(bytes.Buffer)
-	//srv.DebugCache(buf)
-	//println("DebugCache: ", buf.String())
+	// buf := new(bytes.Buffer)
+	// srv.DebugCache(buf)
+	// println("DebugCache: ", buf.String())
 
 	req := func() *http.Request {
 		req, _ := http.NewRequest("GET", httpRequestURL, nil)
@@ -210,7 +208,6 @@ func testBackendConfiguration(
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
-
 	tests := []struct {
 		cfgPath string
 		val     interface{}

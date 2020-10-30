@@ -43,10 +43,8 @@ func SetHeaderAuthorization(req *http.Request, token []byte) {
 // Finder selects the new store ID and website ID based on the store code. It
 // changes the scope in the context.
 func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Middleware {
-
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 			// set run mode and add it to the context
 			runMode := rm.CalculateRunMode(r)
 			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))

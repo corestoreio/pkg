@@ -22,8 +22,10 @@ import (
 // backend overall backend models for all tests
 var backend *backendsigned.Configuration
 
-var _ cfgmodel.Encrypter = (*noopCrypt)(nil)
-var _ cfgmodel.Decrypter = (*noopCrypt)(nil)
+var (
+	_ cfgmodel.Encrypter = (*noopCrypt)(nil)
+	_ cfgmodel.Decrypter = (*noopCrypt)(nil)
+)
 
 type noopCrypt struct{}
 

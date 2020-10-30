@@ -21,14 +21,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/cors"
 	corstest "github.com/corestoreio/pkg/net/cors/internal"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -60,11 +60,10 @@ func TestConfiguration_Partially_HierarchicalConfig(t *testing.T) {
 	// TODO: To make the next line possible and remove the above line for checking
 	// []string{} there needs some refactoring in cors.WithSettings() to only
 	// set values which are available in the backend configuration.
-	//assert.Exactly(t, exposedHeaders, scpCfg.ExposedHeaders)
+	// assert.Exactly(t, exposedHeaders, scpCfg.ExposedHeaders)
 }
 
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
-
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		backend.AllowedOrigins.MustFQWebsite(3): "x.com\ny.com",
 		backend.AllowedMethods.MustFQ():         "PUT\nDEL\nCUT",
@@ -107,7 +106,7 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
-	var logBuf = new(log.MutexBuffer)
+	logBuf := new(log.MutexBuffer)
 	s := newCorsService(nil) // STAR is the default value in the element structure
 	req := reqWithStore("GET")
 
@@ -115,7 +114,7 @@ func TestMatchAllOrigin(t *testing.T) {
 		t.Fatal(err)
 	}
 	corstest.TestMatchAllOrigin(t, s, req)
-	//println("\n", logBuf.String())
+	// println("\n", logBuf.String())
 }
 
 func TestAllowedOrigin(t *testing.T) {
@@ -159,7 +158,7 @@ func TestAllowedOriginFunc(t *testing.T) {
 }
 
 func TestAllowedMethodNoPassthrough(t *testing.T) {
-	var logBuf = new(log.MutexBuffer)
+	logBuf := new(log.MutexBuffer)
 
 	s := newCorsService(cfgmock.PathValue{
 		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
@@ -175,13 +174,13 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 	corstest.TestAllowedMethodNoPassthrough(t, s, req)
 
 	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
-		//println("\n", logBuf.String())
+		// println("\n", logBuf.String())
 		t.Fatalf("Have: %v Want: %v", have, want)
 	}
 	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 88; have <= want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
-	//println("\n", logBuf.String())
+	// println("\n", logBuf.String())
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {
@@ -256,6 +255,7 @@ func TestAllowedCredentials(t *testing.T) {
 	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedCredentials(t, s, req)
 }
+
 func TestMaxAge(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
 		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
@@ -267,7 +267,6 @@ func TestMaxAge(t *testing.T) {
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
-
 	tests := []struct {
 		toPath func(int64) string
 		val    interface{}

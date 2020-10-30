@@ -19,7 +19,7 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/myreplicator"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/sync/singleflight"
+	"golang.org/x/sync/singleflight"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/go-sql-driver/mysql"
 	simysql "github.com/siddontang/go-mysql/mysql"

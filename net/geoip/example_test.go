@@ -20,17 +20,16 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/net/geoip/backendgeoip"
 	"github.com/corestoreio/pkg/net/geoip/maxmindfile"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/log"
 )
 
 func ExampleService_WithIsCountryAllowedByIP() {
-
 	// The scope. Those two values are now hard coded because we cannot access
 	// here the database to the website, store_group and store tables.
 	const (

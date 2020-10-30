@@ -118,7 +118,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	// below two lines comment out enables the null black list
 	jwts.Blocklist = set.NewInMemory()
 
-	var generateToken = func(storeCode string) []byte {
+	generateToken := func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
 		s.Store = storeCode
 		token, err := jwts.NewToken(scope.Website.WithID(1), s)
@@ -132,7 +132,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	const tokenCount = 9000
 	var tokens [tokenCount][]byte
 	// var storeCodes = [...]string{"au", "de", "at", "uk", "nz"}
-	var storeCodes = [...]string{"de", "at", "uk"}
+	storeCodes := [...]string{"de", "at", "uk"}
 	for i := range tokens {
 		tokens[i] = generateToken(storeCodes[rand.Intn(len(storeCodes))])
 

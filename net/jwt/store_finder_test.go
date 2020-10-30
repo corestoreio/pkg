@@ -30,5 +30,7 @@ func (storeFinderMock) StoreIDbyCode(runMode scope.TypeID, storeCode string) (we
 	return
 }
 
-var _ jwt.StoreFinder = (*storeFinderMock)(nil)
-var _ store.Finder = (*storeFinderMock)(nil)
+var (
+	_ jwt.StoreFinder = (*storeFinderMock)(nil)
+	_ store.Finder    = (*storeFinderMock)(nil)
+)

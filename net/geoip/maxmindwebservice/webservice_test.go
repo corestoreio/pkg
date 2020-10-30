@@ -24,11 +24,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/geoip"
 	"github.com/corestoreio/pkg/storage/transcache"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 var _ geoip.Finder = (*mmws)(nil)
@@ -36,7 +36,6 @@ var _ geoip.Finder = (*mmws)(nil)
 var responseJSONPath = filepath.Join("../", "testdata", "response.json")
 
 func TestMmws_Country_Failure_Response(t *testing.T) {
-
 	ws := newMMWS(objcache.NewMock(), "gopher", "passw0rd", http.DefaultClient)
 	trip := cstesting.NewHTTPTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	ws.client.Transport = trip
@@ -54,7 +53,6 @@ func TestMmws_Country_Failure_Response(t *testing.T) {
 }
 
 func TestMmws_Country_Failure_JSON(t *testing.T) {
-
 	ws := newMMWS(objcache.NewMock(), "a", "b", http.DefaultClient)
 	trip := cstesting.NewHTTPTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	ws.client.Transport = trip
@@ -126,7 +124,6 @@ func TestMmws_Country_Success(t *testing.T) {
 		assert.Exactly(t, "passw0rd", p)
 		return true
 	})
-
 }
 
 var maxMindWebServiceClient string
@@ -134,14 +131,13 @@ var maxMindWebServiceClient string
 // BenchmarkMaxMindWebServiceClient/Serial-4         	   50000	     25525 ns/op	    5612 B/op	     108 allocs/op
 // BenchmarkMaxMindWebServiceClient/Parallel-4       	  100000	     18447 ns/op	    5652 B/op	     108 allocs/op
 func BenchmarkMaxMindWebServiceClient(b *testing.B) {
-
 	// transcache.NewMock has gob encoding
 
 	wsc := newMMWS(objcache.NewMock(), "gopher", "passw0rd", &http.Client{
 		Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
 	})
 
-	var checkCountry = func(b *testing.B, ip net.IP) {
+	checkCountry := func(b *testing.B, ip net.IP) {
 		ret, err := wsc.FindCountry(ip)
 		if err != nil {
 			b.Fatal(err)

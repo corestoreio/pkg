@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/sync/singleflight"
 	"go.opencensus.io/trace"
+	"golang.org/x/sync/singleflight"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -219,7 +219,7 @@ func (of *OptionFactories) Register(name string, factory OptionFactoryFunc) {
 func (of *OptionFactories) Names() []string {
 	of.rwmu.RLock()
 	defer of.rwmu.RUnlock()
-	var names = make([]string, len(of.register))
+	names := make([]string, len(of.register))
 	i := 0
 	for n := range of.register {
 		names[i] = n

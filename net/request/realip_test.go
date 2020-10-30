@@ -27,8 +27,10 @@ import (
 )
 
 // check if the returned function conforms with the auth package
-var _ auth.TriggerFunc = request.InIPRange("192.168.0.1", "192.168.0.100")
-var _ auth.TriggerFunc = request.NotInIPRange("192.168.0.1", "192.168.0.100")
+var (
+	_ auth.TriggerFunc = request.InIPRange("192.168.0.1", "192.168.0.100")
+	_ auth.TriggerFunc = request.NotInIPRange("192.168.0.1", "192.168.0.100")
+)
 
 func TestGetRealIP(t *testing.T) {
 	t.Parallel()
@@ -98,7 +100,6 @@ func TestInIPRange(t *testing.T) {
 	assert.True(t, rf(r))
 	r.RemoteAddr = "192.168.0.1"
 	assert.False(t, rf(r))
-
 }
 
 func TestNotInIPRange(t *testing.T) {

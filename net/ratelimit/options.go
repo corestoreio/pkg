@@ -17,8 +17,8 @@ package ratelimit
 import (
 	"net/http"
 
-	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/store/scope"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -72,7 +72,6 @@ func WithDeniedHandler(next http.Handler, scopeIDs ...scope.TypeID) Option {
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 func WithGCRAStore(store throttled.GCRAStore, duration rune, requests, burst int, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-
 		cr, err := calculateRate(duration, requests)
 		if err != nil {
 			return errors.Wrap(err, "[ratelimit] WithGCRAStore.calculateRate")

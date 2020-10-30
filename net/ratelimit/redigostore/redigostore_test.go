@@ -17,12 +17,12 @@ package redigostore_test
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/net/ratelimit/backendratelimit"
 	"github.com/corestoreio/pkg/net/ratelimit/redigostore"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -60,11 +60,9 @@ func TestWithGCRARedis(t *testing.T) {
 		_, err = s.ConfigByScopeID(s4, 0)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
-
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
-
 	cfgStruct, err := backendratelimit.NewConfigStructure()
 	if err != nil {
 		panic(err)

@@ -23,11 +23,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/responseproxy"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/hashpool"
-	"github.com/corestoreio/errors"
 )
 
 // DefaultHashName identifies the default hash when creating a new scoped
@@ -156,7 +156,6 @@ func (sc *ScopedConfig) writeBuffered(next http.Handler, w http.ResponseWriter, 
 // gets read into a buffer. This buffer gets assigned to the r.Body to make a
 // read possible for the next consumer.
 func (sc *ScopedConfig) CalculateHash(r *http.Request) ([]byte, error) {
-
 	h := sc.hashPool.Get()
 	defer sc.hashPool.Put(h)
 	defer r.Body.Close()
@@ -197,7 +196,6 @@ func (sc *ScopedConfig) isMethodAllowed(reqMethod string) bool {
 // hashes the body and compares the hash of the body with the hash value found
 // in the HTTP header. Hash comparison via constant time.
 func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
-
 	if !sc.isMethodAllowed(r.Method) {
 		return errors.NewNotValidf(errScopedConfigMethodNotAllowed, r.Method, sc.AllowedMethods)
 	}

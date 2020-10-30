@@ -23,16 +23,18 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/corestoreio/pkg/net/problem"
 	"github.com/corestoreio/errors"
-	"github.com/mailru/easyjson"
+	"github.com/corestoreio/pkg/net/problem"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/mailru/easyjson"
 )
 
-var _ json.Marshaler = (*problem.Detail)(nil)
-var _ json.Unmarshaler = (*problem.Detail)(nil)
-var _ easyjson.Marshaler = (*problem.Detail)(nil)
-var _ easyjson.Unmarshaler = (*problem.Detail)(nil)
+var (
+	_ json.Marshaler       = (*problem.Detail)(nil)
+	_ json.Unmarshaler     = (*problem.Detail)(nil)
+	_ easyjson.Marshaler   = (*problem.Detail)(nil)
+	_ easyjson.Unmarshaler = (*problem.Detail)(nil)
+)
 
 func TestDetail(t *testing.T) {
 	t.Parallel()

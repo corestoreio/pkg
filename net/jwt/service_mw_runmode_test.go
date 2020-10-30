@@ -22,18 +22,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/storage/containable"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/store/storemock"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.Option) (http.Handler, []byte) {
@@ -59,7 +59,6 @@ func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.O
 }
 
 func TestService_WithRunMode_NoToken(t *testing.T) {
-
 	//  request calls default unauthorized handler
 
 	authHandler, _ := testAuth_WithRunMode(t, nil,
@@ -75,7 +74,6 @@ func TestService_WithRunMode_NoToken(t *testing.T) {
 }
 
 func TestService_WithRunMode_Custom_UnauthorizedHandler(t *testing.T) {
-
 	// request calls the unauthorized handler of website scope 1 = euro scope
 
 	var calledUnauthorizedHandler bool
@@ -333,7 +331,6 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 	assert.Equal(t, http.StatusTeapot, w.Code)
 	assert.Empty(t, w.Body.String())
 	assert.True(t, calledUnauthorizedHandler)
-
 }
 
 func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
@@ -384,7 +381,6 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 	assert.Equal(t, http.StatusTeapot, w.Code)
 	assert.Empty(t, w.Body.String())
 	assert.True(t, calledFinalHandler)
-
 }
 
 // TestService_WithRunMode_DifferentScopes
@@ -394,7 +390,6 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 // 2. runmode website OZ default store AU valid request with store NZ and must
 // change scope to NZ
 func TestService_WithRunMode_DifferentScopes(t *testing.T) {
-
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewSigningMethodHS256Fast(key)
 	if err != nil {
@@ -405,7 +400,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	var calledFinalHandler = new(int32)
+	calledFinalHandler := new(int32)
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),

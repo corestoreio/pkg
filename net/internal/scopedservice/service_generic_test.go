@@ -29,8 +29,8 @@ import (
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 func withError() Option {
@@ -68,7 +68,6 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	hpu := cstesting.NewHTTPParallelUsers(10, 10, 100, time.Millisecond)
 	r := httptest.NewRequest("GET", "http://corestore.io", nil)
 	hpu.ServeHTTP(r, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		tests := []struct {
 			cfg  config.Scoped
 			want string
@@ -93,7 +92,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 		}
 	}))
 
-	var comparePointers = func(h1, h2 scope.TypeID) {
+	comparePointers := func(h1, h2 scope.TypeID) {
 		if have, want := reflect.ValueOf(s.scopeCache[h1]).Pointer(), reflect.ValueOf(s.scopeCache[h2]).Pointer(); have != want {
 			t.Errorf("H1 Pointer: %d H2 Pointer: %d | %s => %s", have, want, h1, h2)
 		}
@@ -197,7 +196,6 @@ func TestService_DefaultOverwritesAScope(t *testing.T) {
 	)
 	// WithDefaultConfig overwrites the previously set
 	assert.Exactly(t, configDefaultString, s.scopeCache[scopeStore1].string)
-
 }
 
 func TestService_ConfigByScopeID_Error(t *testing.T) {

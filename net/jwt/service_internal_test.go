@@ -17,15 +17,14 @@ package jwt
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/csjwt"
 )
 
 func TestServiceWithBackend_NoBackend(t *testing.T) {
-
 	jwts := MustNew()
 	// a hack for testing to remove the default setting or make it invalid
 	jwts.scopeCache[scope.DefaultTypeID] = &ScopedConfig{}
@@ -37,7 +36,6 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 }
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
-
 	jwts := MustNew()
 
 	cr := cfgmock.NewService()

@@ -35,7 +35,6 @@ func TestRunModeFunc_CalculateRunMode(t *testing.T) {
 }
 
 func TestRunMode(t *testing.T) {
-
 	tests := []struct {
 		mode scope.RunModeCalculater
 		want scope.TypeID

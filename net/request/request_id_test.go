@@ -25,8 +25,8 @@ import (
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/request"
 	"github.com/corestoreio/pkg/sync/bgwork"
-	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 )
 
 var _ mw.Middleware = (&request.ID{}).With() // test if function signature matches
@@ -34,18 +34,16 @@ var _ mw.Middleware = (&request.ID{}).With() // test if function signature match
 func TestDefaultRequestPrefix(t *testing.T) {
 	t.Parallel()
 
-	var idGen = &request.ID{}
+	idGen := &request.ID{}
 
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := w.Header().Get(request.HeaderIDKeyName)
 		assert.Contains(t, id, "/")
-
 	}, idGen.With())
 	const regex = ".+/[A-Za-z0-9]+-[0-9]+"
 	matchr := regexp.MustCompile(regex)
 
 	bgwork.Wait(10, func(idx int) {
-
 		req := httptest.NewRequest("GET", "/", nil)
 
 		hpu := cstesting.NewHTTPParallelUsers(5, 10, 500, time.Millisecond)
@@ -59,7 +57,6 @@ func TestDefaultRequestPrefix(t *testing.T) {
 	})
 
 	assert.Exactly(t, 500, int(*idGen.Count), "ID counts do not match")
-
 }
 
 func BenchmarkWithRequestID(b *testing.B) {

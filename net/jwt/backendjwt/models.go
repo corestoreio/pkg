@@ -15,11 +15,11 @@
 package backendjwt
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/jwt"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/errors"
 )
 
 // todo add blake2 hash

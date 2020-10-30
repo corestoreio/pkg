@@ -24,11 +24,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/log/logw"
 	"github.com/corestoreio/pkg/net/accesslog"
 	"github.com/corestoreio/pkg/net/mw"
-	"github.com/corestoreio/log/logw"
-	"github.com/rs/xstats"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/rs/xstats"
 )
 
 var _ xstats.XStater = (*accesslog.BlackholeXStat)(nil)

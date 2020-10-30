@@ -15,9 +15,9 @@
 package geoip
 
 import (
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your

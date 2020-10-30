@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/request"
-	"github.com/corestoreio/log"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
 )
@@ -58,7 +58,6 @@ func WithAccessLog(x xstats.XStater, l ...log.Logger) mw.Middleware {
 	}
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 			// Time request
 			reqStart := time.Now()
 

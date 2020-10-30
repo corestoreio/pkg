@@ -19,12 +19,11 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/net/jwt"
-	"github.com/corestoreio/pkg/util/csjwt"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/csjwt"
 )
 
 func TestInternalOptionNoLeakage(t *testing.T) {
-
 	sc := jwt.ScopedConfig{
 		Key: csjwt.WithPasswordRandom(),
 	}

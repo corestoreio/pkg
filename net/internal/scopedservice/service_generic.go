@@ -26,8 +26,8 @@ import (
 	"github.com/corestoreio/pkg/config"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/sync/singleflight"
 	"go.opencensus.io/trace"
+	"golang.org/x/sync/singleflight"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -180,7 +180,6 @@ func (s *Service) configByContext(ctx context.Context) (ScopedConfig, error) {
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
 func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, error) {
-
 	parent := scpGet.ParentID() // can be website or default
 	current := scpGet.ScopeID() // can be store or website or default
 

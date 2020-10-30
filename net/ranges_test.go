@@ -23,7 +23,6 @@ import (
 )
 
 func TestIPRanges_In(t *testing.T) {
-
 	irs := csnet.IPRanges{
 		csnet.MakeIPRange("74.50.146.0", "74.50.146.4"),
 		csnet.MakeIPRange("::ffff:183.0.2.128", "::ffff:183.0.2.250"),
@@ -37,7 +36,6 @@ func TestIPRanges_In(t *testing.T) {
 	if have, want := irs.InStr("::ffff:183.0.2.252"), false; want != have {
 		t.Errorf("Have %t Want %t", have, want)
 	}
-
 }
 
 func TestIPRange_In(t *testing.T) {

@@ -25,7 +25,6 @@ import (
 )
 
 func TestWrapTee(t *testing.T) {
-
 	tw := responseproxy.WrapTee(httptest.NewRecorder())
 	buf := new(bytes.Buffer)
 	tw.Tee(buf)

@@ -24,14 +24,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/pkg/util/cstesting"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/cstesting"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -93,8 +93,7 @@ var finalHandler = func(t *testing.T) http.Handler {
 // for a specific WebsiteID(1). Despite the request will come in with StoreID(1)
 // we must fall back to the websiteID(1) to fetch there the configuration.
 func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
-
-	var runTest = func(logBuf io.Writer, scopeID scope.TypeID) func(t *testing.T) {
+	runTest := func(logBuf io.Writer, scopeID scope.TypeID) func(t *testing.T) {
 		return func(t *testing.T) {
 			errH := mw.ErrorHandler(func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -105,7 +104,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 			srv, err := ratelimit.New(
 				ratelimit.WithRootConfig(cfgmock.NewService()),
 				ratelimit.WithDebugLog(logBuf),
-				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
+				// ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
 				ratelimit.WithVaryBy(pathGetter{}, scopeID),
 				ratelimit.WithRateLimiter(stubLimiter{}, scopeID),
 				ratelimit.WithErrorHandler(errH, scopeID),
@@ -137,8 +136,8 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 
 	logBuf0 := new(log.MutexBuffer)
 	t.Run("Scope Store Fallback to Default", runTest(logBuf0, scope.DefaultTypeID))
-	//t.Log("FallBack", logBuf0)
-	//cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
+	// t.Log("FallBack", logBuf0)
+	// cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
 	logBuf0.Reset()
 
 	t.Run("Scope Store Fallback to Website", runTest(logBuf0, scope.Website.WithID(1)))
@@ -153,12 +152,10 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 	//
 	//var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
 	//cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
-
 }
 
 func TestService_WithDeniedHandler(t *testing.T) {
-
-	var deniedHandlerCalled = new(int32)
+	deniedHandlerCalled := new(int32)
 
 	srv, err := ratelimit.New(
 		ratelimit.WithRootConfig(cfgmock.NewService()),
@@ -261,7 +258,6 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 }
 
 func TestService_WithDisabled(t *testing.T) {
-
 	srv, err := ratelimit.New(
 		ratelimit.WithRootConfig(cfgmock.NewService()),
 		ratelimit.WithVaryBy(pathGetter{}, scope.DefaultTypeID),

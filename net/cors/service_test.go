@@ -27,12 +27,12 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/cors"
 	corstest "github.com/corestoreio/pkg/net/cors/internal"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -96,8 +96,7 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestService_Options_Scope_Website(t *testing.T) {
-
-	var newSrv = func(opts ...cors.Option) *cors.Service {
+	newSrv := func(opts ...cors.Option) *cors.Service {
 		s := cors.MustNew(
 			cors.WithRootConfig(cfgmock.NewService()),
 			cors.WithServiceErrorHandler(mw.ErrorWithPanic),

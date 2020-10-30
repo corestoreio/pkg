@@ -30,7 +30,6 @@ import (
 )
 
 func BenchmarkWithAlternativeRedirect(b *testing.B) {
-
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
@@ -41,7 +40,7 @@ func BenchmarkWithAlternativeRedirect(b *testing.B) {
 		backend.MaxmindWebserviceLicense.MustFQ():        "8x4",
 		backend.MaxmindWebserviceTimeout.MustFQ():        "3s",
 	})
-	//to fix the speed here ... BigCache_Gob must be optimized
+	// to fix the speed here ... BigCache_Gob must be optimized
 	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))
 
 	cfgSrv = cfgmock.NewService(cfgmock.PathValue{
@@ -53,7 +52,6 @@ func BenchmarkWithAlternativeRedirect(b *testing.B) {
 		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	})
 	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
-
 }
 
 func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B) {
@@ -96,7 +94,6 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 			for pb.Next() {
 				rec := httptest.NewRecorder()
 				geoSrv.WithIsCountryAllowedByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 					c, ok := geoip.FromContextCountry(r.Context())
 					if c != nil {
 						b.Fatalf("Country must be nil, but is %#v", c)
@@ -106,7 +103,6 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 					}
 
 					panic("Should not be called")
-
 				})).ServeHTTP(rec, req)
 
 				if have, want := rec.Header().Get("Location"), `https://byebye.de.io`; have != want {

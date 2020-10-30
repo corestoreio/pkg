@@ -26,7 +26,6 @@ import (
 // scope.FromContext().
 func (s *Service) WithCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		scpCfg, err := s.configByContext(r.Context())
 		if err != nil {
 			s.Log.Info("cors.Service.WithCORS.configByContext.Error", log.Err(err))

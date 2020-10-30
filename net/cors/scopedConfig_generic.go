@@ -17,9 +17,9 @@ package cors
 import (
 	"net/http"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/mw"
 	"github.com/corestoreio/pkg/store/scope"
-	"github.com/corestoreio/errors"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.

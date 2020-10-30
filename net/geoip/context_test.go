@@ -16,15 +16,13 @@ package geoip
 
 import (
 	"context"
-	"testing"
-
 	"net/http/httptest"
+	"testing"
 
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestContextWithError(t *testing.T) {
-
 	req := httptest.NewRequest("GET", "http://localhost", nil)
 
 	assert.NotNil(t, req)

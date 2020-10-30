@@ -23,14 +23,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/signed"
 	"github.com/corestoreio/pkg/store/scope"
+	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/cstesting"
 	"github.com/corestoreio/pkg/util/hashpool"
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-	"github.com/corestoreio/pkg/util/assert"
 )
 
 var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
@@ -67,7 +67,6 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 }
 
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
-
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		backend.AllowedMethods.MustFQWebsite(1): `PATCH,DELETE`,
 		backend.InTrailer.MustFQStore(3):        0,
@@ -157,12 +156,11 @@ func testBackendConfiguration(
 	testLogger bool,
 	opts ...signed.Option,
 ) {
-
 	logBuf := new(log.MutexBuffer)
 	const httpUsers = 1
 	const httpLoops = 1
 
-	var baseOpts = []signed.Option{
+	baseOpts := []signed.Option{
 		signed.WithRootConfig(cfgmock.NewService(pv)),
 		signed.WithDebugLog(logBuf),
 		signed.WithOptionFactory(backend.PrepareOptionFactory()),

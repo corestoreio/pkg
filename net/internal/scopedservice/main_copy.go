@@ -26,7 +26,6 @@ import (
 // This file copies the *_generic.go files to the packages via go:generate
 
 func main() {
-
 	pkgName := os.Args[1]
 
 	files, err := filepath.Glob("../internal/scopedservice/*_generic.go")

@@ -147,7 +147,7 @@ func TestParseConnection_Redis(t *testing.T) {
 func TestParseConnection_General(t *testing.T) {
 	t.Parallel()
 
-	var defaultPoolConnectionParameters = map[string][]string{
+	defaultPoolConnectionParameters := map[string][]string{
 		"db":           {"0"},
 		"max_active":   {"10"},
 		"max_idle":     {"400"},
@@ -306,7 +306,6 @@ func TestParseConnection_General(t *testing.T) {
 var benchmarkParseConnectionAddress string
 
 func BenchmarkParseConnection(b *testing.B) {
-
 	const raw = `redis://empty:SuperSecurePa55w0rd@192.168.0.234/?db=4&max_active=2718&max_idle=3141&idle_timeout=5h3s&cancellable=1`
 
 	for i := 0; i < b.N; i++ {

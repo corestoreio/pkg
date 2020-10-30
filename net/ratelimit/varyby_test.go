@@ -166,7 +166,6 @@ func TestVaryBy_Key(t *testing.T) {
 // BenchmarkVaryBy_Key/non-unicode-4         	  500000	      3694 ns/op	     288 B/op	      21 allocs/op
 // BenchmarkVaryBy_Key/full-unicode-4        	  500000	      3942 ns/op	     288 B/op	      21 allocs/op
 func BenchmarkVaryBy_Key(b *testing.B) {
-
 	vb := &ratelimit.VaryBy{
 		RemoteAddr:  true,
 		Method:      true,

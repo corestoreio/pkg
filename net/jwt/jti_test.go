@@ -17,10 +17,10 @@ package jwt
 import (
 	"testing"
 
-	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/csjwt"
+	"github.com/corestoreio/pkg/util/csjwt/jwtclaim"
 )
 
 func TestExtractJTI(t *testing.T) {

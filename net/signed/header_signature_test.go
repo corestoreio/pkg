@@ -19,16 +19,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net"
 	"github.com/corestoreio/pkg/net/signed"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 var _ signed.HeaderParseWriter = (*signed.ContentSignature)(nil)
 
 func TestSignature_Write(t *testing.T) {
-
 	w := httptest.NewRecorder()
 	sig := signed.NewContentSignature("myKeyID", "hmac-sha1")
 	sig.Write(w, []byte(`Hello Gophers`))
@@ -59,7 +58,7 @@ func BenchmarkSignature_Write(b *testing.B) {
 }
 
 func TestSignature_Parse(t *testing.T) {
-	var newReqHeader = func(value string) *http.Request {
+	newReqHeader := func(value string) *http.Request {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
 		req.Header.Set(net.ContentSignature, value)
 		return req
@@ -234,7 +233,6 @@ func TestSignature_Parse(t *testing.T) {
 
 // 1000000	      1798 ns/op	     464 B/op	       5 allocs/op
 func BenchmarkSignature_Parse(b *testing.B) {
-
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Content-S1gnatur3", `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`)
 

@@ -20,18 +20,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/config/cfgmock"
 	"github.com/corestoreio/pkg/net/runmode"
 	"github.com/corestoreio/pkg/store"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/store/storemock"
-	"github.com/corestoreio/log"
 )
 
 func BenchmarkWithRunMode(b *testing.B) {
 	srv := storemock.NewServiceEuroOZ(cfgmock.NewService())
 
-	var runner = func(req *http.Request, runMode scope.TypeID, wantStoreID, wantWebsiteID int64) func(b *testing.B) {
+	runner := func(req *http.Request, runMode scope.TypeID, wantStoreID, wantWebsiteID int64) func(b *testing.B) {
 		return func(b *testing.B) {
 			rmmw := runmode.WithRunMode(srv, runmode.Options{
 				Log:        log.BlackHole{}, // disabled debug and info logging
@@ -92,5 +92,4 @@ func BenchmarkWithRunMode(b *testing.B) {
 	b.Run("Store UK GET", runner(
 		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", store.CodeURLFieldName), nil),
 		scope.MakeTypeID(scope.Website, 1), 4, 1)) // 4 = uk; 1 = euro
-
 }
