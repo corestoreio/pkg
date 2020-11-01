@@ -1,7 +1,7 @@
 package cstrace
 
 import (
-	"go.opentelemetry.io/otel/api/trace"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/label"
 )
@@ -13,12 +13,12 @@ var ErrorKey = label.Key("error")
 
 // Status if there is an error, it sets the error code "unknown" with the error
 // string as span status otherwise status ok.
-func Status(span trace.Span, err error, msg string) {
+func Status(span otel.Span, err error, msg string) {
 	if err == nil {
-		span.SetStatus(codes.OK, msg)
+		span.SetStatus(codes.Ok, msg)
 		return
 	}
-	span.SetStatus(codes.Unknown, msg)
+	span.SetStatus(codes.Error, msg)
 	span.SetAttributes(ErrorKey.String(err.Error()))
 }
 
