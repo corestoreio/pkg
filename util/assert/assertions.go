@@ -87,11 +87,11 @@ the problem actually occurred in calling code.*/
 // of each stack frame leading from the current test to the assert call that
 // failed.
 func CallerInfo() []string {
-	pc := uintptr(0)
-	file := ""
-	line := 0
-	ok := false
-	name := ""
+	var pc uintptr
+	var ok bool
+	var file string
+	var line int
+	var name string
 
 	callers := []string{}
 	for i := 0; ; i++ {
@@ -155,21 +155,8 @@ func isTest(name, prefix string) bool {
 	if len(name) == len(prefix) { // "Test" is ok
 		return true
 	}
-	rune, _ := utf8.DecodeRuneInString(name[len(prefix):])
-	return !unicode.IsLower(rune)
-}
-
-// getWhitespaceString returns a string that is long enough to overwrite the default
-// output from the go testing framework.
-func getWhitespaceString() string {
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		return ""
-	}
-	parts := strings.Split(file, "/")
-	file = parts[len(parts)-1]
-
-	return strings.Repeat(" ", len(fmt.Sprintf("%s:%d:      ", file, line)))
+	r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+	return !unicode.IsLower(r)
 }
 
 func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
@@ -1082,6 +1069,8 @@ func toFloat(x interface{}) (float64, bool) {
 	xok := true
 
 	switch xn := x.(type) {
+	case uint:
+		xf = float64(xn)
 	case uint8:
 		xf = float64(xn)
 	case uint16:
@@ -1103,7 +1092,7 @@ func toFloat(x interface{}) (float64, bool) {
 	case float32:
 		xf = float64(xn)
 	case float64:
-		xf = float64(xn)
+		xf = xn
 	case time.Duration:
 		xf = float64(xn)
 	default:
@@ -1139,6 +1128,25 @@ func InDelta(t TestingT, expected, actual interface{}, delta float64, msgAndArgs
 	dt := af - bf
 	if dt < -delta || dt > delta {
 		Fail(t, fmt.Sprintf("Max difference between %v and %v allowed is %v, but difference was %v", expected, actual, delta, dt), msgAndArgs...)
+	}
+}
+
+// InDeltaSlice is the same as InDelta, except it compares two slices.
+func InDeltaSlice(t TestingT, expected, actual interface{}, delta float64, msgAndArgs ...interface{}) {
+	if h, ok := t.(tHelper); ok {
+		h.Helper()
+	}
+	if expected == nil || actual == nil ||
+		reflect.TypeOf(actual).Kind() != reflect.Slice ||
+		reflect.TypeOf(expected).Kind() != reflect.Slice {
+		Fail(t, fmt.Sprintf("Parameters must be slice"), msgAndArgs...)
+	}
+
+	actualSlice := reflect.ValueOf(actual)
+	expectedSlice := reflect.ValueOf(expected)
+
+	for i := 0; i < actualSlice.Len(); i++ {
+		InDelta(t, actualSlice.Index(i).Interface(), expectedSlice.Index(i).Interface(), delta, msgAndArgs...)
 	}
 }
 
