@@ -24,6 +24,8 @@ import (
 )
 
 func TestParseTimeStrict(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		layout  string
 		value   string
@@ -45,27 +47,29 @@ func TestParseTimeStrict(t *testing.T) {
 	}
 }
 
-func TestRandTicker(t *testing.T) {
-	const min = 10 * time.Millisecond
-	const max = 20 * time.Millisecond
+func TestRandomTicker(t *testing.T) {
+	t.Parallel()
+
+	min := time.Duration(10)
+	max := time.Duration(20)
 
 	// tick can take a little longer since we're not adjusting it to account for
 	// processing.
-	const precision = 5 * time.Millisecond
+	precision := time.Duration(4)
 
-	rt := cstime.NewRandTicker(min, max)
+	rt := cstime.NewRandomTicker(min*time.Millisecond, max*time.Millisecond, time.Millisecond)
 	for i := 0; i < 5; i++ {
 		t0 := time.Now()
 		t1 := <-rt.C
 		td := t1.Sub(t0)
-		if td < min {
+		if td < min*time.Millisecond {
 			t.Fatalf("tick was shorter than expected: %s", td)
-		} else if td > (max + precision) {
+		} else if td > (max+precision)*time.Millisecond {
 			t.Fatalf("tick was longer than expected: %s", td)
 		}
 	}
 	rt.Stop()
-	time.Sleep(max + precision)
+	time.Sleep((max + precision) * time.Millisecond)
 	select {
 	case v, ok := <-rt.C:
 		if ok || !v.IsZero() {
@@ -74,4 +78,13 @@ func TestRandTicker(t *testing.T) {
 	default:
 		t.Fatal("expected to receive close channel signal")
 	}
+}
+
+func TestNewRandomTicker(t *testing.T) {
+	rt := cstime.NewRandomTicker(10*time.Hour, 120*time.Minute, time.Millisecond)
+	for i := 0; i < 10; i++ {
+		ni := rt.NextInterval()
+		t.Logf("%d: %s", i, ni)
+	}
+	rt.Stop()
 }
