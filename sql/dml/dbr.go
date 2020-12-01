@@ -1406,3 +1406,14 @@ func ExecValidateOneAffectedRow(res sql.Result, err error) error {
 	}
 	return nil
 }
+
+// StaticSQLResult implements sql.Result for mocking reasons.
+type StaticSQLResult struct {
+	LID  int64
+	Rows int64
+	Err  error
+}
+
+func (r StaticSQLResult) LastInsertId() (int64, error) { return r.LID, r.Err }
+
+func (r StaticSQLResult) RowsAffected() (int64, error) { return r.Rows, r.Err }
