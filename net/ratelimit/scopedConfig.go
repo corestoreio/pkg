@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
-	"gopkg.in/throttled/throttled.v2"
+	"github.com/throttled/throttled/v2"
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your

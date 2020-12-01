@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/pkg/net/url"
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/garyburd/redigo/redis"
-	throttledRedis "gopkg.in/throttled/throttled.v2/store/redigostore"
+	throttledRedis "github.com/throttled/throttled/v2/store/redigostore"
 )
 
 // OptionName identifies this package within the register of the

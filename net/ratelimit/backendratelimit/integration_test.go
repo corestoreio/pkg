@@ -31,7 +31,7 @@ import (
 	"github.com/corestoreio/pkg/store/scope"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/cstesting"
-	"gopkg.in/throttled/throttled.v2"
+	"github.com/throttled/throttled/v2"
 )
 
 const errMessage = `stubLimiter TEST error`

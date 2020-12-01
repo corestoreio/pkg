@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	loghttp "github.com/corestoreio/log/http"
-	"gopkg.in/throttled/throttled.v2"
+	"github.com/throttled/throttled/v2"
 )
 
 // WithRateLimit wraps an http.Handler to limit incoming requests. Requests that

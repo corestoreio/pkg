@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/store/scope"
-	"gopkg.in/throttled/throttled.v2"
+	"github.com/throttled/throttled/v2"
 )
 
 // WithDefaultConfig applies the default ratelimit configuration settings based

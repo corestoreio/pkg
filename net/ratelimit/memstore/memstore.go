@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/pkg/config/cfgmodel"
 	"github.com/corestoreio/pkg/net/ratelimit"
 	"github.com/corestoreio/pkg/store/scope"
-	"gopkg.in/throttled/throttled.v2/store/memstore"
+	"github.com/throttled/throttled/v2/store/memstore"
 )
 
 // OptionName identifies this package within the register of the
