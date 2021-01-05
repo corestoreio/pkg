@@ -758,8 +758,8 @@ func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fn fu
 
 // Transaction runs all fns within a transaction. On error it calls
 // automatically ROLLBACK and on success (no error) COMMIT.
-func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*dml.Tx) error) error {
-	return tm.ConnPool.Transaction(ctx, opts, fns...)
+func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fn func(*dml.Tx) error) error {
+	return tm.ConnPool.Transaction(ctx, opts, fn)
 }
 
 // SingleConnection runs all fns in a single connection and guarantees no change
