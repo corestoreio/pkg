@@ -25,3 +25,5 @@ _testmain.go
 # CoreStore packages specific pkg
 *.gen.go
 godepgraph.svg
+
+vendor/

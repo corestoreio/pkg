@@ -95,7 +95,6 @@ from the geniuses listed below:
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/pkg/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
 | Uber Technologies, Inc. | [log](https://github.com/corestoreio/pkg/tree/master/log) | Copyright (c) 2016 MIT License |
 | 2013 The Go Authors | [singleflight](https://github.com/corestoreio/pkg/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
-| Ventu.io, Oleg Sklyar, contributors. | [util/shortid](http://github.com/corestoreio/pkg/tree/master/utils/shortid) | MIT License Copyright (c) 2016, |
 | Carl Jackson (carl@avtok.com) (Goji) | [net/responseproxy](http://github.com/corestoreio/pkg/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
 | Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/null](http://github.com/corestoreio/pkg/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
 | The Go-MySQL-Driver Authors | [storage/null/time_mysql.go](http://github.com/corestoreio/pkg/tree/master/storage/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
