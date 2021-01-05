@@ -1,0 +1,62 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/sql/dml
+BenchmarkSelect_Rows
+BenchmarkSelect_Rows-4                	  464666	      2462 ns/op	    3595 B/op	      17 allocs/op
+BenchmarkSelect_Rows-4                	  488857	      2447 ns/op	    3596 B/op	      17 allocs/op
+BenchmarkSelect_Rows-4                	  495535	      2490 ns/op	    3595 B/op	      17 allocs/op
+BenchmarkSelect_Rows-4                	  497966	      2418 ns/op	    3595 B/op	      17 allocs/op
+BenchmarkSelectBasicSQL
+BenchmarkSelectBasicSQL-4             	  780190	      1545 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkSelectBasicSQL-4             	  789136	      1591 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkSelectBasicSQL-4             	  781018	      1557 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkSelectBasicSQL-4             	  785086	      1548 ns/op	    1448 B/op	      12 allocs/op
+BenchmarkSelectExcessConditions
+BenchmarkSelectExcessConditions-4     	  305848	      4141 ns/op	    3400 B/op	      31 allocs/op
+BenchmarkSelectExcessConditions-4     	  292839	      3934 ns/op	    3400 B/op	      31 allocs/op
+BenchmarkSelectExcessConditions-4     	  311070	      4145 ns/op	    3400 B/op	      31 allocs/op
+BenchmarkSelectExcessConditions-4     	  297380	      4026 ns/op	    3400 B/op	      31 allocs/op
+BenchmarkSelectFullSQL
+BenchmarkSelectFullSQL/NewSelect
+BenchmarkSelectFullSQL/NewSelect-4    	  336412	      3662 ns/op	    3672 B/op	      29 allocs/op
+BenchmarkSelectFullSQL/NewSelect-4    	  333631	      3544 ns/op	    3672 B/op	      29 allocs/op
+BenchmarkSelectFullSQL/NewSelect-4    	  339721	      3535 ns/op	    3672 B/op	      29 allocs/op
+BenchmarkSelectFullSQL/NewSelect-4    	  339351	      3545 ns/op	    3672 B/op	      29 allocs/op
+BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache
+BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache-4         	121202708	         9.70 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache-4         	123413787	        10.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache-4         	123660877	        10.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache-4         	120638953	         9.74 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSelect_Large_IN
+BenchmarkSelect_Large_IN/SQL
+BenchmarkSelect_Large_IN/SQL-4                           	   44836	     27015 ns/op	    6942 B/op	      14 allocs/op
+BenchmarkSelect_Large_IN/SQL-4                           	   44050	     27172 ns/op	    6940 B/op	      14 allocs/op
+BenchmarkSelect_Large_IN/SQL-4                           	   44172	     27199 ns/op	    6939 B/op	      14 allocs/op
+BenchmarkSelect_Large_IN/SQL-4                           	   44037	     27215 ns/op	    6940 B/op	      14 allocs/op
+BenchmarkSelect_Large_IN/interpolate
+BenchmarkSelect_Large_IN/interpolate-4                   	   40824	     29214 ns/op	    7878 B/op	      23 allocs/op
+BenchmarkSelect_Large_IN/interpolate-4                   	   41348	     29266 ns/op	    7878 B/op	      23 allocs/op
+BenchmarkSelect_Large_IN/interpolate-4                   	   41209	     29130 ns/op	    7878 B/op	      23 allocs/op
+BenchmarkSelect_Large_IN/interpolate-4                   	   40942	     29377 ns/op	    7878 B/op	      23 allocs/op
+BenchmarkSelect_Large_IN/interpolate_named
+BenchmarkSelect_Large_IN/interpolate_named-4             	   39091	     29923 ns/op	    8320 B/op	      34 allocs/op
+BenchmarkSelect_Large_IN/interpolate_named-4             	   39931	     29901 ns/op	    8323 B/op	      34 allocs/op
+BenchmarkSelect_Large_IN/interpolate_named-4             	   40191	     29938 ns/op	    8319 B/op	      34 allocs/op
+BenchmarkSelect_Large_IN/interpolate_named-4             	   40316	     29752 ns/op	    8320 B/op	      34 allocs/op
+BenchmarkSelect_Large_IN/interpolate_optimized
+BenchmarkSelect_Large_IN/interpolate_optimized-4         	   44328	     26944 ns/op	    5605 B/op	       7 allocs/op
+BenchmarkSelect_Large_IN/interpolate_optimized-4         	   43762	     27432 ns/op	    5607 B/op	       7 allocs/op
+BenchmarkSelect_Large_IN/interpolate_optimized-4         	   44160	     27105 ns/op	    5605 B/op	       7 allocs/op
+BenchmarkSelect_Large_IN/interpolate_optimized-4         	   43983	     27223 ns/op	    5606 B/op	       7 allocs/op
+BenchmarkSelect_ComplexAddColumns
+BenchmarkSelect_ComplexAddColumns-4                      	  595192	      2023 ns/op	    2208 B/op	      16 allocs/op
+BenchmarkSelect_ComplexAddColumns-4                      	  601232	      2028 ns/op	    2208 B/op	      16 allocs/op
+BenchmarkSelect_ComplexAddColumns-4                      	  588608	      2022 ns/op	    2208 B/op	      16 allocs/op
+BenchmarkSelect_ComplexAddColumns-4                      	  590324	      2060 ns/op	    2208 B/op	      16 allocs/op
+BenchmarkSelect_SQLCase
+BenchmarkSelect_SQLCase-4                                	  292652	      4098 ns/op	    2088 B/op	      17 allocs/op
+BenchmarkSelect_SQLCase-4                                	  292190	      4103 ns/op	    2088 B/op	      17 allocs/op
+BenchmarkSelect_SQLCase-4                                	  283087	      4128 ns/op	    2088 B/op	      17 allocs/op
+BenchmarkSelect_SQLCase-4                                	  293898	      4083 ns/op	    2088 B/op	      17 allocs/op
+PASS
+ok  	github.com/corestoreio/pkg/sql/dml	63.119s

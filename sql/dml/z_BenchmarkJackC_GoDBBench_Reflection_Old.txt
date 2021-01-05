@@ -1,0 +1,21 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/sql/dml
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Arguments-4         	    5000	    302802 ns/op	   16967 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Arguments-4         	    5000	    287161 ns/op	   16954 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Arguments-4         	    5000	    300029 ns/op	   16955 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Arguments-4         	    5000	    301948 ns/op	   16954 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Interfaces-4        	    5000	    301021 ns/op	   16923 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Interfaces-4        	    5000	    299199 ns/op	   16923 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Interfaces-4        	    5000	    300908 ns/op	   16923 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsCollect_Interfaces-4        	    5000	    300507 ns/op	   16922 B/op	     410 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Arguments-4          	    5000	    298390 ns/op	    9044 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Arguments-4          	    5000	    307664 ns/op	    9042 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Arguments-4          	    5000	    287129 ns/op	    9043 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Arguments-4          	    5000	    296097 ns/op	    9042 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Interface-4          	    5000	    297833 ns/op	    9011 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Interface-4          	    5000	    296095 ns/op	    9011 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Interface-4          	    5000	    296985 ns/op	    9012 B/op	     404 allocs/op
+BenchmarkJackC_GoDBBench/SelectMultipleRowsEntity_Interface-4          	    5000	    295942 ns/op	    9010 B/op	     404 allocs/op
+PASS
+ok  	github.com/corestoreio/pkg/sql/dml	24.377s

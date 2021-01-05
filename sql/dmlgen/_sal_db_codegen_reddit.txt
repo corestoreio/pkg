@@ -1,0 +1,85 @@
+
+https://medium.com/@zaurio/generator-the-client-to-sql-database-on-golang-dccfeb4641c3
+https://github.com/golang/mock
+
+https://www.reddit.com/r/golang/comments/a30eud/golang_generator_of_client_to_sql_database_based/
+OK, but in an actual real-world application your structs are often not aligned
+wit the database. Eg. In the application I'm currently building I have:
+
+type Document struct {
+    ID uuid.UUID
+    Name string
+    LatestVersion uuid.UUID
+    Key [32]byte
+}
+
+and also
+
+type DisplayDocument struct {
+    ID uuid.UUID
+    Name string
+    LatestVersion *DocumentVersion
+    Owner *User
+    Permissions []*DocumentPermissions
+}
+
+because the Document struct matches what's in the table, suitable for Creating
+and Updating documents, but DisplayDocument matches what's required by the UI.
+
+I could construct the DisplayDocument in code from three or four separate
+database queries, but it's actually waaaay more efficient to do all of that in
+the database, so I have a Postgres function that takes a Document ID and returns
+the data needed to create a complete DisplayDocument in one go.
+
+So how would I use this tool to generation the necessary boilerplate? level 2
+izaurio 4 points · 16 hours ago
+
+Structs of response and request are not aligned with database tables. It's about
+the contract. The tool helps in communications between application and database.
+Preparing the struct for UI is responsibility of service object.
+
+But you are talking about a receiving complex response with nested structs.
+
+Bad news: currently there is no support for fetching one-to-many relations.
+(will be available with AppendRow hook).
+
+Good news: there is exists the support of nested structs. You can define
+response like that:
+
+type GetDocumentResp struct {
+	Document
+	User
+	DocumentVersion
+}
+
+and if the database response will be:
+
+id | name | id | name | id | created_at
+---+------+----+------+----+-----------
+1  | n1   | 13 | n2   | 34 | 12:34
+
+then you will get response:
+
+var out = GetDocumentResp{
+	Document: Document{
+		ID: 1,
+		Name: "n1",
+	},
+	User: User{
+		ID: 13,
+		Name: "n2",
+	},
+	DocumentVersion: DocumentVersion{
+		ID: 34,
+		CreatedAt: "12:34",
+	},
+}
+
+It is not a solution to process array of DocumentPermissions. If you don't want
+to use embed structs, you should redefine a mapping like:
+
+func (r *GetDocumentResp) ProcessRow(rowMap sal.RowMap) {
+ rowMap.Set("name", r.Owner.User.Name)
+}
+
+but in your case it's not suitable.

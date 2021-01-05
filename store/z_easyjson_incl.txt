@@ -1,0 +1,41 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/corestoreio/pkg/store
+BenchmarkService_Json_Encoding/easyjsonMEJ_____-4         	  110478	     10704 ns/op	    5925 B/op	      30 allocs/op
+BenchmarkService_Json_Encoding/easyjsonMEJ_____-4         	  112952	     10659 ns/op	    5926 B/op	      30 allocs/op
+BenchmarkService_Json_Encoding/easyjsonMEJ_____-4         	  112575	     10664 ns/op	    5926 B/op	      30 allocs/op
+BenchmarkService_Json_Encoding/stdlibNewEncoder-4         	   27379	     43844 ns/op	    6148 B/op	      36 allocs/op
+BenchmarkService_Json_Encoding/stdlibNewEncoder-4         	   27397	     43787 ns/op	    6148 B/op	      36 allocs/op
+BenchmarkService_Json_Encoding/stdlibNewEncoder-4         	   27210	     44108 ns/op	    6150 B/op	      36 allocs/op
+BenchmarkService_Json_Encoding/segmentioNewEncoder-4      	   35367	     33973 ns/op	    5992 B/op	      32 allocs/op
+BenchmarkService_Json_Encoding/segmentioNewEncoder-4      	   35286	     37327 ns/op	    5992 B/op	      32 allocs/op
+BenchmarkService_Json_Encoding/segmentioNewEncoder-4      	   35376	     34040 ns/op	    5992 B/op	      32 allocs/op
+BenchmarkService_Json_Encoding/stdlibMarshal-4            	   26497	     45268 ns/op	   11032 B/op	      37 allocs/op
+BenchmarkService_Json_Encoding/stdlibMarshal-4            	   26498	     45249 ns/op	   11034 B/op	      37 allocs/op
+BenchmarkService_Json_Encoding/stdlibMarshal-4            	   26559	     45953 ns/op	   11038 B/op	      37 allocs/op
+BenchmarkService_Json_Encoding/segmentioMarshal-4         	   34323	     35232 ns/op	   10875 B/op	      33 allocs/op
+BenchmarkService_Json_Encoding/segmentioMarshal-4         	   34686	     34661 ns/op	   10877 B/op	      33 allocs/op
+BenchmarkService_Json_Encoding/segmentioMarshal-4         	   34839	     34716 ns/op	   10874 B/op	      33 allocs/op
+BenchmarkService_Json_Encoding/jsoniterFastestStream-4    	  105936	     11262 ns/op	    5959 B/op	      31 allocs/op
+BenchmarkService_Json_Encoding/jsoniterFastestStream-4    	  106156	     11308 ns/op	    5958 B/op	      31 allocs/op
+BenchmarkService_Json_Encoding/jsoniterFastestStream-4    	  106377	     11285 ns/op	    5960 B/op	      31 allocs/op
+BenchmarkService_Json_Decoding/easyjson_______-4          	   30956	     38765 ns/op	    8080 B/op	     202 allocs/op
+BenchmarkService_Json_Decoding/easyjson_______-4          	   30892	     38837 ns/op	    8080 B/op	     202 allocs/op
+BenchmarkService_Json_Decoding/easyjson_______-4          	   30891	     38806 ns/op	    8080 B/op	     202 allocs/op
+BenchmarkService_Json_Decoding/stdlibNewDecoder-4         	   10000	    108983 ns/op	   39472 B/op	     218 allocs/op
+BenchmarkService_Json_Decoding/stdlibNewDecoder-4         	   10000	    109044 ns/op	   39472 B/op	     218 allocs/op
+BenchmarkService_Json_Decoding/stdlibNewDecoder-4         	   10000	    109144 ns/op	   39472 B/op	     218 allocs/op
+BenchmarkService_Json_Decoding/segmentioNewDecoder-4      	   15368	     77851 ns/op	   40928 B/op	     205 allocs/op
+BenchmarkService_Json_Decoding/segmentioNewDecoder-4      	   15382	     78086 ns/op	   40928 B/op	     205 allocs/op
+BenchmarkService_Json_Decoding/segmentioNewDecoder-4      	   15352	     78080 ns/op	   40928 B/op	     205 allocs/op
+BenchmarkService_Json_Decoding/stdlibUnmarshal-4          	   12411	     96700 ns/op	    8400 B/op	     208 allocs/op
+BenchmarkService_Json_Decoding/stdlibUnmarshal-4          	   12393	     96761 ns/op	    8400 B/op	     208 allocs/op
+BenchmarkService_Json_Decoding/stdlibUnmarshal-4          	   12399	     96764 ns/op	    8400 B/op	     208 allocs/op
+BenchmarkService_Json_Decoding/segmentioUnmarshal-4       	   21540	     55605 ns/op	    8112 B/op	     203 allocs/op
+BenchmarkService_Json_Decoding/segmentioUnmarshal-4       	   20421	     55570 ns/op	    8112 B/op	     203 allocs/op
+BenchmarkService_Json_Decoding/segmentioUnmarshal-4       	   21562	     55666 ns/op	    8112 B/op	     203 allocs/op
+BenchmarkService_Json_Decoding/jsoniterFastestStream-4    	   16737	     71586 ns/op	   45888 B/op	     514 allocs/op
+BenchmarkService_Json_Decoding/jsoniterFastestStream-4    	   16705	     72049 ns/op	   45888 B/op	     514 allocs/op
+BenchmarkService_Json_Decoding/jsoniterFastestStream-4    	   16754	     71692 ns/op	   45888 B/op	     514 allocs/op
+PASS
+ok  	github.com/corestoreio/pkg/store	59.894s

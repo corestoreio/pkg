@@ -1,0 +1,37 @@
+
+https://www.reddit.com/r/golang/comments/8j3219/anyone_using_gorm_in_production_is_it_slow/
+
+https://www.reddit.com/r/golang/comments/8iilnv/top_1000_githubcom_go_repositories_sorted_by/dysp66y/
+
+rv77ax 5 points·2 days ago·edited 2 days ago
+
+Personally, I don't like ORM in general. That's unpopular opinion that most of
+devs will disagree with me. This dislike caused by some ORM implementation
+select all row and and do filter internally. For example, if you do select on
+table A where Id = 1, a bad ORM implementation will select all row in table A
+(which cause large memory usage on your application) and then filter the result
+internally.
+
+That is just select operation. If you use a lot of join, it would get worse.
+Gorm maybe not like that.
+
+Not all operation is just select, update, and delete. Sometimes we need subquery
+(select from select) or complex join that requires more time to debug and test
+when using ORM syntax rather using plain SQL. GORM maybe not like that.
+
+You build web apps with microservices. Current data flow with gorm is: db ->
+gorm -> protobuf -> JSON. I still can't understand why you need middleman (in
+this case gorm) while you can bind the result of query to protobuf struct
+directly, so the process could be simple: db -> protobuf -> JSON.
+
+Gorm will not update column if the value is false. The documentation about this
+feature is deep down on their docs, you will not find it until you get bitten by
+it. Either you end up using map (which is worse performance) or you use db.Raw
+SQL for update directly.
+
+In the end, in my personal conclusion, the promise that any ORM provided is not
+worth it.
+
+
+https://github.com/alecthomas/go_serialization_benchmarks
+https://www.reddit.com/r/golang/comments/9ad4dp/experiences_with_grpc/
