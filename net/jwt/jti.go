@@ -18,7 +18,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/conv"
 	"github.com/corestoreio/pkg/util/csjwt"
-	"github.com/corestoreio/pkg/util/shortid"
+	"github.com/teris-io/shortid"
 )
 
 // IDGenerator represents the interface to generate a new UUID aka JWT ID.

@@ -34,7 +34,7 @@ const (
 type Service struct {
 	service
 	// JTI generates for each token a new ID. It panics on nil. Default ID
-	// generator runs in package util/shortid.
+	// generator runs in package "github.com/teris-io/shortid".
 	JTI IDGenerator
 	// Blocklist concurrent safe black list service which handles blocked
 	// tokens. Default black hole storage. Must be thread safe.
