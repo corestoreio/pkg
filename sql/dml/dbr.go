@@ -66,8 +66,6 @@ type cachedSQL struct {
 
 func noopMapTableNameFn(oldName string) string { return oldName }
 
-func noopResultCheckFn(_ sql.Result, err error) error { return err }
-
 func prepareQueryBuilder(mapTableNameFn func(oldName string) (newName string), qb QueryBuilder) {
 	if mapTableNameFn == nil {
 		mapTableNameFn = noopMapTableNameFn
@@ -176,7 +174,7 @@ type DBR struct {
 	previousErr error
 	// ResultCheckFn custom function to check for affected rows or last insert ID.
 	// Only used in generated code.
-	ResultCheckFn func(sql.Result, error) error
+	ResultCheckFn func(tableName string, expectedAffectedRows int, res sql.Result, err error) error
 
 	// QualifiedColumnsAliases allows to overwrite the internal qualified
 	// columns slice with custom names. Only in the use case when records are
@@ -1405,6 +1403,42 @@ func ExecValidateOneAffectedRow(res sql.Result, err error) error {
 		return errors.NotValid.Newf("[dml] ExecValidateOneAffectedRow can't validate affected rows. Have %d Want %d", rowCount, expectedAffectedRows)
 	}
 	return nil
+}
+
+// DBRValidateMinOneAffectedRow is an option argument to provide a basic helper
+// function to check that at least one row has been deleted.
+func DBRValidateMinAffectedRow(minExpectedRows int64) DBRFunc {
+	return func(dbr *DBR) {
+		dbr.ResultCheckFn = func(tableName string, _ int, res sql.Result, err error) error {
+			if err != nil {
+				return errors.WithStack(err)
+			}
+			rowCount, err := res.RowsAffected()
+			if err == nil && rowCount < minExpectedRows {
+				err = errors.NotValid.Newf("[dml] %q can't validate affected rows. Have %d MinWant %d", tableName, rowCount, minExpectedRows)
+			}
+			return err
+		}
+	}
+}
+
+func DBRWithTx(tx *Tx, opts []DBRFunc) []DBRFunc {
+	return append(opts, func(dbr *DBR) {
+		dbr.DB = tx.DB
+	})
+}
+
+func strictAffectedRowsResultCheck(tableName string, expectedAffectedRows int, res sql.Result, err error) error {
+	if err != nil || expectedAffectedRows < 0 {
+		return err
+	}
+
+	ar, err := res.RowsAffected()
+	if err == nil && ar != int64(expectedAffectedRows) {
+		err = errors.NotValid.Newf("[dml] %q can't validate affected rows. Have %d MinWant %d", tableName, ar, expectedAffectedRows)
+	}
+
+	return err
 }
 
 // StaticSQLResult implements sql.Result for mocking reasons.

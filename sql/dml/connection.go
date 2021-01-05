@@ -250,17 +250,14 @@ func withExecSQL(ctx context.Context, event uint8, sqlQuery ...string) ConnPoolO
 				return err
 
 			default:
-				fns := make([]func(*Tx) error, len(sqlQuery))
-				for i, sq := range sqlQuery {
-					sq := sq // prevent bug while scoping
-					fns[i] = func(tx *Tx) error {
+				return c.Transaction(ctx, nil, func(tx *Tx) error {
+					for i, sq := range sqlQuery {
 						if _, err := tx.DB.ExecContext(ctx, sq); err != nil {
-							return errors.Wrapf(err, "[dml] WithInitialExecSQL Query: %q", sq)
+							return errors.Wrapf(err, "[dml] WithInitialExecSQL Query at index %d", i)
 						}
-						return nil
 					}
-				}
-				return c.Transaction(ctx, &sql.TxOptions{}, fns...)
+					return nil
+				})
 			}
 		},
 	}
@@ -559,7 +556,7 @@ func (qc *queryCache) initDBRCacheKey(
 	dbr := &DBR{
 		customCacheKey: cacheKey,
 		DB:             db,
-		ResultCheckFn:  noopResultCheckFn,
+		ResultCheckFn:  strictAffectedRowsResultCheck,
 		isPrepared:     isPrepared,
 	}
 	for _, opt := range opts {
@@ -621,7 +618,7 @@ func (qc *queryCache) initDBRQB(
 	dbr := &DBR{
 		customCacheKey: hashSQL(rawSQL),
 		DB:             db,
-		ResultCheckFn:  noopResultCheckFn,
+		ResultCheckFn:  strictAffectedRowsResultCheck,
 		isPrepared:     isPrepared,
 	}
 
@@ -766,30 +763,29 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 // 			func(tx *dml.Tx) error {
 //          	// SQL
 // 		        return nil
-//      	}[,
-// 			func(tx *dml.Tx) error {
-//          	// more SQL
-// 		        return nil
-//      	},]
+//      	}
 // 		); err != nil{
 //           panic(err.Error()) // you could gracefully handle the error also
 //      }
 // It logs the time taken, if a logger has been set with Debug logging enabled.
 // The provided context gets used only for starting the transaction.
-func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fns ...func(*Tx) error) error {
+func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fn func(*Tx) error) (err error) {
 	tx, err := c.BeginTx(ctx, opts)
 	if err != nil {
 		return err
 	}
-	for i, f := range fns {
-		if err := f(tx); err != nil {
-			err = errors.Wrapf(err, "[dml] ConnPool.Transaction.error at index %d", i)
-			if rErr := tx.Rollback(); rErr != nil && err == nil {
-				err = errors.Wrapf(rErr, "[dml] ConnPool.Transaction.Rollback.error at index %d", i)
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				err = errors.Wrapf(err, "Rollback failed too: %+v", rbErr)
 			}
-			return err
 		}
+	}()
+
+	if err = fn(tx); err != nil {
+		return errors.WithStack(err)
 	}
+
 	return errors.WithStack(tx.Commit())
 }
 

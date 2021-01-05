@@ -422,3 +422,12 @@ func (mockSQLRes) LastInsertId() (int64, error) {
 func (m mockSQLRes) RowsAffected() (int64, error) {
 	return m.int64, m.error
 }
+
+func TestDBRValidateMinAffectedRow(t *testing.T) {
+	dbr := &DBR{}
+	DBRValidateMinAffectedRow(2)(dbr)
+	err := dbr.ResultCheckFn("TableName", 0, StaticSQLResult{Rows: 2}, nil)
+	assert.NoError(t, err)
+	err = dbr.ResultCheckFn("TableName", 0, StaticSQLResult{Rows: 1}, nil)
+	assert.ErrorIsKind(t, errors.NotValid, err)
+}
