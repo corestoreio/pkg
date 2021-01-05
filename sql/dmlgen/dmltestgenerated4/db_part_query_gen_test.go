@@ -31,7 +31,7 @@ func TestNewDBManagerDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
 	var ps *pseudo.Service
-	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6},
+	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6},
 		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),

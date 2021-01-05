@@ -21,7 +21,7 @@ import (
 )
 
 func TestNewDBManagerNonDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6})
 	_ = ps
 	t.Run("CatalogProductIndexEAVDecimalIDX_Empty", func(t *testing.T) {
 		e := new(CatalogProductIndexEAVDecimalIDX)
@@ -185,7 +185,7 @@ func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	err = tbls.Validate(ctx)
 	assert.NoError(t, err)
 	var ps *pseudo.Service
-	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6},
+	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6},
 		pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {
 			return 1, nil
 		}),
@@ -303,22 +303,11 @@ func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.ExactlyLength(t, 255, &entIn.City, &entOut.City, "IDX%d: City should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Company, &entOut.Company, "IDX%d: Company should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.CountryID, &entOut.CountryID, "IDX%d: CountryID should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Fax, &entOut.Fax, "IDX%d: Fax should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Middlename, &entOut.Middlename, "IDX%d: Middlename should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Postcode, &entOut.Postcode, "IDX%d: Postcode should match", lID)
-			assert.ExactlyLength(t, 40, &entIn.Prefix, &entOut.Prefix, "IDX%d: Prefix should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Region, &entOut.Region, "IDX%d: Region should match", lID)
-			assert.Exactly(t, entIn.RegionID, entOut.RegionID, "IDX%d: RegionID should match", lID)
 			assert.ExactlyLength(t, 65535, &entIn.Street, &entOut.Street, "IDX%d: Street should match", lID)
-			assert.ExactlyLength(t, 40, &entIn.Suffix, &entOut.Suffix, "IDX%d: Suffix should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Telephone, &entOut.Telephone, "IDX%d: Telephone should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.VatID, &entOut.VatID, "IDX%d: VatID should match", lID)
-			assert.Exactly(t, entIn.VatIsValid, entOut.VatIsValid, "IDX%d: VatIsValid should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.VatRequestDate, &entOut.VatRequestDate, "IDX%d: VatRequestDate should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.VatRequestID, &entOut.VatRequestID, "IDX%d: VatRequestID should match", lID)
-			assert.Exactly(t, entIn.VatRequestSuccess, entOut.VatRequestSuccess, "IDX%d: VatRequestSuccess should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
 		entCol := NewCustomerAddressEntities()
@@ -354,24 +343,16 @@ func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 			assert.Exactly(t, entIn.WebsiteID, entOut.WebsiteID, "IDX%d: WebsiteID should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Email, &entOut.Email, "IDX%d: Email should match", lID)
 			assert.Exactly(t, entIn.GroupID, entOut.GroupID, "IDX%d: GroupID should match", lID)
-			assert.ExactlyLength(t, 50, &entIn.IncrementID, &entOut.IncrementID, "IDX%d: IncrementID should match", lID)
 			assert.Exactly(t, entIn.StoreID, entOut.StoreID, "IDX%d: StoreID should match", lID)
 			assert.Exactly(t, entIn.IsActive, entOut.IsActive, "IDX%d: IsActive should match", lID)
-			assert.Exactly(t, entIn.DisableAutoGroupChange, entOut.DisableAutoGroupChange, "IDX%d: DisableAutoGroupChange should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.CreatedIn, &entOut.CreatedIn, "IDX%d: CreatedIn should match", lID)
-			assert.ExactlyLength(t, 40, &entIn.Prefix, &entOut.Prefix, "IDX%d: Prefix should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Firstname, &entOut.Firstname, "IDX%d: Firstname should match", lID)
-			assert.ExactlyLength(t, 255, &entIn.Middlename, &entOut.Middlename, "IDX%d: Middlename should match", lID)
 			assert.ExactlyLength(t, 255, &entIn.Lastname, &entOut.Lastname, "IDX%d: Lastname should match", lID)
-			assert.ExactlyLength(t, 40, &entIn.Suffix, &entOut.Suffix, "IDX%d: Suffix should match", lID)
 			assert.ExactlyLength(t, 128, &entIn.passwordHash, &entOut.passwordHash, "IDX%d: passwordHash should match", lID)
 			assert.ExactlyLength(t, 128, &entIn.RpToken, &entOut.RpToken, "IDX%d: RpToken should match", lID)
 			assert.Exactly(t, entIn.DefaultBilling, entOut.DefaultBilling, "IDX%d: DefaultBilling should match", lID)
 			assert.Exactly(t, entIn.DefaultShipping, entOut.DefaultShipping, "IDX%d: DefaultShipping should match", lID)
-			assert.ExactlyLength(t, 50, &entIn.Taxvat, &entOut.Taxvat, "IDX%d: Taxvat should match", lID)
-			assert.ExactlyLength(t, 64, &entIn.Confirmation, &entOut.Confirmation, "IDX%d: Confirmation should match", lID)
 			assert.Exactly(t, entIn.Gender, entOut.Gender, "IDX%d: Gender should match", lID)
-			assert.Exactly(t, entIn.FailuresNum, entOut.FailuresNum, "IDX%d: FailuresNum should match", lID)
 		}
 		dmltest.Close(t, entINSERTStmtA)
 		entCol := NewCustomerEntities()

@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewDBManagerNonDB_48a8450c0b62e880b2d40acd0bbbd0dc(t *testing.T) {
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6})
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6})
 	_ = ps
 	t.Run("CoreConfiguration_Empty", func(t *testing.T) {
 		e := new(CoreConfiguration)

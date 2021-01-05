@@ -14,7 +14,7 @@ func (g *Generator) fnTestMainOther(testGen *codegen.Go, tbls tables) {
 
 	testGen.Pln(`func TestNewDBManagerNonDB_` + tbls.nameID() + `(t *testing.T) {`)
 	{
-		testGen.Pln(`ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6})`)
+		testGen.Pln(`ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de",MaxFloatDecimals:6})`)
 		// If some features haven't been enabled, then there are no tests so
 		// assign ps to underscore to avoid the unused variable error.
 		// Alternatively figure out how not to print the whole test function at
@@ -60,14 +60,14 @@ func (g *Generator) fnTestMainDB(testGen *codegen.Go, tbls tables) {
 		testGen.Pln(`err = tbls.Validate(ctx)`)
 		testGen.Pln(`assert.NoError(t, err)`)
 		testGen.Pln(`var ps *pseudo.Service`)
-		testGen.Pln(`ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de",FloatMaxDecimals:6},`)
+		testGen.Pln(`ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de",MaxFloatDecimals:6},`)
 		testGen.In()
-		testGen.Pln(`pseudo.WithTagFakeFunc("website_id", func(maxLen int) (interface{}, error) {`)
-		testGen.Pln(`    return 1, nil`)
+		testGen.Pln(`pseudo.WithTagFakeFunc("website_id", func(maxLen int) interface{} {`)
+		testGen.Pln(`    return 1`)
 		testGen.Pln(`}),`)
 
-		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) (interface{}, error) {`)
-		testGen.Pln(`    return 1, nil`)
+		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) interface{} {`)
+		testGen.Pln(`    return 1`)
 		testGen.Pln(`}),`)
 		if fn, ok := g.customCode["pseudo.MustNewService.Option"]; ok {
 			fn(g, nil, testGen)

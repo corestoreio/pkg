@@ -150,8 +150,8 @@ type DBM struct {
 	option DBMOption
 }
 
-func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, ec *CoreConfigurations, e *CoreConfiguration) error {
-	if len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *CoreConfigurations, e *CoreConfiguration) error {
+	if len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventCoreConfigurationFunc[ef] {
@@ -162,8 +162,8 @@ func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag,
 	return nil
 }
 
-func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
-	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
+	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventSalesOrderStatusStateFunc[ef] {
@@ -174,8 +174,8 @@ func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventF
 	return nil
 }
 
-func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
-	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
+	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventViewCustomerAutoIncrementFunc[ef] {
@@ -299,8 +299,9 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	if e == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -309,20 +310,21 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	if _, err = dbm.ConnPool.WithCacheKey("CoreConfigurationSelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK", opts...).ExecContext(ctx, e.ConfigID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -332,13 +334,14 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -348,13 +351,14 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -364,13 +368,14 @@ func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -446,8 +451,9 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs ConfigID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -462,20 +468,21 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -485,7 +492,8 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -503,20 +511,21 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -526,13 +535,14 @@ func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dm
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -604,8 +614,9 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	if e == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs arg.Status,arg.State into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -614,7 +625,7 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	if _, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateSelectByPK", opts...).Load(ctx, e, arg.Status, arg.State); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 // IsSet returns true if the entity has non-empty primary keys.
@@ -688,8 +699,9 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 	if cc == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs Status,State into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -708,7 +720,7 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 	if _, err = dbm.ConnPool.WithCacheKey(cacheKey, opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 // Each will run function f on all items in []* SalesOrderStatusState . Auto
@@ -789,8 +801,9 @@ func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryK
 	if e == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -799,7 +812,7 @@ func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryK
 	if _, err = dbm.ConnPool.WithCacheKey("ViewCustomerAutoIncrementSelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 // IsSet returns true if the entity has non-empty primary keys.
@@ -856,8 +869,9 @@ func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkID
 	if cc == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs CeEntityID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -872,7 +886,7 @@ func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkID
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 // Each will run function f on all items in []* ViewCustomerAutoIncrement . Auto

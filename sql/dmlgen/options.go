@@ -93,6 +93,7 @@ type ForeignKeyOptions struct {
 // Store struct won't or will have a field pointing to the
 // CustomerEntityCollection (1:M relationship).
 // Setting includeRelationShips to nil will include all relationships.
+// Wildcards are supported.
 func WithForeignKeyRelationships(ctx context.Context, db dml.Querier, o ForeignKeyOptions) (opt Option) {
 	opt.sortOrder = 210 // must run at the end or where the end is near ;-)
 	opt.fn = func(g *Generator) (err error) {

@@ -53,61 +53,40 @@ var Columns = struct {
 		VersionTe string
 	}
 	CustomerAddressEntity struct {
-		EntityID          string
-		IncrementID       string
-		ParentID          string
-		CreatedAt         string
-		UpdatedAt         string
-		IsActive          string
-		City              string
-		Company           string
-		CountryID         string
-		Fax               string
-		Firstname         string
-		Lastname          string
-		Middlename        string
-		Postcode          string
-		Prefix            string
-		Region            string
-		RegionID          string
-		Street            string
-		Suffix            string
-		Telephone         string
-		VatID             string
-		VatIsValid        string
-		VatRequestDate    string
-		VatRequestID      string
-		VatRequestSuccess string
+		EntityID    string
+		IncrementID string
+		ParentID    string
+		CreatedAt   string
+		UpdatedAt   string
+		IsActive    string
+		City        string
+		Company     string
+		CountryID   string
+		Firstname   string
+		Lastname    string
+		Postcode    string
+		Region      string
+		Street      string
 	}
 	CustomerEntity struct {
-		EntityID               string
-		WebsiteID              string
-		Email                  string
-		GroupID                string
-		IncrementID            string
-		StoreID                string
-		CreatedAt              string
-		UpdatedAt              string
-		IsActive               string
-		DisableAutoGroupChange string
-		CreatedIn              string
-		Prefix                 string
-		Firstname              string
-		Middlename             string
-		Lastname               string
-		Suffix                 string
-		Dob                    string
-		PasswordHash           string
-		RpToken                string
-		RpTokenCreatedAt       string
-		DefaultBilling         string
-		DefaultShipping        string
-		Taxvat                 string
-		Confirmation           string
-		Gender                 string
-		FailuresNum            string
-		FirstFailure           string
-		LockExpires            string
+		EntityID         string
+		WebsiteID        string
+		Email            string
+		GroupID          string
+		StoreID          string
+		CreatedAt        string
+		UpdatedAt        string
+		IsActive         string
+		CreatedIn        string
+		Firstname        string
+		Lastname         string
+		Dob              string
+		PasswordHash     string
+		RpToken          string
+		RpTokenCreatedAt string
+		DefaultBilling   string
+		DefaultShipping  string
+		Gender           string
 	}
 	DmlgenTypes struct {
 		ID             string
@@ -205,116 +184,74 @@ var Columns = struct {
 		VersionTe: "version_te",
 	},
 	CustomerAddressEntity: struct {
-		EntityID          string
-		IncrementID       string
-		ParentID          string
-		CreatedAt         string
-		UpdatedAt         string
-		IsActive          string
-		City              string
-		Company           string
-		CountryID         string
-		Fax               string
-		Firstname         string
-		Lastname          string
-		Middlename        string
-		Postcode          string
-		Prefix            string
-		Region            string
-		RegionID          string
-		Street            string
-		Suffix            string
-		Telephone         string
-		VatID             string
-		VatIsValid        string
-		VatRequestDate    string
-		VatRequestID      string
-		VatRequestSuccess string
+		EntityID    string
+		IncrementID string
+		ParentID    string
+		CreatedAt   string
+		UpdatedAt   string
+		IsActive    string
+		City        string
+		Company     string
+		CountryID   string
+		Firstname   string
+		Lastname    string
+		Postcode    string
+		Region      string
+		Street      string
 	}{
-		EntityID:          "entity_id",
-		IncrementID:       "increment_id",
-		ParentID:          "parent_id",
-		CreatedAt:         "created_at",
-		UpdatedAt:         "updated_at",
-		IsActive:          "is_active",
-		City:              "city",
-		Company:           "company",
-		CountryID:         "country_id",
-		Fax:               "fax",
-		Firstname:         "firstname",
-		Lastname:          "lastname",
-		Middlename:        "middlename",
-		Postcode:          "postcode",
-		Prefix:            "prefix",
-		Region:            "region",
-		RegionID:          "region_id",
-		Street:            "street",
-		Suffix:            "suffix",
-		Telephone:         "telephone",
-		VatID:             "vat_id",
-		VatIsValid:        "vat_is_valid",
-		VatRequestDate:    "vat_request_date",
-		VatRequestID:      "vat_request_id",
-		VatRequestSuccess: "vat_request_success",
+		EntityID:    "entity_id",
+		IncrementID: "increment_id",
+		ParentID:    "parent_id",
+		CreatedAt:   "created_at",
+		UpdatedAt:   "updated_at",
+		IsActive:    "is_active",
+		City:        "city",
+		Company:     "company",
+		CountryID:   "country_id",
+		Firstname:   "firstname",
+		Lastname:    "lastname",
+		Postcode:    "postcode",
+		Region:      "region",
+		Street:      "street",
 	},
 	CustomerEntity: struct {
-		EntityID               string
-		WebsiteID              string
-		Email                  string
-		GroupID                string
-		IncrementID            string
-		StoreID                string
-		CreatedAt              string
-		UpdatedAt              string
-		IsActive               string
-		DisableAutoGroupChange string
-		CreatedIn              string
-		Prefix                 string
-		Firstname              string
-		Middlename             string
-		Lastname               string
-		Suffix                 string
-		Dob                    string
-		PasswordHash           string
-		RpToken                string
-		RpTokenCreatedAt       string
-		DefaultBilling         string
-		DefaultShipping        string
-		Taxvat                 string
-		Confirmation           string
-		Gender                 string
-		FailuresNum            string
-		FirstFailure           string
-		LockExpires            string
+		EntityID         string
+		WebsiteID        string
+		Email            string
+		GroupID          string
+		StoreID          string
+		CreatedAt        string
+		UpdatedAt        string
+		IsActive         string
+		CreatedIn        string
+		Firstname        string
+		Lastname         string
+		Dob              string
+		PasswordHash     string
+		RpToken          string
+		RpTokenCreatedAt string
+		DefaultBilling   string
+		DefaultShipping  string
+		Gender           string
 	}{
-		EntityID:               "entity_id",
-		WebsiteID:              "website_id",
-		Email:                  "email",
-		GroupID:                "group_id",
-		IncrementID:            "increment_id",
-		StoreID:                "store_id",
-		CreatedAt:              "created_at",
-		UpdatedAt:              "updated_at",
-		IsActive:               "is_active",
-		DisableAutoGroupChange: "disable_auto_group_change",
-		CreatedIn:              "created_in",
-		Prefix:                 "prefix",
-		Firstname:              "firstname",
-		Middlename:             "middlename",
-		Lastname:               "lastname",
-		Suffix:                 "suffix",
-		Dob:                    "dob",
-		PasswordHash:           "password_hash",
-		RpToken:                "rp_token",
-		RpTokenCreatedAt:       "rp_token_created_at",
-		DefaultBilling:         "default_billing",
-		DefaultShipping:        "default_shipping",
-		Taxvat:                 "taxvat",
-		Confirmation:           "confirmation",
-		Gender:                 "gender",
-		FailuresNum:            "failures_num",
-		FirstFailure:           "first_failure",
-		LockExpires:            "lock_expires",
+		EntityID:         "entity_id",
+		WebsiteID:        "website_id",
+		Email:            "email",
+		GroupID:          "group_id",
+		StoreID:          "store_id",
+		CreatedAt:        "created_at",
+		UpdatedAt:        "updated_at",
+		IsActive:         "is_active",
+		CreatedIn:        "created_in",
+		Firstname:        "firstname",
+		Lastname:         "lastname",
+		Dob:              "dob",
+		PasswordHash:     "password_hash",
+		RpToken:          "rp_token",
+		RpTokenCreatedAt: "rp_token_created_at",
+		DefaultBilling:   "default_billing",
+		DefaultShipping:  "default_shipping",
+		Gender:           "gender",
 	},
 	DmlgenTypes: struct {
 		ID             string
@@ -548,8 +485,8 @@ type DBM struct {
 	option DBMOption
 }
 
-func (dbm DBM) eventCatalogProductIndexEAVDecimalIDXFunc(ctx context.Context, ef dml.EventFlag, ec *CatalogProductIndexEAVDecimalIDXes, e *CatalogProductIndexEAVDecimalIDX) error {
-	if len(dbm.option.eventCatalogProductIndexEAVDecimalIDXFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventCatalogProductIndexEAVDecimalIDXFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *CatalogProductIndexEAVDecimalIDXes, e *CatalogProductIndexEAVDecimalIDX) error {
+	if len(dbm.option.eventCatalogProductIndexEAVDecimalIDXFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventCatalogProductIndexEAVDecimalIDXFunc[ef] {
@@ -560,8 +497,8 @@ func (dbm DBM) eventCatalogProductIndexEAVDecimalIDXFunc(ctx context.Context, ef
 	return nil
 }
 
-func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, ec *CoreConfigurations, e *CoreConfiguration) error {
-	if len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *CoreConfigurations, e *CoreConfiguration) error {
+	if len(dbm.option.eventCoreConfigurationFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventCoreConfigurationFunc[ef] {
@@ -572,8 +509,8 @@ func (dbm DBM) eventCoreConfigurationFunc(ctx context.Context, ef dml.EventFlag,
 	return nil
 }
 
-func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventFlag, ec *CustomerAddressEntities, e *CustomerAddressEntity) error {
-	if len(dbm.option.eventCustomerAddressEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *CustomerAddressEntities, e *CustomerAddressEntity) error {
+	if len(dbm.option.eventCustomerAddressEntityFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventCustomerAddressEntityFunc[ef] {
@@ -584,8 +521,8 @@ func (dbm DBM) eventCustomerAddressEntityFunc(ctx context.Context, ef dml.EventF
 	return nil
 }
 
-func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, ec *CustomerEntities, e *CustomerEntity) error {
-	if len(dbm.option.eventCustomerEntityFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *CustomerEntities, e *CustomerEntity) error {
+	if len(dbm.option.eventCustomerEntityFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventCustomerEntityFunc[ef] {
@@ -596,8 +533,8 @@ func (dbm DBM) eventCustomerEntityFunc(ctx context.Context, ef dml.EventFlag, ec
 	return nil
 }
 
-func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, ec *DmlgenTypesCollection, e *DmlgenTypes) error {
-	if len(dbm.option.eventDmlgenTypesFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *DmlgenTypesCollection, e *DmlgenTypes) error {
+	if len(dbm.option.eventDmlgenTypesFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventDmlgenTypesFunc[ef] {
@@ -608,8 +545,8 @@ func (dbm DBM) eventDmlgenTypesFunc(ctx context.Context, ef dml.EventFlag, ec *D
 	return nil
 }
 
-func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
-	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *SalesOrderStatusStates, e *SalesOrderStatusState) error {
+	if len(dbm.option.eventSalesOrderStatusStateFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventSalesOrderStatusStateFunc[ef] {
@@ -620,8 +557,8 @@ func (dbm DBM) eventSalesOrderStatusStateFunc(ctx context.Context, ef dml.EventF
 	return nil
 }
 
-func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
-	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *ViewCustomerAutoIncrements, e *ViewCustomerAutoIncrement) error {
+	if len(dbm.option.eventViewCustomerAutoIncrementFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventViewCustomerAutoIncrementFunc[ef] {
@@ -632,8 +569,8 @@ func (dbm DBM) eventViewCustomerAutoIncrementFunc(ctx context.Context, ef dml.Ev
 	return nil
 }
 
-func (dbm DBM) eventViewCustomerNoAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, ec *ViewCustomerNoAutoIncrements, e *ViewCustomerNoAutoIncrement) error {
-	if len(dbm.option.eventViewCustomerNoAutoIncrementFunc[ef]) == 0 || dml.EventsAreSkipped(ctx) {
+func (dbm DBM) eventViewCustomerNoAutoIncrementFunc(ctx context.Context, ef dml.EventFlag, skipEvents bool, ec *ViewCustomerNoAutoIncrements, e *ViewCustomerNoAutoIncrement) error {
+	if len(dbm.option.eventViewCustomerNoAutoIncrementFunc[ef]) == 0 || skipEvents {
 		return nil
 	}
 	for _, fn := range dbm.option.eventViewCustomerNoAutoIncrementFunc[ef] {
@@ -835,8 +772,9 @@ func (e *CatalogProductIndexEAVDecimalIDX) Load(ctx context.Context, dbm *DBM, a
 	if e == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs arg.EntityID,arg.AttributeID,arg.StoreID,arg.SourceID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -845,7 +783,7 @@ func (e *CatalogProductIndexEAVDecimalIDX) Load(ctx context.Context, dbm *DBM, a
 	if _, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXSelectByPK", opts...).Load(ctx, e, arg.EntityID, arg.AttributeID, arg.StoreID, arg.SourceID); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -854,13 +792,14 @@ func (e *CatalogProductIndexEAVDecimalIDX) Delete(ctx context.Context, dbm *DBM,
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXDeleteByPK", opts...).ExecContext(ctx, e.EntityID, e.AttributeID, e.StoreID, e.SourceID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -872,13 +811,14 @@ func (e *CatalogProductIndexEAVDecimalIDX) Update(ctx context.Context, dbm *DBM,
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -890,13 +830,14 @@ func (e *CatalogProductIndexEAVDecimalIDX) Insert(ctx context.Context, dbm *DBM,
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -908,13 +849,14 @@ func (e *CatalogProductIndexEAVDecimalIDX) Upsert(ctx context.Context, dbm *DBM,
 	if e == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1055,8 +997,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *D
 	if cc == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID,AttributeID,StoreID,SourceID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -1077,7 +1020,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *D
 	if _, err = dbm.ConnPool.WithCacheKey(cacheKey, opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1086,13 +1029,14 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1104,7 +1048,8 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm 
 	if cc == nil {
 		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -1122,7 +1067,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm 
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1131,13 +1076,14 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1149,13 +1095,14 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpsert(ctx context.Context, dbm 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1377,8 +1324,9 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	if e == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -1387,7 +1335,7 @@ func (e *CoreConfiguration) Load(ctx context.Context, dbm *DBM, primaryKey uint3
 	if _, err = dbm.ConnPool.WithCacheKey("CoreConfigurationSelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1396,13 +1344,14 @@ func (e *CoreConfiguration) Delete(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK", opts...).ExecContext(ctx, e.ConfigID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1414,13 +1363,14 @@ func (e *CoreConfiguration) Update(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1432,13 +1382,14 @@ func (e *CoreConfiguration) Insert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1450,13 +1401,14 @@ func (e *CoreConfiguration) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DB
 	if e == nil {
 		return nil, errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1599,8 +1551,9 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfiguration can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs ConfigID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -1615,7 +1568,7 @@ func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1624,13 +1577,14 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1642,7 +1596,8 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	if cc == nil {
 		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -1660,7 +1615,7 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1669,13 +1624,14 @@ func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dm
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1687,13 +1643,14 @@ func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dm
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1829,31 +1786,20 @@ func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 // Table comment: Customer Address Entity
 //easyjson:json
 type CustomerAddressEntity struct {
-	EntityID          uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	IncrementID       null.String `max_len:"50"` // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	ParentID          null.Uint32 `max_len:"10"` // parent_id int(10) unsigned NULL MUL DEFAULT 'NULL'  "Parent ID"
-	CreatedAt         time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt         time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive          bool        `max_len:"5"`     // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	City              string      `max_len:"255"`   // city varchar(255) NOT NULL    "City"
-	Company           null.String `max_len:"255"`   // company varchar(255) NULL  DEFAULT 'NULL'  "Company"
-	CountryID         string      `max_len:"255"`   // country_id varchar(255) NOT NULL    "Country"
-	Fax               null.String `max_len:"255"`   // fax varchar(255) NULL  DEFAULT 'NULL'  "Fax"
-	Firstname         string      `max_len:"255"`   // firstname varchar(255) NOT NULL    "First Name"
-	Lastname          string      `max_len:"255"`   // lastname varchar(255) NOT NULL    "Last Name"
-	Middlename        null.String `max_len:"255"`   // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name"
-	Postcode          null.String `max_len:"255"`   // postcode varchar(255) NULL  DEFAULT 'NULL'  "Zip/Postal Code"
-	Prefix            null.String `max_len:"40"`    // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Region            null.String `max_len:"255"`   // region varchar(255) NULL  DEFAULT 'NULL'  "State/Province"
-	RegionID          null.Uint32 `max_len:"10"`    // region_id int(10) unsigned NULL  DEFAULT 'NULL'  "State/Province"
-	Street            string      `max_len:"65535"` // street text NOT NULL    "Street Address"
-	Suffix            null.String `max_len:"40"`    // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
-	Telephone         string      `max_len:"255"`   // telephone varchar(255) NOT NULL    "Phone Number"
-	VatID             null.String `max_len:"255"`   // vat_id varchar(255) NULL  DEFAULT 'NULL'  "VAT number"
-	VatIsValid        null.Bool   `max_len:"10"`    // vat_is_valid int(10) unsigned NULL  DEFAULT 'NULL'  "VAT number validity"
-	VatRequestDate    null.String `max_len:"255"`   // vat_request_date varchar(255) NULL  DEFAULT 'NULL'  "VAT number validation request date"
-	VatRequestID      null.String `max_len:"255"`   // vat_request_id varchar(255) NULL  DEFAULT 'NULL'  "VAT number validation request ID"
-	VatRequestSuccess null.Uint32 `max_len:"10"`    // vat_request_success int(10) unsigned NULL  DEFAULT 'NULL'  "VAT number validation request success"
+	EntityID    uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	IncrementID null.String `max_len:"50"` // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
+	ParentID    null.Uint32 `max_len:"10"` // parent_id int(10) unsigned NULL MUL DEFAULT 'NULL'  "Parent ID"
+	CreatedAt   time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt   time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive    bool        `max_len:"5"`     // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	City        string      `max_len:"255"`   // city varchar(255) NOT NULL    "City"
+	Company     null.String `max_len:"255"`   // company varchar(255) NULL  DEFAULT 'NULL'  "Company"
+	CountryID   string      `max_len:"255"`   // country_id varchar(255) NOT NULL    "Country"
+	Firstname   string      `max_len:"255"`   // firstname varchar(255) NOT NULL    "First Name"
+	Lastname    string      `max_len:"255"`   // lastname varchar(255) NOT NULL    "Last Name"
+	Postcode    null.String `max_len:"255"`   // postcode varchar(255) NULL  DEFAULT 'NULL'  "Zip/Postal Code"
+	Region      null.String `max_len:"255"`   // region varchar(255) NULL  DEFAULT 'NULL'  "State/Province"
+	Street      string      `max_len:"65535"` // street text NOT NULL    "Street Address"
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -1874,7 +1820,7 @@ func (e *CustomerAddressEntity) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
-	for cm.Next(25) {
+	for cm.Next(14) {
 		switch c := cm.Column(); c {
 		case "entity_id", "0":
 			cm.Uint32(&e.EntityID)
@@ -1894,38 +1840,16 @@ func (e *CustomerAddressEntity) MapColumns(cm *dml.ColumnMap) error {
 			cm.NullString(&e.Company)
 		case "country_id", "8":
 			cm.String(&e.CountryID)
-		case "fax", "9":
-			cm.NullString(&e.Fax)
-		case "firstname", "10":
+		case "firstname", "9":
 			cm.String(&e.Firstname)
-		case "lastname", "11":
+		case "lastname", "10":
 			cm.String(&e.Lastname)
-		case "middlename", "12":
-			cm.NullString(&e.Middlename)
-		case "postcode", "13":
+		case "postcode", "11":
 			cm.NullString(&e.Postcode)
-		case "prefix", "14":
-			cm.NullString(&e.Prefix)
-		case "region", "15":
+		case "region", "12":
 			cm.NullString(&e.Region)
-		case "region_id", "16":
-			cm.NullUint32(&e.RegionID)
-		case "street", "17":
+		case "street", "13":
 			cm.String(&e.Street)
-		case "suffix", "18":
-			cm.NullString(&e.Suffix)
-		case "telephone", "19":
-			cm.String(&e.Telephone)
-		case "vat_id", "20":
-			cm.NullString(&e.VatID)
-		case "vat_is_valid", "21":
-			cm.NullBool(&e.VatIsValid)
-		case "vat_request_date", "22":
-			cm.NullString(&e.VatRequestDate)
-		case "vat_request_id", "23":
-			cm.NullString(&e.VatRequestID)
-		case "vat_request_success", "24":
-			cm.NullUint32(&e.VatRequestSuccess)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CustomerAddressEntity Column %q not found", c)
 		}
@@ -1939,8 +1863,9 @@ func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, primaryKey u
 	if e == nil {
 		return errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -1949,7 +1874,7 @@ func (e *CustomerAddressEntity) Load(ctx context.Context, dbm *DBM, primaryKey u
 	if _, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntitySelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -1958,13 +1883,14 @@ func (e *CustomerAddressEntity) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityDeleteByPK", opts...).ExecContext(ctx, e.EntityID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1976,13 +1902,14 @@ func (e *CustomerAddressEntity) Update(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -1994,13 +1921,14 @@ func (e *CustomerAddressEntity) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2012,13 +1940,14 @@ func (e *CustomerAddressEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2062,22 +1991,11 @@ func (e *CustomerAddressEntity) WriteTo(w io.Writer) (n int64, err error) {
 		"city:", e.City, "\n",
 		"company:", e.Company, "\n",
 		"country_id:", e.CountryID, "\n",
-		"fax:", e.Fax, "\n",
 		"firstname:", e.Firstname, "\n",
 		"lastname:", e.Lastname, "\n",
-		"middlename:", e.Middlename, "\n",
 		"postcode:", e.Postcode, "\n",
-		"prefix:", e.Prefix, "\n",
 		"region:", e.Region, "\n",
-		"region_id:", e.RegionID, "\n",
 		"street:", e.Street, "\n",
-		"suffix:", e.Suffix, "\n",
-		"telephone:", e.Telephone, "\n",
-		"vat_id:", e.VatID, "\n",
-		"vat_is_valid:", e.VatIsValid, "\n",
-		"vat_request_date:", e.VatRequestDate, "\n",
-		"vat_request_id:", e.VatRequestID, "\n",
-		"vat_request_success:", e.VatRequestSuccess, "\n",
 	)
 	return int64(n2), err
 }
@@ -2182,8 +2100,9 @@ func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs [
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerAddressEntity can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -2198,7 +2117,7 @@ func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs [
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2207,13 +2126,14 @@ func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2225,7 +2145,8 @@ func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCh
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -2243,7 +2164,7 @@ func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCh
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2252,13 +2173,14 @@ func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2270,13 +2192,14 @@ func (cc *CustomerAddressEntities) DBUpsert(ctx context.Context, dbm *DBM, opts 
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2387,40 +2310,47 @@ func (cc *CustomerAddressEntities) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
+type customerEntityRelations struct {
+	parent                  *CustomerEntity
+	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+}
+
+func (r *customerEntityRelations) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if len(r.CustomerAddressEntities.Data) > 0 {
+		for _, e2 := range r.CustomerAddressEntities.Data {
+			e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
+		}
+		if _, err := r.CustomerAddressEntities.DBInsert(ctx, dbm, opts...); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
 // CustomerEntity represents a single row for DB table customer_entity. Auto
 // generated.
 // Table comment: Customer Entity
 //easyjson:json
 type CustomerEntity struct {
-	EntityID                uint32                   `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID               null.Uint32              `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email                   null.String              `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID                 uint32                   `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	IncrementID             null.String              `max_len:"50"`  // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	StoreID                 null.Uint32              `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
-	CreatedAt               time.Time                // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt               time.Time                // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive                bool                     `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	DisableAutoGroupChange  uint32                   `max_len:"5"`   // disable_auto_group_change smallint(5) unsigned NOT NULL  DEFAULT '0'  "Disable automatic group change based on VAT ID"
-	CreatedIn               null.String              `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
-	Prefix                  null.String              `max_len:"40"`  // prefix varchar(40) NULL  DEFAULT 'NULL'  "Name Prefix"
-	Firstname               null.String              `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Middlename              null.String              `max_len:"255"` // middlename varchar(255) NULL  DEFAULT 'NULL'  "Middle Name/Initial"
-	Lastname                null.String              `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Suffix                  null.String              `max_len:"40"`  // suffix varchar(40) NULL  DEFAULT 'NULL'  "Name Suffix"
-	Dob                     null.Time                // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	passwordHash            null.String              `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
-	RpToken                 null.String              `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
-	RpTokenCreatedAt        null.Time                // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling          null.Uint32              `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping         null.Uint32              `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
-	Taxvat                  null.String              `max_len:"50"` // taxvat varchar(50) NULL  DEFAULT 'NULL'  "Tax/VAT Number"
-	Confirmation            null.String              `max_len:"64"` // confirmation varchar(64) NULL  DEFAULT 'NULL'  "Is Confirmed"
-	Gender                  null.Uint32              `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	FailuresNum             null.Int32               `max_len:"5"`  // failures_num smallint(6) NULL  DEFAULT '0'  "Failure Number"
-	FirstFailure            null.Time                // first_failure timestamp NULL  DEFAULT 'NULL'  "First Failure"
-	LockExpires             null.Time                // lock_expires timestamp NULL  DEFAULT 'NULL'  "Lock Expiration Date"
-	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+	EntityID         uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID        null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email            null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID          uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	StoreID          null.Uint32 `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	CreatedAt        time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt        time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive         bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	CreatedIn        null.String `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
+	Firstname        null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Lastname         null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Dob              null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
+	passwordHash     null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	RpToken          null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
+	RpTokenCreatedAt null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
+	DefaultBilling   null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping  null.Uint32 `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	Gender           null.Uint32 `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	Relations        *customerEntityRelations
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -2441,7 +2371,7 @@ func (e *CustomerEntity) AssignLastInsertID(id int64) {
 
 // MapColumns implements interface ColumnMapper only partially. Auto generated.
 func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
-	for cm.Next(28) {
+	for cm.Next(18) {
 		switch c := cm.Column(); c {
 		case "entity_id", "0":
 			cm.Uint32(&e.EntityID)
@@ -2451,54 +2381,34 @@ func (e *CustomerEntity) MapColumns(cm *dml.ColumnMap) error {
 			cm.NullString(&e.Email)
 		case "group_id", "3":
 			cm.Uint32(&e.GroupID)
-		case "increment_id", "4":
-			cm.NullString(&e.IncrementID)
-		case "store_id", "5":
+		case "store_id", "4":
 			cm.NullUint32(&e.StoreID)
-		case "created_at", "6":
+		case "created_at", "5":
 			cm.Time(&e.CreatedAt)
-		case "updated_at", "7":
+		case "updated_at", "6":
 			cm.Time(&e.UpdatedAt)
-		case "is_active", "8":
+		case "is_active", "7":
 			cm.Bool(&e.IsActive)
-		case "disable_auto_group_change", "9":
-			cm.Uint32(&e.DisableAutoGroupChange)
-		case "created_in", "10":
+		case "created_in", "8":
 			cm.NullString(&e.CreatedIn)
-		case "prefix", "11":
-			cm.NullString(&e.Prefix)
-		case "firstname", "12":
+		case "firstname", "9":
 			cm.NullString(&e.Firstname)
-		case "middlename", "13":
-			cm.NullString(&e.Middlename)
-		case "lastname", "14":
+		case "lastname", "10":
 			cm.NullString(&e.Lastname)
-		case "suffix", "15":
-			cm.NullString(&e.Suffix)
-		case "dob", "16":
+		case "dob", "11":
 			cm.NullTime(&e.Dob)
-		case "password_hash", "17":
+		case "password_hash", "12":
 			cm.NullString(&e.passwordHash)
-		case "rp_token", "18":
+		case "rp_token", "13":
 			cm.NullString(&e.RpToken)
-		case "rp_token_created_at", "19":
+		case "rp_token_created_at", "14":
 			cm.NullTime(&e.RpTokenCreatedAt)
-		case "default_billing", "20":
+		case "default_billing", "15":
 			cm.NullUint32(&e.DefaultBilling)
-		case "default_shipping", "21":
+		case "default_shipping", "16":
 			cm.NullUint32(&e.DefaultShipping)
-		case "taxvat", "22":
-			cm.NullString(&e.Taxvat)
-		case "confirmation", "23":
-			cm.NullString(&e.Confirmation)
-		case "gender", "24":
+		case "gender", "17":
 			cm.NullUint32(&e.Gender)
-		case "failures_num", "25":
-			cm.NullInt32(&e.FailuresNum)
-		case "first_failure", "26":
-			cm.NullTime(&e.FirstFailure)
-		case "lock_expires", "27":
-			cm.NullTime(&e.LockExpires)
 		default:
 			return errors.NotFound.Newf("[dmltestgenerated] CustomerEntity Column %q not found", c)
 		}
@@ -2512,8 +2422,9 @@ func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, 
 	if e == nil {
 		return errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -2522,7 +2433,7 @@ func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, 
 	if _, err = dbm.ConnPool.WithCacheKey("CustomerEntitySelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2531,13 +2442,14 @@ func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityDeleteByPK", opts...).ExecContext(ctx, e.EntityID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2549,13 +2461,14 @@ func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2567,13 +2480,14 @@ func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2585,13 +2499,14 @@ func (e *CustomerEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2639,29 +2554,19 @@ func (e *CustomerEntity) WriteTo(w io.Writer) (n int64, err error) {
 		"website_id:", e.WebsiteID, "\n",
 		"email:", e.Email, "\n",
 		"group_id:", e.GroupID, "\n",
-		"increment_id:", e.IncrementID, "\n",
 		"store_id:", e.StoreID, "\n",
 		"created_at:", e.CreatedAt, "\n",
 		"updated_at:", e.UpdatedAt, "\n",
 		"is_active:", e.IsActive, "\n",
-		"disable_auto_group_change:", e.DisableAutoGroupChange, "\n",
 		"created_in:", e.CreatedIn, "\n",
-		"prefix:", e.Prefix, "\n",
 		"firstname:", e.Firstname, "\n",
-		"middlename:", e.Middlename, "\n",
 		"lastname:", e.Lastname, "\n",
-		"suffix:", e.Suffix, "\n",
 		"dob:", e.Dob, "\n",
 		"rp_token:", e.RpToken, "\n",
 		"rp_token_created_at:", e.RpTokenCreatedAt, "\n",
 		"default_billing:", e.DefaultBilling, "\n",
 		"default_shipping:", e.DefaultShipping, "\n",
-		"taxvat:", e.Taxvat, "\n",
-		"confirmation:", e.Confirmation, "\n",
 		"gender:", e.Gender, "\n",
-		"failures_num:", e.FailuresNum, "\n",
-		"first_failure:", e.FirstFailure, "\n",
-		"lock_expires:", e.LockExpires, "\n",
 	)
 	return int64(n2), err
 }
@@ -2764,8 +2669,9 @@ func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -2780,7 +2686,7 @@ func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2789,13 +2695,14 @@ func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2807,7 +2714,8 @@ func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn f
 	if cc == nil {
 		return errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -2825,7 +2733,7 @@ func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn f
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -2834,13 +2742,14 @@ func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -2852,13 +2761,14 @@ func (cc *CustomerEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.
 	if cc == nil {
 		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3131,8 +3041,9 @@ func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, primaryKey int32, opts
 	if e == nil {
 		return errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -3141,7 +3052,7 @@ func (e *DmlgenTypes) Load(ctx context.Context, dbm *DBM, primaryKey int32, opts
 	if _, err = dbm.ConnPool.WithCacheKey("DmlgenTypesSelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -3150,13 +3061,14 @@ func (e *DmlgenTypes) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesDeleteByPK", opts...).ExecContext(ctx, e.ID); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3168,13 +3080,14 @@ func (e *DmlgenTypes) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3186,13 +3099,14 @@ func (e *DmlgenTypes) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3204,13 +3118,14 @@ func (e *DmlgenTypes) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)
 	if e == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3387,8 +3302,9 @@ func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []i
 	if cc == nil {
 		return errors.NotValid.Newf("DmlgenTypes can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs ID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -3403,7 +3319,7 @@ func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []i
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -3412,13 +3328,14 @@ func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ..
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3430,7 +3347,8 @@ func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resChec
 	if cc == nil {
 		return errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -3448,7 +3366,7 @@ func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resChec
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -3457,13 +3375,14 @@ func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ..
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3475,13 +3394,14 @@ func (cc *DmlgenTypesCollection) DBUpsert(ctx context.Context, dbm *DBM, opts ..
 	if cc == nil {
 		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3764,8 +3684,9 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	if e == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs arg.Status,arg.State into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -3774,7 +3695,7 @@ func (e *SalesOrderStatusState) Load(ctx context.Context, dbm *DBM, arg SalesOrd
 	if _, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateSelectByPK", opts...).Load(ctx, e, arg.Status, arg.State); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -3783,13 +3704,14 @@ func (e *SalesOrderStatusState) Delete(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeDelete, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateDeleteByPK", opts...).ExecContext(ctx, e.Status, e.State); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3801,13 +3723,14 @@ func (e *SalesOrderStatusState) Update(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpdateByPK", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3819,13 +3742,14 @@ func (e *SalesOrderStatusState) Insert(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateInsert", opts...).ExecContext(ctx, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3837,13 +3761,14 @@ func (e *SalesOrderStatusState) Upsert(ctx context.Context, dbm *DBM, opts ...dm
 	if e == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, nil, e); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", e)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, nil, e); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -3986,8 +3911,9 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 	if cc == nil {
 		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs Status,State into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -4006,7 +3932,7 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 	if _, err = dbm.ConnPool.WithCacheKey(cacheKey, opts...).Load(ctx, cc, args...); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -4015,13 +3941,14 @@ func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts .
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeDelete, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateDeleteByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterDelete, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -4033,7 +3960,8 @@ func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resChe
 	if cc == nil {
 		return errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if len(opts) == 0 {
@@ -4051,7 +3979,7 @@ func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resChe
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, cc, nil))
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
 func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
@@ -4060,13 +3988,14 @@ func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts .
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateInsert", opts...).ExecContext(ctx, cc); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, cc, nil)); err != nil {
+	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -4078,13 +4007,14 @@ func (cc *SalesOrderStatusStates) DBUpsert(ctx context.Context, dbm *DBM, opts .
 	if cc == nil {
 		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, cc, nil); err != nil {
+	qo := dml.FromContextQueryOptions(ctx)
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, cc, nil); err != nil {
+	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return res, nil
@@ -4259,8 +4189,9 @@ func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryK
 	if e == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, nil, e); err != nil {
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
 		return errors.WithStack(err)
 	}
 	if e.IsSet() {
@@ -4269,7 +4200,7 @@ func (e *ViewCustomerAutoIncrement) Load(ctx context.Context, dbm *DBM, primaryK
 	if _, err = dbm.ConnPool.WithCacheKey("ViewCustomerAutoIncrementSelectByPK", opts...).Load(ctx, e, primaryKey); err != nil {
 		return errors.WithStack(err)
 	}
-	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, nil, e))
+	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, nil, e))
 }
 
 // Empty empties all the fields of the current object. Also known as Reset.
@@ -4393,8 +4324,9 @@ func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkID
 	if cc == nil {
 		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
 	}
+	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs CeEntityID into the context as value to search for a cache entry in the event function.
-	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, cc, nil); err != nil {
+	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
 	if cc.Data != nil {
@@ -4409,7 +4341,7 @@ func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkID
 			return errors.WithStack(err)
 		}
 	}
-	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, cc, nil))
+	return errors.WithStack(dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagAfterSelect, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.

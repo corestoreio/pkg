@@ -69,7 +69,7 @@ func TestManualNewDBManager_Tuples_SalesOrderStatusState(t *testing.T) {
 	dbm, err := NewDBManager(ctx, opts)
 	assert.NoError(t, err)
 
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6, MaxLenStringLimit: 41})
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6, MaxLenStringLimit: 41})
 	t.Run("Entity", func(t *testing.T) {
 		var eFake SalesOrderStatusState // e=entity => entityFake or entityLoaded
 		assert.NoError(t, ps.FakeData(&eFake))

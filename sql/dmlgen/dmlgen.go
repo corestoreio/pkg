@@ -105,7 +105,6 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 			"github.com/corestoreio/pkg/sql/dml",
 			"github.com/corestoreio/pkg/storage/null",
 			"github.com/corestoreio/pkg/util/cstrace",
-			"go.opentelemetry.io/otel/api/trace",
 		},
 		ImportPathsTesting: []string{
 			"testing",
@@ -134,6 +133,7 @@ func NewGenerator(packageImportPath string, opts ...Option) (*Generator, error) 
 
 	for _, t := range g.Tables {
 		t.Package = g.Package
+		t.relationshipSeen = map[string]bool{}
 	}
 	return g, nil
 }
@@ -145,6 +145,13 @@ func (g *Generator) sortedTableNames() []string {
 	}
 	sortedKeys.Sort()
 	return sortedKeys
+}
+
+func (g *Generator) findColumn(tableName, columnName string) *ddl.Column {
+	if g.Tables[tableName] == nil {
+		panic(fmt.Sprintln("tableName, columnName", tableName, columnName)) // TODO fix this, but how?
+	}
+	return g.Tables[tableName].Table.Columns.ByField(columnName)
 }
 
 func (g *Generator) isAllowedRelationship(table1, column1, table2, column2 string) bool {
@@ -225,14 +232,20 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 	for i, tblname := range g.sortedTableNames() {
 		tables[i] = g.Tables[tblname] // must panic if table name not found
 	}
-
+	// deal with random map to guarantee the persistent code generation.
+	for _, t := range tables {
+		t.fnEntityRelationStruct(mainGen, g) // this must go first because to check if a table has relations
+		t.fnEntityStruct(mainGen, g)
+	}
 	g.fnCreateDBM(mainGen, tables)
 	g.fnTestMainOther(testGen, tables)
 	g.fnTestMainDB(testGen, tables)
 
 	// deal with random map to guarantee the persistent code generation.
 	for _, t := range tables {
-		t.entityStruct(mainGen, g)
+		//	t.fnEntityRelationStruct(mainGen, g)  // this must go first because to check if a table has relations
+		t.fnEntityRelationMethods(mainGen, g) // this must go first because to check if a table has relations
+		// t.fnEntityStruct(mainGen, g)
 
 		t.fnEntityCopy(mainGen, g)
 		t.fnEntityDBAssignLastInsertID(mainGen, g)
@@ -244,10 +257,10 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 		t.fnEntityValidate(mainGen, g)
 		t.fnEntityWriteTo(mainGen, g)
 
-		t.collectionStruct(mainGen, g)
-
+		t.fnCollectionStruct(mainGen, g)
 		t.fnCollectionAppend(mainGen, g)
 		t.fnCollectionBinaryMarshaler(mainGen, g)
+		t.fnCollectionClear(mainGen, g)
 		t.fnCollectionCut(mainGen, g)
 		t.fnCollectionDBAssignLastInsertID(mainGen, g)
 		t.fnCollectionDBMapColumns(mainGen, g)

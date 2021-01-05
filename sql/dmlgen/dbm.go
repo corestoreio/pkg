@@ -8,6 +8,10 @@ import (
 	"github.com/corestoreio/pkg/util/strs"
 )
 
+func constTableName(tableName string) string {
+	return `TableName` + strs.ToGoCamelCase(tableName)
+}
+
 func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	if !tbls.hasFeature(g, FeatureDB|FeatureDBTracing|FeatureDBSelect|FeatureDBDelete|
 		FeatureDBInsert|FeatureDBUpdate|FeatureDBUpsert|FeatureDBTableColumnNames) {
@@ -19,7 +23,7 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 	var tableCreateStmt []string
 	var tableConstants []string
 	for _, tblname := range g.sortedTableNames() {
-		constName := `TableName` + strs.ToGoCamelCase(tblname)
+		constName := constTableName(tblname)
 		tableConstants = append(tableConstants, fmt.Sprintf("%s = %q", constName, tblname))
 		tableNames = append(tableNames, tblname)
 		tableCreateStmt = append(tableCreateStmt, constName, `""`)
@@ -62,12 +66,6 @@ func (g *Generator) fnCreateDBM(mainGen *codegen.Go, tbls tables) {
 		mainGen.Pln(`}`) // end main struct
 	}
 
-	mainGen.Pln(`var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
-			// do nothing because Clone gets called automatically
-		}}
-		func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
-`)
-
 	// <event functions>
 	mainGen.C(`Event functions are getting dispatched during before or after handling a collection or an entity.
 Context is always non-nil but either collection or entity pointer will be set.`)
@@ -82,7 +80,7 @@ Context is always non-nil but either collection or entity pointer will be set.`)
 	mainGen.C(`DBMOption provides various options to the DBM object.`)
 	mainGen.Pln(`type DBMOption struct {`)
 	{
-		mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `Trace                trace.Tracer`)
+		mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `Trace                cstrace.Tracer`)
 		mainGen.Pln(`TableOptions         []ddl.TableOption // gets applied at the beginning`)
 		mainGen.Pln(`TableOptionsAfter    []ddl.TableOption // gets applied at the end`)
 		mainGen.Pln(tbls.hasFeature(g, FeatureDBSelect), `InitSelectFn         func(*dml.Select) *dml.Select`)
@@ -96,7 +94,7 @@ Context is always non-nil but either collection or entity pointer will be set.`)
 	mainGen.Pln(`}`)
 	// </DBM option struct>
 
-	// <event adder>
+	// <EVENT ADDER>
 	for _, tbl := range tbls {
 		mainGen.C(codegen.SkipWS(`AddEvent`, tbl.EntityName()), `adds a specific defined event call back to the DBM.
 It panics if the event argument is larger than dml.EventFlagMax.`)
@@ -110,7 +108,7 @@ It panics if the event argument is larger than dml.EventFlagMax.`)
 		}
 		mainGen.Pln(`}`)
 	}
-	// </event adder>
+	// </EVENT ADDER>
 
 	mainGen.C(`DBM defines the DataBaseManagement object for the tables `, tableNames)
 	mainGen.Pln(`type DBM struct { *ddl.Tables; option DBMOption }`)
@@ -173,6 +171,6 @@ It panics if the event argument is larger than dml.EventFlagMax.`)
 		mainGen.Out()
 	}
 
-	mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `	if dbmo.Trace == nil { dbmo.Trace = trace.NoopTracer{}; }`)
+	mainGen.Pln(tbls.hasFeature(g, FeatureDBTracing), `	if dbmo.Trace == nil { dbmo.Trace = cstrace.NewNoopTracerProvider().Tracer(""); }`)
 	mainGen.Pln(`return &DBM{	Tables: tbls, option: *dbmo, }, nil }`)
 }

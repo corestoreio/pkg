@@ -164,32 +164,33 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 		),
 
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
-		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
-			return nil, nil
+		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) interface{} {
+			return nil
 		}),
-		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) (interface{}, error) {
+		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) interface{} {
 			if ps.Intn(1000)%3 == 0 {
-				return nil, nil
+				return nil
 			}
-			return ps.Dob18(), nil
+			return ps.Dob18()
 		}),
-		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) (interface{}, error) {
-			return ps.Dob18().MarshalText()
+		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) interface{} {
+			t,_ := ps.Dob18().MarshalText()
+			return t
 		}),
-		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) (interface{}, error) {
-			return fmt.Sprintf("%.1f", ps.Price()), nil
+		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) interface{} {
+			return fmt.Sprintf("%.1f", ps.Price())
 		}),
-		pseudo.WithTagFakeFunc("price_b124", func(maxLen int) (interface{}, error) {
-			return fmt.Sprintf("%.4f", ps.Price()), nil
+		pseudo.WithTagFakeFunc("price_b124", func(maxLen int) interface{} {
+			return fmt.Sprintf("%.4f", ps.Price())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) (interface{}, error) {
-			return fmt.Sprintf("%.3f", ps.Float64()), nil
+		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) interface{} {
+			return fmt.Sprintf("%.3f", ps.Float64())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) (interface{}, error) {
-			return fmt.Sprintf("%.6f", ps.Float64()), nil
+		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) interface{} {
+			return fmt.Sprintf("%.6f", ps.Float64())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) (interface{}, error) {
-			return fmt.Sprintf("%.12f", ps.Float64()), nil
+		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) interface{} {
+			return fmt.Sprintf("%.12f", ps.Float64())
 		}),
 		pseudo.WithTagFakeFuncAlias(
 			"col_decimal124", "price_b124",
@@ -534,17 +535,19 @@ func TestCustomerEntity_Relations(t *testing.T) {
 
 	featuresInclude := dmlgen.FeatureDB | dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct |
 		dmlgen.FeatureDBSelect | dmlgen.FeatureDBUpdate | dmlgen.FeatureDBUpsert | dmlgen.FeatureDBInsert |
-		dmlgen.FeatureDBDelete | dmlgen.FeatureEntityRelationships | dmlgen.FeatureCollectionEach
+		dmlgen.FeatureDBDelete | dmlgen.FeatureEntityRelationships | dmlgen.FeatureCollectionEach | dmlgen.FeatureCollectionClear
 
 	ctx := context.Background()
 	g, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgenerated5",
 
 		dmlgen.WithTablesFromDB(ctx, db,
-			"customer_entity", "customer_address_entity",
+			"customer_entity", "customer_address_entity", "customer_entity_varchar", "customer_entity_int",
 		),
 		dmlgen.WithForeignKeyRelationships(ctx, db.DB, dmlgen.ForeignKeyOptions{
 			ExcludeRelationships: []string{
 				"customer_address_entity.parent_id", "customer_entity.entity_id",
+				"customer_entity_int.*", "*.*",
+				"customer_entity_varchar.*", "*.*",
 			},
 		}),
 		dmlgen.WithTableConfig(
@@ -559,8 +562,8 @@ func TestCustomerEntity_Relations(t *testing.T) {
 				FeaturesInclude: featuresInclude,
 			}),
 		dmlgen.WithCustomCode("pseudo.MustNewService.Option", `
-		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) (interface{}, error) {
-			return nil, nil
+		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) interface{} {
+			return nil
 		}),
 `),
 	)

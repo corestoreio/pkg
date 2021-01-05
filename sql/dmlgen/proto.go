@@ -318,7 +318,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 
 			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
 
-				// for debugging see Table.entityStruct function. This code is only different in the Pln function.
+				// for debugging see Table.fnEntityStruct function. This code is only different in the Pln function.
 
 				var hasAtLeastOneRelationShip int
 				relationShipSeen := map[string]bool{}
@@ -333,7 +333,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
 						if isOneToMany && hasTable && isRelationAllowed {
-							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+							proto.Pln(fieldMapFn(pluralize(kcuce.ReferencedTableName.Data)), fieldMapFn(pluralize(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							lastColumnPos++
@@ -352,7 +352,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
 						// hasTable variable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							proto.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
+							proto.Pln(fieldMapFn(pluralize(targetTbl)), " *", pluralize(targetTbl),
 								t.customStructTagFields[targetTbl],
 								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
 								"=>", targetTbl+"."+targetColumn,
@@ -371,11 +371,11 @@ func (g *Generator) generateProto(w io.Writer) error {
 						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-						keySeen := fieldMapFn(collectionName(kcuce.ReferencedTableName.Data))
+						keySeen := fieldMapFn(pluralize(kcuce.ReferencedTableName.Data))
 						relationShipSeenAlready := relationShipSeen[keySeen]
 						// case ONE-TO-MANY
 						if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
-							proto.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)),
+							proto.Pln(fieldMapFn(pluralize(kcuce.ReferencedTableName.Data)), fieldMapFn(pluralize(kcuce.ReferencedTableName.Data)),
 								"=", lastColumnPos, ";",
 								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
 							relationShipSeen[keySeen] = true
@@ -394,7 +394,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case MANY-TO-MANY
 						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
 						if targetTbl != "" && targetColumn != "" {
-							keySeen := fieldMapFn(collectionName(targetTbl))
+							keySeen := fieldMapFn(pluralize(targetTbl))
 							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) &&
 								!relationShipSeen[keySeen]
 							relationShipSeen[keySeen] = true
@@ -403,7 +403,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 						// case MANY-TO-MANY
 						// hasTable shall not be added because usually the link table does not get loaded.
 						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							proto.Pln(fieldMapFn(collectionName(targetTbl)), fieldMapFn(collectionName(targetTbl)),
+							proto.Pln(fieldMapFn(pluralize(targetTbl)), fieldMapFn(pluralize(targetTbl)),
 								"=", lastColumnPos, ";",
 								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
 								"=>", targetTbl+"."+targetColumn,

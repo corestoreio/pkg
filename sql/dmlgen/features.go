@@ -9,6 +9,7 @@ type FeatureToggle uint64
 const (
 	FeatureCollectionAppend FeatureToggle = 1 << iota
 	FeatureCollectionBinaryMarshaler
+	FeatureCollectionClear
 	FeatureCollectionCut
 	FeatureCollectionDelete
 	FeatureCollectionEach

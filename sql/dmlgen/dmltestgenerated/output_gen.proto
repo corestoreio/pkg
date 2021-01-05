@@ -57,22 +57,11 @@ message CustomerAddressEntity {
 	string City = 7 ; 
 	null.String Company = 8 [(gogoproto.nullable)=false]; 
 	string CountryID = 9 ; 
-	null.String Fax = 10 [(gogoproto.nullable)=false]; 
-	string Firstname = 11 ; 
-	string Lastname = 12 ; 
-	null.String Middlename = 13 [(gogoproto.nullable)=false]; 
-	null.String Postcode = 14 [(gogoproto.nullable)=false]; 
-	null.String Prefix = 15 [(gogoproto.nullable)=false]; 
-	null.String Region = 16 [(gogoproto.nullable)=false]; 
-	null.Uint32 RegionID = 17 [(gogoproto.nullable)=false]; 
-	string Street = 18 ; 
-	null.String Suffix = 19 [(gogoproto.nullable)=false]; 
-	string Telephone = 20 ; 
-	null.String VatID = 21 [(gogoproto.nullable)=false]; 
-	null.Bool VatIsValid = 22 [(gogoproto.nullable)=false]; 
-	null.String VatRequestDate = 23 [(gogoproto.nullable)=false]; 
-	null.String VatRequestID = 24 [(gogoproto.nullable)=false]; 
-	null.Uint32 VatRequestSuccess = 25 [(gogoproto.nullable)=false]; 
+	string Firstname = 10 ; 
+	string Lastname = 11 ; 
+	null.String Postcode = 12 [(gogoproto.nullable)=false]; 
+	null.String Region = 13 [(gogoproto.nullable)=false]; 
+	string Street = 14 ; 
 } 
 // CustomerAddressEntities represents multiple rows for the
 // customer_address_entity DB table. Auto generated.
@@ -87,30 +76,20 @@ message CustomerEntity {
 	null.Uint32 WebsiteID = 2 [(gogoproto.nullable)=false]; 
 	null.String Email = 3 [(gogoproto.nullable)=false]; 
 	uint32 GroupID = 4 ; 
-	null.String IncrementID = 5 [(gogoproto.nullable)=false]; 
-	null.Uint32 StoreID = 6 [(gogoproto.nullable)=false]; 
-	google.protobuf.Timestamp CreatedAt = 7 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
-	google.protobuf.Timestamp UpdatedAt = 8 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
-	bool IsActive = 9 ; 
-	uint32 DisableAutoGroupChange = 10 ; 
-	null.String CreatedIn = 11 [(gogoproto.nullable)=false]; 
-	null.String Prefix = 12 [(gogoproto.nullable)=false]; 
-	null.String Firstname = 13 [(gogoproto.nullable)=false]; 
-	null.String Middlename = 14 [(gogoproto.nullable)=false]; 
-	null.String Lastname = 15 [(gogoproto.nullable)=false]; 
-	null.String Suffix = 16 [(gogoproto.nullable)=false]; 
-	null.Time Dob = 17 [(gogoproto.nullable)=false]; 
-	null.String RpToken = 19 [(gogoproto.nullable)=false]; 
-	null.Time RpTokenCreatedAt = 20 [(gogoproto.nullable)=false]; 
-	null.Uint32 DefaultBilling = 21 [(gogoproto.nullable)=false]; 
-	null.Uint32 DefaultShipping = 22 [(gogoproto.nullable)=false]; 
-	null.String Taxvat = 23 [(gogoproto.nullable)=false]; 
-	null.String Confirmation = 24 [(gogoproto.nullable)=false]; 
-	null.Uint32 Gender = 25 [(gogoproto.nullable)=false]; 
-	null.Int32 FailuresNum = 26 [(gogoproto.nullable)=false]; 
-	null.Time FirstFailure = 27 [(gogoproto.nullable)=false]; 
-	null.Time LockExpires = 28 [(gogoproto.nullable)=false]; 
-	CustomerAddressEntities CustomerAddressEntities = 29 ; // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id 
+	null.Uint32 StoreID = 5 [(gogoproto.nullable)=false]; 
+	google.protobuf.Timestamp CreatedAt = 6 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
+	google.protobuf.Timestamp UpdatedAt = 7 [(gogoproto.stdtime)=true,(gogoproto.nullable)=false]; 
+	bool IsActive = 8 ; 
+	null.String CreatedIn = 9 [(gogoproto.nullable)=false]; 
+	null.String Firstname = 10 [(gogoproto.nullable)=false]; 
+	null.String Lastname = 11 [(gogoproto.nullable)=false]; 
+	null.Time Dob = 12 [(gogoproto.nullable)=false]; 
+	null.String RpToken = 14 [(gogoproto.nullable)=false]; 
+	null.Time RpTokenCreatedAt = 15 [(gogoproto.nullable)=false]; 
+	null.Uint32 DefaultBilling = 16 [(gogoproto.nullable)=false]; 
+	null.Uint32 DefaultShipping = 17 [(gogoproto.nullable)=false]; 
+	null.Uint32 Gender = 18 [(gogoproto.nullable)=false]; 
+	CustomerAddressEntities CustomerAddressEntities = 19 ; // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id 
 } 
 // CustomerEntities represents multiple rows for the customer_entity DB table.
 // Auto generated.

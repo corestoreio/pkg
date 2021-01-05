@@ -22,6 +22,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/util/bufferpool"
 	"github.com/corestoreio/pkg/util/codegen"
 	"github.com/corestoreio/pkg/util/strs"
 )
@@ -36,12 +37,33 @@ type Table struct {
 	HasSerializer        bool // writes the .proto file if true
 
 	// PrivateFields key=snake case name of the DB column, value=true, the field must be private
-	debug                 bool // gets set via isDebug function
-	privateFields         map[string]bool
-	featuresInclude       FeatureToggle
-	featuresExclude       FeatureToggle
-	fieldMapFn            func(dbIdentifier string) (newName string)
-	customStructTagFields map[string]string
+	debug                  bool // gets set via isDebug function
+	privateFields          map[string]bool
+	featuresInclude        FeatureToggle
+	featuresExclude        FeatureToggle
+	fieldMapFn             func(dbIdentifier string) (newName string)
+	customStructTagFields  map[string]string
+	relationshipSeen       map[string]bool // to not print twice a relationship
+	availableRelationships []relationShipInfo
+}
+
+type relationShipInfo struct {
+	isCollection          bool
+	tableName             string
+	structName            string
+	mappedStructFieldName string // name of the struct in the relation struct
+	columnName            string
+}
+
+func (t *Table) getFieldMapFn(g *Generator) func(dbIdentifier string) (newName string) {
+	fieldMapFn := g.defaultTableConfig.FieldMapFn
+	if fieldMapFn == nil {
+		fieldMapFn = t.fieldMapFn
+	}
+	if fieldMapFn == nil {
+		fieldMapFn = defaultFieldMapFn
+	}
+	return fieldMapFn
 }
 
 func (t *Table) IsFieldPublic(dbColumnName string) bool {
@@ -57,22 +79,26 @@ func (t *Table) GoCamelMaybePrivate(fieldName string) string {
 	if t.IsFieldPublic(fieldName) {
 		return su
 	}
-	return lcFirst(su)
+	return strs.LcFirst(su)
 }
 
 func (t *Table) CollectionName() string {
-	return collectionName(t.Table.Name)
+	return pluralize(t.Table.Name)
 }
 
 func (t *Table) EntityName() string {
 	return strs.ToGoCamelCase(t.Table.Name)
 }
 
+func (t *Table) EntityNameLCFirst() string {
+	return strs.LcFirst(strs.ToGoCamelCase(t.Table.Name))
+}
+
 func (t *Table) hasFeature(g *Generator, f FeatureToggle) bool {
 	return g.hasFeature(t.featuresInclude, t.featuresExclude, f, 'a') // mode == AND
 }
 
-func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
+func (t *Table) fnCollectionStruct(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionStruct) {
 		return
 	}
@@ -115,17 +141,9 @@ func (t *Table) collectionStruct(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
+func (t *Table) fnEntityStruct(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityStruct) {
 		return
-	}
-
-	fieldMapFn := g.defaultTableConfig.FieldMapFn
-	if fieldMapFn == nil {
-		fieldMapFn = t.fieldMapFn
-	}
-	if fieldMapFn == nil {
-		fieldMapFn = defaultFieldMapFn
 	}
 
 	mainGen.C(t.EntityName(), `represents a single row for DB table`, t.Table.Name+`. Auto generated.`)
@@ -153,124 +171,335 @@ func (t *Table) entityStruct(mainGen *codegen.Go, g *Generator) {
 				}
 				mainGen.Pln(t.GoCamelMaybePrivate(c.Field), g.goTypeNull(c), structTag, c.GoComment())
 			}
-
-			// this part is duplicated in the proto file generation function generateProto.
-			if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) {
-				var debugBuf bytes.Buffer
-				tabW := tabwriter.NewWriter(&debugBuf, 6, 0, 2, ' ', 0)
-				var hasAtLeastOneRelationShip int
-				fmt.Fprintf(&debugBuf, "RelationInfo for: %q\n", t.Table.Name)
-				fmt.Fprintf(tabW, "Case\tis1:M\tis1:1\tseen?\tisRelAl\thasTable\tTarget Tbl M:N\tRelation\n")
-				relationShipSeen := map[string]bool{}
-				if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
-					for _, kcuce := range kcuc.Data {
-						if !kcuce.ReferencedTableName.Valid {
-							continue
-						}
-						hasAtLeastOneRelationShip++
-						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-						fmt.Fprintf(tabW, "A1_1:M\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, false, isRelationAllowed, hasTable,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						if isOneToMany && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
-								t.customStructTagFields[kcuce.ReferencedTableName.Data],
-								"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
-
-						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						fmt.Fprintf(tabW, "B1_1:1\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						if isOneToOne && hasTable && isRelationAllowed {
-							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
-								t.customStructTagFields[kcuce.ReferencedTableName.Data],
-								"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
-
-						// case MANY-TO-MANY
-						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
-						fmt.Fprintf(tabW, "C1_M:N\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
-							targetTbl+"."+targetColumn,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						// hasTable variable shall not be added because usually the link table does not get loaded.
-						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
-								t.customStructTagFields[targetTbl],
-								"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
-								"=>", targetTbl+"."+targetColumn,
-							)
-						}
-					}
-				}
-
-				if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
-					for _, kcuce := range kcuc.Data {
-						if !kcuce.ReferencedTableName.Valid {
-							continue
-						}
-						hasAtLeastOneRelationShip++
-						// case ONE-TO-MANY
-						isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
-						keySeen := fieldMapFn(collectionName(kcuce.ReferencedTableName.Data))
-						relationShipSeenAlready := relationShipSeen[keySeen]
-						// case ONE-TO-MANY
-						fmt.Fprintf(tabW, "A2_1:M rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, relationShipSeenAlready, isRelationAllowed, hasTable,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
-							mainGen.Pln(fieldMapFn(collectionName(kcuce.ReferencedTableName.Data)), " *", collectionName(kcuce.ReferencedTableName.Data),
-								t.customStructTagFields[kcuce.ReferencedTableName.Data],
-								"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-							relationShipSeen[keySeen] = true
-						}
-
-						// case ONE-TO-ONE
-						isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						fmt.Fprintf(tabW, "B2_1:1 rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						if isRelationAllowed && isOneToOne && hasTable {
-							mainGen.Pln(fieldMapFn(strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)), " *", strs.ToGoCamelCase(kcuce.ReferencedTableName.Data),
-								t.customStructTagFields[kcuce.ReferencedTableName.Data],
-								"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						}
-
-						// case MANY-TO-MANY
-						targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
-						if targetTbl != "" && targetColumn != "" {
-							keySeen := fieldMapFn(collectionName(targetTbl))
-							isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) &&
-								!relationShipSeen[keySeen]
-							relationShipSeen[keySeen] = true
-						}
-
-						// case MANY-TO-MANY
-						fmt.Fprintf(tabW, "C2_M:N rev\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
-							targetTbl+"."+targetColumn,
-							kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
-						// hasTable shall not be added because usually the link table does not get loaded.
-						if isRelationAllowed && targetTbl != "" && targetColumn != "" {
-							mainGen.Pln(fieldMapFn(collectionName(targetTbl)), " *", collectionName(targetTbl),
-								t.customStructTagFields[targetTbl],
-								"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
-								"=>", targetTbl+"."+targetColumn,
-							)
-						}
-					}
-				}
-				if t.debug && hasAtLeastOneRelationShip > 0 {
-					_ = tabW.Flush()
-					fmt.Fprintf(&debugBuf, "Relationship count: %d\n", hasAtLeastOneRelationShip)
-					fmt.Println(debugBuf.String())
+			if len(t.availableRelationships) > 0 {
+				mainGen.P(`Relations *`, t.relationStructName()) // TODO use customStructTagFields
+				if fn, ok := g.customCode["type_relation_"+t.relationStructName()]; ok {
+					fn(g, t, mainGen)
+				} else {
+					mainGen.Pln("")
 				}
 			}
 			mainGen.Out()
 		}
 	}
 	mainGen.Pln(`}`)
+}
+
+func (t *Table) relationStructName() string {
+	return t.EntityNameLCFirst() + `Relations`
+}
+
+// this part is duplicated in the proto file generation function generateProto.
+func (t *Table) fnEntityRelationStruct(mainGen *codegen.Go, g *Generator) {
+	_, ok1 := g.kcu[t.Table.Name]
+	_, ok2 := g.kcuRev[t.Table.Name]
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) || (!ok1 && !ok2) {
+		return
+	}
+
+	fieldMapFn := t.getFieldMapFn(g)
+	// only write the relation struct if there are some relations, if non, revert to the old buffer.
+	mainGenBuf := mainGen.Buffer
+	mainGen.Buffer = new(bytes.Buffer)
+	defer func() {
+		data := mainGen.Buffer.Bytes()
+		mainGen.Buffer = mainGenBuf // restore old buffer
+		if len(t.availableRelationships) > 0 {
+			mainGen.Buffer.Write(data)
+		}
+	}()
+
+	mainGen.Pln(`type `, t.relationStructName(), ` struct {`)
+	mainGen.In()
+	if fn, ok := g.customCode["type_"+t.relationStructName()]; ok {
+		fn(g, t, mainGen)
+	}
+	mainGen.Pln(`parent *`, t.EntityName())
+
+	debugBuf := bufferpool.Get()
+	defer bufferpool.Put(debugBuf)
+	tabW := tabwriter.NewWriter(debugBuf, 6, 0, 2, ' ', 0)
+	var hasAtLeastOneRelationShip int
+	fmt.Fprintf(debugBuf, "RelationInfo for: %q\n", t.Table.Name)
+	fmt.Fprintf(tabW, "Case\tis1:M\tis1:1\tseen?\tisRelAl\thasTable\tTarget Tbl M:N\tRelation\n")
+	if kcuc, ok := g.kcu[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+		for _, kcuce := range kcuc.Data {
+			if !kcuce.ReferencedTableName.Valid {
+				continue
+			}
+			hasAtLeastOneRelationShip++
+			// case ONE-TO-MANY
+			isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
+			fmt.Fprintf(tabW, "A1_1:M\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, false, isRelationAllowed, hasTable,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			if isOneToMany && hasTable && isRelationAllowed {
+
+				name := pluralize(kcuce.ReferencedTableName.Data)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					isCollection:          true,
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name,
+					t.customStructTagFields[kcuce.ReferencedTableName.Data],
+					"// 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			}
+
+			// case ONE-TO-ONE
+			isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			fmt.Fprintf(tabW, "B1_1:1\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			if isOneToOne && hasTable && isRelationAllowed {
+
+				name := strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					isCollection:          true,
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name, t.customStructTagFields[kcuce.ReferencedTableName.Data],
+					"// 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			}
+
+			// case MANY-TO-MANY
+			targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.TableName, kcuce.ColumnName)
+			fmt.Fprintf(tabW, "C1_M:N\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, false, isRelationAllowed, hasTable,
+				targetTbl+"."+targetColumn,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			// hasTable variable shall not be added because usually the link table does not get loaded.
+			if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+
+				name := pluralize(targetTbl)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					isCollection:          true,
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name, t.customStructTagFields[targetTbl],
+					"// M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+					"=>", targetTbl+"."+targetColumn,
+				)
+			}
+		}
+	}
+
+	if kcuc, ok := g.kcuRev[t.Table.Name]; ok { // kcu = keyColumnUsage && kcuc = keyColumnUsageCollection
+		for _, kcuce := range kcuc.Data {
+			if !kcuce.ReferencedTableName.Valid {
+				continue
+			}
+			hasAtLeastOneRelationShip++
+			// case ONE-TO-MANY
+			isOneToMany := g.krs.IsOneToMany(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			isRelationAllowed := g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			hasTable := g.Tables[kcuce.ReferencedTableName.Data] != nil
+			keySeen := fieldMapFn(pluralize(kcuce.ReferencedTableName.Data))
+			relationShipSeenAlready := t.relationshipSeen[keySeen]
+			// case ONE-TO-MANY
+			fmt.Fprintf(tabW, "A2_1:M rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, false, relationShipSeenAlready, isRelationAllowed, hasTable,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			if isRelationAllowed && isOneToMany && hasTable && !relationShipSeenAlready {
+
+				name := pluralize(kcuce.ReferencedTableName.Data)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					isCollection:          true,
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name, t.customStructTagFields[kcuce.ReferencedTableName.Data],
+					"// Reversed 1:M", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+				t.relationshipSeen[keySeen] = true
+			}
+
+			// case ONE-TO-ONE
+			isOneToOne := g.krs.IsOneToOne(kcuce.TableName, kcuce.ColumnName, kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			fmt.Fprintf(tabW, "B2_1:1 rev\t%t\t%t\t%t\t%t\t%t\t-\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			if isRelationAllowed && isOneToOne && hasTable {
+
+				name := strs.ToGoCamelCase(kcuce.ReferencedTableName.Data)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name, t.customStructTagFields[kcuce.ReferencedTableName.Data],
+					"// Reversed 1:1", kcuce.TableName+"."+kcuce.ColumnName, "=>", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			}
+
+			// case MANY-TO-MANY
+			targetTbl, targetColumn := g.krs.ManyToManyTarget(kcuce.ReferencedTableName.Data, kcuce.ReferencedColumnName.Data)
+			if targetTbl != "" && targetColumn != "" {
+				keySeen := fieldMapFn(pluralize(targetTbl))
+				isRelationAllowed = g.isAllowedRelationship(kcuce.TableName, kcuce.ColumnName, targetTbl, targetColumn) && !t.relationshipSeen[keySeen]
+				t.relationshipSeen[keySeen] = true
+			}
+
+			// case MANY-TO-MANY
+			fmt.Fprintf(tabW, "C2_M:N rev\t%t\t%t\t%t\t%t\t%t\t%s\t%s => %s\n", isOneToMany, isOneToOne, relationShipSeenAlready, isRelationAllowed, hasTable,
+				targetTbl+"."+targetColumn,
+				kcuce.TableName+"."+kcuce.ColumnName, kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data)
+			// hasTable shall not be added because usually the link table does not get loaded.
+			if isRelationAllowed && targetTbl != "" && targetColumn != "" {
+
+				name := pluralize(targetTbl)
+				fieldName := fieldMapFn(name)
+				t.availableRelationships = append(t.availableRelationships, relationShipInfo{
+					isCollection:          true,
+					tableName:             kcuce.ReferencedTableName.Data,
+					structName:            name,
+					mappedStructFieldName: fieldName,
+					columnName:            kcuce.ReferencedColumnName.Data,
+				})
+
+				mainGen.Pln(fieldName, " *", name, t.customStructTagFields[targetTbl],
+					"// Reversed M:N", kcuce.TableName+"."+kcuce.ColumnName, "via", kcuce.ReferencedTableName.Data+"."+kcuce.ReferencedColumnName.Data,
+					"=>", targetTbl+"."+targetColumn,
+				)
+			}
+		}
+	}
+	if t.debug && hasAtLeastOneRelationShip > 0 {
+		_ = tabW.Flush()
+		fmt.Fprintf(debugBuf, "Relationship count: %d\n", hasAtLeastOneRelationShip)
+		fmt.Println(debugBuf.String())
+	}
+
+	mainGen.Out()
+	mainGen.Pln(`}`) // end type struct
+
+	mainGen.Pln(`func (e *`, t.EntityName(), `) setRelationParent() {`)
+	mainGen.Pln(`if e.Relations != nil && e.Relations.parent == nil {
+			e.Relations.parent = e
+		}
+	}`)
+
+	mainGen.Pln(`func (e *`, t.EntityName(), `) NewRelations() *`, t.relationStructName(), ` {`)
+	mainGen.Pln(`e.Relations = &`, t.relationStructName(), ` { parent: e }
+			return e.Relations }`)
+}
+
+func (t *Table) fnEntityRelationMethods(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) || len(t.availableRelationships) == 0 {
+		return
+	}
+
+	parentPK := t.Table.Columns.PrimaryKeys().First() // TODO support multiple Primary Keys
+	parentPKFieldName := strs.ToGoCamelCase(parentPK.Field)
+
+	for _, rs := range t.availableRelationships {
+		// <DELETE>
+		mainGen.Pln(`func (r *`, t.relationStructName(), `) `, "Delete"+rs.mappedStructFieldName, `(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {`)
+		mainGen.Pln(`dbr := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, rs.mappedStructFieldName, `DeleteByFK`, `"`), `, opts...)`)
+		mainGen.Pln(`res, err := dbr.ExecContext(ctx, r.parent.`, parentPKFieldName, `)`)
+		mainGen.Pln(`err = dbr.ResultCheckFn(`, constTableName(rs.tableName), `, len(r.`, rs.mappedStructFieldName, `.Data), res, err)`)
+		mainGen.Pln(`if err == nil && r.`, rs.mappedStructFieldName, ` != nil { r.`, rs.mappedStructFieldName, `.Clear() }`)
+		mainGen.Pln(`return errors.WithStack(err)
+		}`)
+		// </DELETE>
+
+		// <INSERT>
+		mainGen.Pln(`func (r *`, t.relationStructName(), `) `, codegen.SkipWS("Insert", rs.mappedStructFieldName), `(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {`)
+		mainGen.Pln(`if r.`, rs.mappedStructFieldName, ` == nil || len(r.`, rs.mappedStructFieldName, `.Data) == 0 { return nil }
+		for _, e2 := range r.`, rs.mappedStructFieldName, `.Data {
+			e2.`, strs.ToGoCamelCase(rs.columnName), ` = `, g.convertType(
+			parentPK,
+			g.findColumn(rs.tableName, rs.columnName),
+			`r.parent.`+parentPKFieldName,
+		), `
+		}
+			return errors.WithStack(r.`, rs.mappedStructFieldName, `.DBInsert(ctx, dbm, opts...)) }`)
+		// </INSERT>
+
+		// <UPDATE>
+		mainGen.Pln(`func (r *customerEntityRelations) `, codegen.SkipWS(`Update`, rs.mappedStructFieldName), `(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+		mainGen.Pln(`if r.`, rs.mappedStructFieldName, ` == nil || len(r.`, rs.mappedStructFieldName, `.Data) == 0 {
+			dbr := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, rs.mappedStructFieldName, `DeleteByFK`, `"`), `, opts...)
+			res, err := dbr.ExecContext(ctx, r.parent.`, parentPKFieldName, `)
+			return dbr.ResultCheckFn(`, constTableName(rs.tableName), `, -1, res, errors.WithStack(err))
+		}
+		for _, e2 := range r.`, rs.mappedStructFieldName, `.Data {
+				e2.`, strs.ToGoCamelCase(rs.columnName), ` = `, g.convertType(
+			parentPK,
+			g.findColumn(rs.tableName, rs.columnName),
+			`r.parent.`+parentPKFieldName,
+		), `
+		}
+		err = r.`, rs.mappedStructFieldName, `.DBUpdate(ctx, dbm, opts...)
+		return errors.WithStack(err)
+}`)
+		// </UPDATE>
+
+		// <SELECT>
+		mainGen.Pln(`func (r *`, t.relationStructName(), `) `, "Load"+rs.mappedStructFieldName, `(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {`)
+		mainGen.Pln(`if r.`, rs.mappedStructFieldName, ` == nil { r.`, rs.mappedStructFieldName, ` = &`, rs.mappedStructFieldName, `{} }`)
+		mainGen.Pln(`r.`, rs.mappedStructFieldName, `.Clear()
+			  rowCount, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, rs.mappedStructFieldName, `SelectByFK"`), `, opts...).Load(ctx, r.`, rs.mappedStructFieldName, `, r.parent.EntityID)
+				return rowCount, errors.WithStack(err) }`)
+		// </SELECT>
+
+	} // end for availableRelationships
+
+	// TODO for all `All` functions add a possibility to load async.
+	//g, ctx := errgroup.WithContext(ctx)
+	//g.Go(func() error {
+	//	_, err = r.LoadCustomerAddressEntities(ctx, dbm, opts...)
+	//	return errors.WithStack(err)
+	//})
+	//return g.Wait()
+
+	// <INSERT_ALL>
+	mainGen.Pln(`func (r *`, t.relationStructName(), `) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {`)
+	for _, rs := range t.availableRelationships {
+		mainGen.Pln(`if err := r.`, codegen.SkipWS("Insert", rs.mappedStructFieldName), `(ctx, dbm, opts...); err != nil { return errors.WithStack(err) }`)
+	}
+	mainGen.Pln(`return nil }`)
+	// </INSERT_ALL>
+
+	// <SELECT_ALL>
+	mainGen.Pln(`func (r *`, t.relationStructName(), `) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
+	for _, rs := range t.availableRelationships {
+		mainGen.Pln(`if _, err = r.`, codegen.SkipWS("Load", rs.mappedStructFieldName), `(ctx, dbm, opts...); err != nil { return errors.WithStack(err) }`)
+	}
+	mainGen.Pln(`return nil }`)
+	// </SELECT_ALL>
+
+	// <UPDATE_ALL>
+	mainGen.Pln(`func (r *`, t.relationStructName(), `) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {`)
+	for _, rs := range t.availableRelationships {
+		mainGen.Pln(`if err := r.`, codegen.SkipWS("Update", rs.mappedStructFieldName), `(ctx, dbm, opts...); err != nil { return errors.WithStack(err) }`)
+	}
+	mainGen.Pln(`return nil }`)
+	// </UPDATE_ALL>
+
+	// <DELETE_ALL>
+	mainGen.Pln(`func (r *`, t.relationStructName(), `) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {`)
+	for _, rs := range t.availableRelationships {
+		mainGen.Pln(`if err := r.`, codegen.SkipWS("Delete", rs.mappedStructFieldName), `(ctx, dbm, opts...); err != nil { return errors.WithStack(err) }`)
+	}
+	mainGen.Pln(`return nil }`)
+	// </DELETE_ALL>
 }
 
 func (t *Table) fnEntityGetSetPrivateFields(mainGen *codegen.Go, g *Generator) {
@@ -640,6 +869,26 @@ func (t *Table) fnCollectionEach(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`)
 }
 
+// Clear because Reset name is used by gogo protobuf
+func (t *Table) fnCollectionClear(mainGen *codegen.Go, g *Generator) {
+	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionClear) {
+		return
+	}
+	mainGen.C(`Clear will reset the data slice or create a new type. Useful for reusing the underlying backing slice array. Auto generated via dmlgen.`)
+	mainGen.Pln(`func (cc *`, t.CollectionName(), `) Clear() *`, t.CollectionName(), ` {
+	if cc == nil {
+		*cc = `, t.CollectionName(), `{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) { cc.Data = cc.Data[:c] }
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
+}`)
+}
+
 func (t *Table) fnCollectionCut(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionCut) {
 		return
@@ -819,9 +1068,7 @@ func (t *Table) fnCollectionDBMapColumns(mainGen *codegen.Go, g *Generator) {
 							}`)
 
 		mainGen.Pln(`case dml.ColumnMapScan:
-							if cm.Count == 0 {
-								cc.Data = cc.Data[:0]
-							}
+							if cm.Count == 0 { cc.Clear(); }
 							var e `, t.EntityName(), `
 							if err := cc.scanColumns(cm, &e); err != nil {
 								return errors.WithStack(err)
@@ -906,9 +1153,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBLoad(ctx context.Context,dbm *DBM, pkIDs []`, dbLoadStructArgOrSliceName, `, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "DBLoad", `"`), `)
 		defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
-	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
-	}`)
+	mainGen.Pln(dmlEnabled, `cc.Clear()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `// put the IDs`, bufPKNames.String(), `into the context as value to search for a cache entry in the event function.
@@ -984,7 +1229,7 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpdate)
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpdateByPK")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpdateByPK", `"`), `);
 			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
@@ -996,18 +1241,13 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 			return errors.WithStack(err)
 		}`)
 
-	mainGen.Pln(dmlEnabled, `	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}`)
-
-	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).Prepare(ctx)
+	mainGen.Pln(dmlEnabled, `dbr := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...)`)
+	mainGen.Pln(dmlEnabled, `dbrStmt, err := dbr.Prepare(ctx)
 		if err != nil {	return errors.WithStack(err) }`)
 
 	mainGen.Pln(dmlEnabled, `for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(`, constTableName(t.Table.Name), `, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}`)
@@ -1017,46 +1257,44 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	dmlEnabled = t.hasFeature(g, FeatureDBInsert)
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "Insert")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "Insert", `"`), `);
 			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-			return nil, errors.WithStack(err)
+	mainGen.Pln(dmlEnabled, `if err := dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+			return errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, cc); err != nil {
-			return nil, errors.WithStack(err)
+		dbr := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...)
+		res, err := dbr.ExecContext(ctx, cc)
+		if err := dbr.ResultCheckFn(`, constTableName(t.Table.Name), `, len(cc.Data), res, err); err != nil {
+			return errors.WithStack(err)
 		}
-		if err = errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, qo.SkipEvents,cc, nil)); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		return res, nil
+		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterInsert, qo.SkipEvents,cc, nil))
 	}`)
 
 	dmlEnabled = t.hasFeature(g, FeatureDBUpsert)
 	collectionFuncName = codegen.SkipWS(t.EntityName(), "UpsertByPK")
-	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result,err error) {`)
+	mainGen.Pln(dmlEnabled, `func (cc `, collectionPTRName, `) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc)  (err error) {`)
 	mainGen.Pln(dmlEnabled && tracingEnabled, `	ctx, span := dbm.option.Trace.Start(ctx, `, codegen.SkipWS(`"`, t.CollectionName(), "UpsertByPK", `"`), `);
 			defer func(){ cstrace.Status(span, err, ""); span.End(); }()`)
 	mainGen.Pln(dmlEnabled, `if cc == nil {
-		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
+		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.CollectionName()), `can't be nil")
 	}`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
-	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-			return nil, errors.WithStack(err)
+	mainGen.Pln(dmlEnabled, `if err := dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+			return errors.WithStack(err)
 		}
-		if res, err = dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-			return nil, errors.WithStack(err)
+		dbr := dbm.ConnPool.WithCacheKey(`, codegen.SkipWS(`"`, collectionFuncName, `"`), `, opts...)
+		res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+		if err := dbr.ResultCheckFn(`, constTableName(t.Table.Name), `, len(cc.Data), res, err); err != nil {
+				return errors.WithStack(err)
 		}
-		if err = dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents,cc, nil); err != nil {
-			return nil, errors.WithStack(err)
-		}
-		return res, nil
+		return errors.WithStack(dbm.`, entityEventName, `(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents,cc, nil))
 	}`)
 }
 
@@ -1122,6 +1360,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled && len(t.availableRelationships) > 0, `e.setRelationParent()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `// put the IDs`, bufPKNames.String(), `into the context as value to search for a cache entry in the event function.
@@ -1150,6 +1389,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled && len(t.availableRelationships) > 0, `e.setRelationParent()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
@@ -1172,6 +1412,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled && len(t.availableRelationships) > 0, `e.setRelationParent()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
@@ -1194,6 +1435,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled && len(t.availableRelationships) > 0, `e.setRelationParent()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
@@ -1216,6 +1458,7 @@ func (t *Table) fnEntityDBMHandler(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(dmlEnabled, `if e == nil {
 		return nil, errors.NotValid.Newf(`, codegen.SkipWS(`"`, t.EntityName()), `can't be nil")
 	}`)
+	mainGen.Pln(dmlEnabled && len(t.availableRelationships) > 0, `e.setRelationParent()`)
 	mainGen.Pln(dmlEnabled, `qo := dml.FromContextQueryOptions(ctx)`)
 
 	mainGen.Pln(dmlEnabled, `if err = dbm.`, entityEventName, `(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
@@ -1255,15 +1498,15 @@ func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 
 	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.CollectionName(), `SelectAll"`),
-		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Select("*")),`)
 
 	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.CollectionName(), `SelectByPK"`),
-		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereIN.String(), `),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Select("*")).Where(`, pkWhereIN.String(), `),`)
 
 	mainGen.Pln(tblPKLen > 0 && t.hasFeature(g, FeatureDBSelect|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `SelectByPK"`),
-		`: dbmo.InitSelectFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Select("*")).Where(`, pkWhereEQ.String(), `),`)
+		`: dbmo.InitSelectFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Select("*")).Where(`, pkWhereEQ.String(), `),`)
 
 	if t.Table.IsView() {
 		return
@@ -1271,16 +1514,38 @@ func (t *Table) fnDBMOptionsSQLBuildQueries(mainGen *codegen.Go, g *Generator) {
 
 	mainGen.Pln(t.hasFeature(g, FeatureDBUpdate|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `UpdateByPK"`),
-		`: dbmo.InitUpdateFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Update().Where(`, pkWhereEQ.String(), `)),`)
+		`: dbmo.InitUpdateFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Update().Where(`, pkWhereEQ.String(), `)),`)
 	mainGen.Pln(t.hasFeature(g, FeatureDBDelete|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `DeleteByPK"`),
-		`: dbmo.InitDeleteFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Delete().Where(`, pkWhereIN.String(), `)),`)
+		`: dbmo.InitDeleteFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Delete().Where(`, pkWhereIN.String(), `)),`)
 	mainGen.Pln(t.hasFeature(g, FeatureDBInsert|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `Insert"`),
-		`: dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()),`)
+		`: dbmo.InitInsertFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Insert()),`)
 	mainGen.Pln(t.hasFeature(g, FeatureDBUpsert|FeatureEntityStruct|FeatureCollectionStruct),
 		codegen.SkipWS(`"`, t.EntityName(), `UpsertByPK"`),
-		`: dbmo.InitInsertFn(tbls.MustTable(`, codegen.SkipWS(`TableName`, t.EntityName()), `).Insert()).OnDuplicateKey(),`)
+		`: dbmo.InitInsertFn(tbls.MustTable(`, constTableName(t.Table.Name), `).Insert()).OnDuplicateKey(),`)
+
+	// foreign keys
+	if g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityRelationships) && len(t.availableRelationships) > 0 {
+		mainGen.C(`<FOREIGN_KEY_QUERIES`, t.Table.Name, `>`)
+		var fkWhereEQ bytes.Buffer
+		for _, rs := range t.availableRelationships {
+			fkWhereEQ.WriteString("\ndml.Column(`" + rs.columnName + "`).Equal().PlaceHolder(),\n")
+
+			// DELETE FROM
+			mainGen.Pln(codegen.SkipWS(`"`, rs.mappedStructFieldName, `DeleteByFK"`),
+				`: dbmo.InitDeleteFn(tbls.MustTable(`, constTableName(rs.tableName), `).Delete().Where(`, fkWhereEQ.String(), `)),`)
+
+			// SELECT FROM
+			mainGen.Pln(codegen.SkipWS(`"`, rs.mappedStructFieldName, `SelectByFK"`),
+				`: dbmo.InitSelectFn(tbls.MustTable(`, constTableName(rs.tableName), `).Select("*").Where(`, fkWhereEQ.String(), `)),`)
+
+			// UPDATE not needed as it uses the default UPDATE
+
+			fkWhereEQ.Reset()
+		}
+		mainGen.C(`</FOREIGN_KEY_QUERIES`, t.Table.Name, `>`)
+	}
 }
 
 func (t *Table) generateTestOther(testGen *codegen.Go, g *Generator) (codeWritten int) {

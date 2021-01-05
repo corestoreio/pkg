@@ -6,20 +6,12 @@ import (
 	"go/token"
 	"path/filepath"
 	"strings"
-	"unicode"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/strs"
 )
 
-// lcFirst transforms the first character of a string to lower case.
-func lcFirst(s string) string {
-	sr := []rune(s)
-	sr[0] = unicode.ToLower(sr[0])
-	return string(sr)
-}
-
-func collectionName(name string) string {
+func pluralize(name string) string {
 	tg := strs.ToGoCamelCase(name)
 	switch {
 	case strings.HasSuffix(name, "y"):

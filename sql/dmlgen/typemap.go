@@ -470,6 +470,26 @@ func (g *Generator) mySQLToGoDmlColumnMap(c *ddl.Column, withNull bool) string {
 	return string(unicode.ToUpper(r)) + gt[n:]
 }
 
+func (g *Generator) convertType(from, to *ddl.Column, fieldName string) string {
+	if from.HasEqualType(to) {
+		return fieldName
+	}
+	var targetFn, toTargetFn string
+	targetFn = "panic"
+
+	targetFn = g.mySQLToGoType(to, to.IsNull())
+	if to.IsNull() {
+		// null.Uint32 => null.MakeUint32
+		targetFn = targetFn[0:5] + "Make" + targetFn[5:]
+	}
+	toTargetFn = g.mySQLToGoType(to, false)
+	if targetFn == toTargetFn {
+		return fieldName
+	}
+
+	return fmt.Sprintf("%s(%s(%s))", targetFn, toTargetFn, fieldName)
+}
+
 func (g *Generator) toSerializerType(c *ddl.Column, withNull bool) string {
 	goType := g.findType(c)
 

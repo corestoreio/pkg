@@ -6,6 +6,8 @@ DROP TABLE IF EXISTS `store_group`;
 DROP TABLE IF EXISTS `store_website`;
 DROP TABLE IF EXISTS `customer_entity`;
 DROP TABLE IF EXISTS `customer_address_entity`;
+DROP TABLE IF EXISTS `customer_entity_varchar`;
+DROP TABLE IF EXISTS `customer_entity_int`;
 DROP TABLE IF EXISTS `core_configuration`;
 
 DROP VIEW IF EXISTS `view_customer_no_auto_increment`;

@@ -65,7 +65,7 @@ func TestNewDBManager_Manual(t *testing.T) {
 	dbm, err := NewDBManager(ctx, opts)
 	assert.NoError(t, err)
 
-	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", FloatMaxDecimals: 6, MaxLenStringLimit: 41})
+	ps := pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6, MaxLenStringLimit: 41})
 
 	t.Run("Collection", func(t *testing.T) {
 		var ec CoreConfigurations

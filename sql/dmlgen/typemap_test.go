@@ -81,9 +81,9 @@ func TestToGoTypeNull(t *testing.T) {
 		{&ddl.Column{Field: `description_003`, DataType: `char`, Null: "YES"}, "null.String"},
 		{&ddl.Column{Field: `description_004`, DataType: `char`, Null: "NO"}, "string"},
 	}
-	ts := new(Generator)
+	g := new(Generator)
 	for _, test := range tests {
-		have := ts.mySQLToGoType(test.c, true) // including null
+		have := g.mySQLToGoType(test.c, true) // including null
 		assert.Exactly(t, test.want, have, "%q", test.c.Field)
 	}
 }
@@ -149,9 +149,9 @@ func TestMySQLToGoDmlColumnMap(t *testing.T) {
 		{&ddl.Column{Field: `description_003`, DataType: `char`, Null: "YES"}, "NullString"},
 		{&ddl.Column{Field: `description_004`, DataType: `char`, Null: "NO"}, "String"},
 	}
-	ts := new(Generator)
+	g := new(Generator)
 	for i, test := range tests {
-		have := ts.mySQLToGoDmlColumnMap(test.c, true) // including null
+		have := g.mySQLToGoDmlColumnMap(test.c, true) // including null
 		assert.Exactly(t, test.want, have, "IDX:%d %#v", i, test.c)
 	}
 }
@@ -177,9 +177,48 @@ func TestToGoPrimitive(t *testing.T) {
 		{"ColDecimal124", &ddl.Column{Field: "col_decimal_12_4", Pos: 12, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", Generated: "NEVER"}},
 		{"Price124a", &ddl.Column{Field: "price_12_4a", Pos: 13, Default: null.MakeString("NULL"), Null: "YES", DataType: "decimal", Precision: null.MakeInt64(12), Scale: null.MakeInt64(4), ColumnType: "decimal(12,4)", Generated: "NEVER"}},
 	}
-	ts := new(Generator)
+	g := new(Generator)
 	for i, test := range tests {
-		have := ts.toGoPrimitiveFromNull(test.c)
+		have := g.toGoPrimitiveFromNull(test.c)
 		assert.Exactly(t, test.want, have, "IDX:%d %#v", i, test.c)
+	}
+}
+
+func TestConvertType(t *testing.T) {
+	tests := []struct {
+		from *ddl.Column
+		to   *ddl.Column
+		want string
+	}{
+		{
+			&ddl.Column{Null: "", DataType: "int", ColumnType: "int(10) unsigned"},
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(10) unsigned"},
+			"null.MakeUint32(uint32(v))",
+		},
+		{
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(10) unsigned"},
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(10) unsigned"},
+			"v",
+		},
+		{
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(11)"},
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(10) unsigned"},
+			"null.MakeUint32(uint32(v))",
+		},
+		{
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(10) unsigned"},
+			&ddl.Column{Null: "YES", DataType: "int", ColumnType: "int(11)"},
+			"null.MakeInt32(int32(v))",
+		},
+		{
+			&ddl.Column{Null: "", DataType: "int", ColumnType: "int(10) unsigned"},
+			&ddl.Column{Null: "", DataType: "bigint", ColumnType: "bigint(11)"},
+			"v",
+		},
+	}
+	g := new(Generator)
+	for i, test := range tests {
+		have := g.convertType(test.from, test.to, "v")
+		assert.Exactly(t, test.want, have, "IDX:%d", i)
 	}
 }
