@@ -161,11 +161,22 @@ func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 
 // WithVerifyConnection checks if the connection to the server is valid and can
 // be established.
-func WithVerifyConnection() ConnPoolOption {
+func WithVerifyConnection(ctx context.Context, pingRetry time.Duration) ConnPoolOption {
 	return ConnPoolOption{
 		sortOrder: 149,
 		fn: func(c *ConnPool) error {
-			return errors.WithStack(c.DB.Ping())
+			tkr := time.NewTicker(pingRetry)
+			defer tkr.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-tkr.C:
+					if err := c.DB.PingContext(ctx); err == nil {
+						return nil
+					}
+				}
+			}
 		},
 	}
 }
@@ -443,7 +454,9 @@ func MustConnectAndVerify(opts ...ConnPoolOption) *ConnPool {
 	if err != nil {
 		panic(err)
 	}
-	if err := c.options(WithVerifyConnection()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second) // not an elegant solution
+	defer cancel()
+	if err := c.options(WithVerifyConnection(ctx, 10*time.Second)); err != nil {
 		panic(err)
 	}
 	return c
