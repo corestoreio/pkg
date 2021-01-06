@@ -1371,6 +1371,10 @@ func (b *ColumnMap) Strings(values ...string) *ColumnMap {
 	return b.addSlice("Strings", values)
 }
 
+func (b *ColumnMap) Times(values ...time.Time) *ColumnMap {
+	return b.addSlice("Times", values)
+}
+
 func (b *ColumnMap) NullStrings(values ...null.String) *ColumnMap {
 	return b.addSlice("NullStrings", values)
 }
