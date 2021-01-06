@@ -165,6 +165,10 @@ func WithVerifyConnection(ctx context.Context, pingRetry time.Duration) ConnPool
 	return ConnPoolOption{
 		sortOrder: 149,
 		fn: func(c *ConnPool) error {
+			if err := c.DB.PingContext(ctx); err == nil {
+				return nil
+			}
+
 			tkr := time.NewTicker(pingRetry)
 			defer tkr.Stop()
 			for {
