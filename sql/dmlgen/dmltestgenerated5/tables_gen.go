@@ -29,9 +29,9 @@ type CustomerAddressEntity struct {
 
 type customerEntityRelations struct {
 	parent                  *CustomerEntity
-	CustomerEntityVarchars  *CustomerEntityVarchars  // Reversed 1:M customer_entity.entity_id => customer_entity_varchar.entity_id
 	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
 	CustomerEntityInts      *CustomerEntityInts      // Reversed 1:M customer_entity.entity_id => customer_entity_int.entity_id
+	CustomerEntityVarchars  *CustomerEntityVarchars  // Reversed 1:M customer_entity.entity_id => customer_entity_varchar.entity_id
 }
 
 func (e *CustomerEntity) setRelationParent() {
@@ -324,12 +324,6 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			"CustomerEntityInsert":     dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()),
 			"CustomerEntityUpsertByPK": dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).OnDuplicateKey(),
 			// <FOREIGN_KEY_QUERIES customer_entity >
-			"CustomerEntityVarcharsDeleteByFK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntityVarchar).Delete().Where(
-				dml.Column(`entity_id`).Equal().PlaceHolder(),
-			)),
-			"CustomerEntityVarcharsSelectByFK": dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntityVarchar).Select("*").Where(
-				dml.Column(`entity_id`).Equal().PlaceHolder(),
-			)),
 			"CustomerAddressEntitiesDeleteByFK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerAddressEntity).Delete().Where(
 				dml.Column(`parent_id`).Equal().PlaceHolder(),
 			)),
@@ -340,6 +334,12 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 				dml.Column(`entity_id`).Equal().PlaceHolder(),
 			)),
 			"CustomerEntityIntsSelectByFK": dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntityInt).Select("*").Where(
+				dml.Column(`entity_id`).Equal().PlaceHolder(),
+			)),
+			"CustomerEntityVarcharsDeleteByFK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntityVarchar).Delete().Where(
+				dml.Column(`entity_id`).Equal().PlaceHolder(),
+			)),
+			"CustomerEntityVarcharsSelectByFK": dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerEntityVarchar).Select("*").Where(
 				dml.Column(`entity_id`).Equal().PlaceHolder(),
 			)),
 			// </FOREIGN_KEY_QUERIES customer_entity >
@@ -706,48 +706,6 @@ func (cc *CustomerAddressEntities) EntityIDs(ret ...uint32) []uint32 {
 	return ret
 }
 
-func (r *customerEntityRelations) DeleteCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
-	dbr := dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsDeleteByFK", opts...)
-	res, err := dbr.ExecContext(ctx, r.parent.EntityID)
-	err = dbr.ResultCheckFn(TableNameCustomerEntityVarchar, len(r.CustomerEntityVarchars.Data), res, err)
-	if err == nil && r.CustomerEntityVarchars != nil {
-		r.CustomerEntityVarchars.Clear()
-	}
-	return errors.WithStack(err)
-}
-
-func (r *customerEntityRelations) InsertCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
-	if r.CustomerEntityVarchars == nil || len(r.CustomerEntityVarchars.Data) == 0 {
-		return nil
-	}
-	for _, e2 := range r.CustomerEntityVarchars.Data {
-		e2.EntityID = r.parent.EntityID
-	}
-	return errors.WithStack(r.CustomerEntityVarchars.DBInsert(ctx, dbm, opts...))
-}
-
-func (r *customerEntityRelations) UpdateCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
-	if r.CustomerEntityVarchars == nil || len(r.CustomerEntityVarchars.Data) == 0 {
-		dbr := dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsDeleteByFK", opts...)
-		res, err := dbr.ExecContext(ctx, r.parent.EntityID)
-		return dbr.ResultCheckFn(TableNameCustomerEntityVarchar, -1, res, errors.WithStack(err))
-	}
-	for _, e2 := range r.CustomerEntityVarchars.Data {
-		e2.EntityID = r.parent.EntityID
-	}
-	err = r.CustomerEntityVarchars.DBUpdate(ctx, dbm, opts...)
-	return errors.WithStack(err)
-}
-
-func (r *customerEntityRelations) LoadCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
-	if r.CustomerEntityVarchars == nil {
-		r.CustomerEntityVarchars = &CustomerEntityVarchars{}
-	}
-	r.CustomerEntityVarchars.Clear()
-	rowCount, err = dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsSelectByFK", opts...).Load(ctx, r.CustomerEntityVarchars, r.parent.EntityID)
-	return rowCount, errors.WithStack(err)
-}
-
 func (r *customerEntityRelations) DeleteCustomerAddressEntities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
 	dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntitiesDeleteByFK", opts...)
 	res, err := dbr.ExecContext(ctx, r.parent.EntityID)
@@ -832,53 +790,95 @@ func (r *customerEntityRelations) LoadCustomerEntityInts(ctx context.Context, db
 	return rowCount, errors.WithStack(err)
 }
 
-func (r *customerEntityRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
-	if err := r.InsertCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
-		return errors.WithStack(err)
+func (r *customerEntityRelations) DeleteCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+	err = dbr.ResultCheckFn(TableNameCustomerEntityVarchar, len(r.CustomerEntityVarchars.Data), res, err)
+	if err == nil && r.CustomerEntityVarchars != nil {
+		r.CustomerEntityVarchars.Clear()
 	}
+	return errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) InsertCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.CustomerEntityVarchars == nil || len(r.CustomerEntityVarchars.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.CustomerEntityVarchars.Data {
+		e2.EntityID = r.parent.EntityID
+	}
+	return errors.WithStack(r.CustomerEntityVarchars.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.CustomerEntityVarchars == nil || len(r.CustomerEntityVarchars.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+		return dbr.ResultCheckFn(TableNameCustomerEntityVarchar, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.CustomerEntityVarchars.Data {
+		e2.EntityID = r.parent.EntityID
+	}
+	err = r.CustomerEntityVarchars.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) LoadCustomerEntityVarchars(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.CustomerEntityVarchars == nil {
+		r.CustomerEntityVarchars = &CustomerEntityVarchars{}
+	}
+	r.CustomerEntityVarchars.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("CustomerEntityVarcharsSelectByFK", opts...).Load(ctx, r.CustomerEntityVarchars, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
 	if err := r.InsertCustomerAddressEntities(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 	if err := r.InsertCustomerEntityInts(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
+	if err := r.InsertCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
 func (r *customerEntityRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
-	if _, err = r.LoadCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
-		return errors.WithStack(err)
-	}
 	if _, err = r.LoadCustomerAddressEntities(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 	if _, err = r.LoadCustomerEntityInts(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
+	if _, err = r.LoadCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
 func (r *customerEntityRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
-	if err := r.UpdateCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
-		return errors.WithStack(err)
-	}
 	if err := r.UpdateCustomerAddressEntities(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 	if err := r.UpdateCustomerEntityInts(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
+	if err := r.UpdateCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
 func (r *customerEntityRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
-	if err := r.DeleteCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
-		return errors.WithStack(err)
-	}
 	if err := r.DeleteCustomerAddressEntities(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 	if err := r.DeleteCustomerEntityInts(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.DeleteCustomerEntityVarchars(ctx, dbm, opts...); err != nil {
 		return errors.WithStack(err)
 	}
 	return nil

@@ -28,4 +28,6 @@
 //
 // CRUD (https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Create,
 // Read, Update and Delete.
+//
+// TODO for testing maybe: https://pkg.go.dev/perkeep.org/pkg/test/dockertest
 package sql
