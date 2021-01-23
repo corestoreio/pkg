@@ -15,6 +15,7 @@
 // +build etcdv3
 
 // TODO think about: https://github.com/tailscale/tailetc
+// TODO think about: https://pkg.go.dev/go.gazette.dev/core/keyspace
 
 // build tag above: for some reason it cannot be added build tag "csall" because
 // when running in parent directory `config` the command:`$ go test -tags csall
