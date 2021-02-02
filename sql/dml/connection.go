@@ -800,10 +800,10 @@ func (c *ConnPool) Transaction(ctx context.Context, opts *sql.TxOptions, fn func
 	}()
 
 	if err = fn(tx); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
-	return errors.WithStack(tx.Commit())
+	return tx.Commit()
 }
 
 func (c *ConnPool) CachedQueries() map[string]string {
