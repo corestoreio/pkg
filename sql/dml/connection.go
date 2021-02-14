@@ -832,7 +832,7 @@ func (c *ConnPool) RegisterByQueryBuilder(cacheKeyQB map[string]QueryBuilder) er
 	for _, cacheKey := range keys {
 		qb := cacheKeyQB[cacheKey]
 		if _, ok := c.queryCache.queries[cacheKey]; ok {
-			continue
+			return errors.AlreadyExists.Newf("[dml] CacheKey %q already exists", cacheKey)
 		}
 
 		prepareQueryBuilder(c.queryCache.mapTableName, qb)
