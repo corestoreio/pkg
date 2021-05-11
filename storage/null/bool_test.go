@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/pkg/util/assert"
-	"github.com/gogo/protobuf/proto"
 )
 
 var (
@@ -40,10 +39,6 @@ var (
 	_ encoding.TextMarshaler     = (*Bool)(nil)
 	_ encoding.TextUnmarshaler   = (*Bool)(nil)
 	_ driver.Valuer              = (*Bool)(nil)
-	_ proto.Marshaler            = (*Bool)(nil)
-	_ proto.Unmarshaler          = (*Bool)(nil)
-	_ proto.Sizer                = (*Bool)(nil)
-	_ protoMarshalToer           = (*Bool)(nil)
 )
 
 func TestMakeNullBool(t *testing.T) {
@@ -56,9 +51,7 @@ func TestMakeNullBool(t *testing.T) {
 		t.Error("MakeBool(false)", "is invalid, but should be valid")
 	}
 	assert.Exactly(t, "false", zero.String())
-	assert.Exactly(t, 2, zero.Size())
 	assert.Exactly(t, "null", Bool{}.String())
-	assert.Exactly(t, 0, Bool{}.Size())
 }
 
 func TestNullBool_UnmarshalJSON(t *testing.T) {

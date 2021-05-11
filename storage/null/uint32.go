@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"encoding/json"
 	"math"
 	"strconv"
 
@@ -111,20 +112,20 @@ func (a *Uint32) UnmarshalJSON(data []byte) error {
 	}
 	var err error
 	var v interface{}
-	if err = jsonUnMarshalFn(data, &v); err != nil {
+	if err = json.Unmarshal(data, &v); err != nil {
 		return err
 	}
 
 	switch v.(type) {
 	case float64:
 		// Unmarshal again, directly to int32, to avoid intermediate float64
-		err = jsonUnMarshalFn(data, &a.Uint32)
+		err = json.Unmarshal(data, &a.Uint32)
 	case map[string]interface{}:
 		dto := &struct {
 			Uint32 uint32
 			Valid  bool
 		}{}
-		err = jsonUnMarshalFn(data, dto)
+		err = json.Unmarshal(data, dto)
 		a.Uint32 = dto.Uint32
 		a.Valid = dto.Valid
 	case nil:

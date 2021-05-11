@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/pkg/util/assert"
-	"github.com/gogo/protobuf/proto"
 )
 
 var (
@@ -47,10 +46,6 @@ var (
 	_ encoding.TextMarshaler     = (*Time)(nil)
 	_ encoding.TextUnmarshaler   = (*Time)(nil)
 	_ driver.Valuer              = (*Time)(nil)
-	_ proto.Marshaler            = (*Time)(nil)
-	_ proto.Unmarshaler          = (*Time)(nil)
-	_ proto.Sizer                = (*Time)(nil)
-	_ protoMarshalToer           = (*Time)(nil)
 )
 
 func TestNullTime_JsonUnmarshal(t *testing.T) {
@@ -161,13 +156,12 @@ func TestNullTime_BinaryEncoding(t *testing.T) {
 			assert.Exactly(t, haveS, wantS)
 		}
 	}
-	t.Run("now fixed", runner(MakeTime(now()), []byte("\x01\x00\x00\x00\x0e\xbbK7\xe5\x00\x00\x00\x02\x00\x00"), []byte("\n\b\b\xe5\x81\xe5\x9d\x04\x10\x02\x10\x01")))
-	t.Run("null", runner(Time{}, nil, []byte("\n\v\b\x80\x92\xb8Ø\xfe\xff\xff\xff\x01")))
-}
-
-func TestNullTime_Size(t *testing.T) {
-	assert.Exactly(t, 13, Time{}.Size())
-	assert.Exactly(t, 12, MakeTime(now()).Size())
+	t.Run("now fixed", runner(
+		MakeTime(now()),
+		[]byte("\x01\x00\x00\x00\x0e\xbbK7\xe5\x00\x00\x00\x02\x00\x00"),
+		[]byte{0x1, 0x0, 0x0, 0x0, 0xe, 0xbb, 0x4b, 0x37, 0xe5, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0},
+	))
+	t.Run("null", runner(Time{}, nil, nil))
 }
 
 func TestTimeFrom(t *testing.T) {

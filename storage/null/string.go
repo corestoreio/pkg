@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"encoding/json"
 	"strings"
 	"unicode/utf8"
 
@@ -113,7 +114,7 @@ func (a *String) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 
-	if err = jsonUnMarshalFn(data, &v); err != nil {
+	if err = json.Unmarshal(data, &v); err != nil {
 		return err
 	}
 
@@ -125,7 +126,7 @@ func (a *String) UnmarshalJSON(data []byte) error {
 			String string
 			Valid  bool
 		}{}
-		err = jsonUnMarshalFn(data, dto)
+		err = json.Unmarshal(data, dto)
 		a.Data = dto.String
 		a.Valid = dto.Valid
 	case nil:
@@ -144,7 +145,7 @@ func (a String) MarshalJSON() ([]byte, error) {
 	if !a.Valid {
 		return bTextNullLC, nil
 	}
-	return jsonMarshalFn(a.Data)
+	return json.Marshal(a.Data)
 }
 
 // MarshalText implements encoding.TextMarshaler.

@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql/driver"
+	"encoding/json"
 	"strconv"
 
 	"github.com/corestoreio/errors"
@@ -108,7 +109,7 @@ func (a *Bool) UnmarshalJSON(data []byte) error {
 
 	var err error
 	var v interface{}
-	if err = jsonUnMarshalFn(data, &v); err != nil {
+	if err = json.Unmarshal(data, &v); err != nil {
 		return err
 	}
 	switch x := v.(type) {
@@ -119,7 +120,7 @@ func (a *Bool) UnmarshalJSON(data []byte) error {
 			Bool  bool
 			Valid bool
 		}{}
-		err = jsonUnMarshalFn(data, dto)
+		err = json.Unmarshal(data, dto)
 		a.Bool = dto.Bool
 		a.Valid = dto.Valid
 	case nil:

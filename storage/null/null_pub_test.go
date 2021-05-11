@@ -51,10 +51,17 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	defer dmltest.Close(t, dbc)
 
 	rec := newNullTypedRecordWithData()
-	in := dbc.InsertInto("storage_null_types").
-		AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val")
 
-	res, err := in.WithDBR().ExecContext(context.TODO(), dml.Qualify("", rec))
+	err := dbc.RegisterByQueryBuilder(map[string]dml.QueryBuilder{
+		"insert_storage_null_types": dml.NewInsert("storage_null_types").
+			AddColumns("id", "string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val"),
+		"select_storage_null_types": dml.NewSelect().Star().From("storage_null_types").Where(
+			dml.Column("decimal_val").PlaceHolder(),
+		),
+	})
+	assert.NoError(t, err)
+
+	res, err := dbc.WithCacheKey("insert_storage_null_types").ExecContext(context.TODO(), dml.Qualify("", rec))
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
@@ -63,11 +70,7 @@ func TestDecimal_Select_Integration(t *testing.T) {
 	nullTypeSet := &nullTypedRecord{}
 	dec := null.Decimal{Precision: 12345, Scale: 3, Valid: true}
 
-	sel := dbc.SelectFrom("storage_null_types").Star().Where(
-		dml.Column("decimal_val").Decimal(dec),
-	)
-
-	rc, err := sel.WithDBR().Load(context.TODO(), nullTypeSet)
+	rc, err := dbc.WithCacheKey("select_storage_null_types").Load(context.TODO(), nullTypeSet, dec)
 	assert.NoError(t, err)
 	assert.Exactly(t, uint64(1), rc)
 
@@ -79,6 +82,15 @@ func TestNullTypeScanning(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t, dml.WithSetNamesUTF8MB4(),
 		dml.WithExecSQLOnConnOpen(ctx, tableNullTypesCreate), dml.WithExecSQLOnConnClose(ctx, tableNullTypesDrop))
 	defer dmltest.Close(t, dbc)
+
+	err := dbc.RegisterByQueryBuilder(map[string]dml.QueryBuilder{
+		"insert_storage_null_types": dml.NewInsert("storage_null_types").
+			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val"),
+		"select_storage_null_types": dml.NewSelect().Star().From("storage_null_types").Where(
+			dml.Column("id").PlaceHolder(),
+		),
+	})
+	assert.NoError(t, err)
 
 	type nullTypeScanningTest struct {
 		record *nullTypedRecord
@@ -98,9 +110,7 @@ func TestNullTypeScanning(t *testing.T) {
 
 	for _, test := range tests {
 		// Create the record in the db
-		res, err := dbc.InsertInto("storage_null_types").
-			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val", "decimal_val").
-			WithDBR().ExecContext(context.TODO(), dml.Qualify("", test.record))
+		res, err := dbc.WithCacheKey("insert_storage_null_types").ExecContext(context.TODO(), dml.Qualify("", test.record))
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
@@ -108,9 +118,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = dbc.SelectFrom("storage_null_types").Star().Where(
-			dml.Expr("id = ?").Int64(id),
-		).WithDBR().Load(context.TODO(), nullTypeSet)
+		_, err = dbc.WithCacheKey("select_storage_null_types").Load(context.TODO(), nullTypeSet, id)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)
@@ -173,7 +181,7 @@ func (p *nullTypedRecord) MapColumns(cm *dml.ColumnMap) error {
 	if cm.Mode() == dml.ColumnMapEntityReadAll {
 		return cm.Int64(&p.ID).NullString(&p.StringVal).NullInt64(&p.Int64Val).NullFloat64(&p.Float64Val).NullTime(&p.TimeVal).NullBool(&p.BoolVal).Decimal(&p.DecimalVal).Err()
 	}
-	for cm.Next() {
+	for cm.Next(7) {
 		c := cm.Column()
 		switch c {
 		case "id":

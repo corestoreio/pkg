@@ -16,20 +16,11 @@ syntax = "proto3";
 
 package null;
 
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 
-option (gogoproto.goproto_stringer_all) = false;
-option (gogoproto.goproto_getters_all) = false;
-option (gogoproto.goproto_unrecognized_all) = false;
-option (gogoproto.marshaler_all) = true;
-option (gogoproto.sizer_all) = true;
-option (gogoproto.typedecl_all) = false;
-option (gogoproto.unmarshaler_all) = true;
 option cc_enable_arenas = true;
 option csharp_namespace = "CoreStore.Protobuf.Null";
-option go_package = "null";
-option java_multiple_files = true;
+option go_package = "github.com/corestoreio/pkg/storage/null";
 option java_outer_classname = "NullProto";
 option java_package = "com.corestore.protobuf.null";
 option objc_class_prefix = "CSNULL";
@@ -42,68 +33,7 @@ message Decimal {
   uint64 precision = 2;
   int32 scale = 3; // Number of decimals after the radix
   bool negative = 4;
-  bool valid = 5; // If false, null must be handled
   // Quote if true JSON marshaling will quote the returned number and creates
   // a string. JavaScript floats are only 53 bits.
-  bool quote = 6;
-}
-
-message Bool {
-  bool bool = 1;
-  bool valid = 2;
-}
-
-message Float64 {
-  double float64 = 1;
-  bool valid = 2;
-}
-
-message Int64 {
-  int64 int64 = 1;
-  bool valid = 2;
-}
-
-message Int32 {
-  int32 int32 = 1;
-  bool valid = 2;
-}
-
-message Int16 {
-  int32 int16 = 1;
-  bool valid = 2;
-}
-
-message Int8 {
-  int32 int8 = 1;
-  bool valid = 2;
-}
-
-message Uint64 {
-  uint64 uint64 = 1;
-  bool valid = 2;
-}
-
-message Uint32 {
-  uint32 uint32 = 1;
-  bool valid = 2;
-}
-
-message Uint16 {
-  uint32 uint16 = 1;
-  bool valid = 2;
-}
-
-message Uint8 {
-  uint32 uint8 = 1;
-  bool valid = 2;
-}
-
-message String {
-  string data = 1;
-  bool valid = 2;
-}
-
-message Time {
-  google.protobuf.Timestamp time = 1 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
-  bool valid = 2;
+  bool quote = 5;
 }

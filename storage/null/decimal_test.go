@@ -26,7 +26,6 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 	"github.com/corestoreio/pkg/util/pseudo"
-	"github.com/gogo/protobuf/proto"
 )
 
 // Holy guacamole. Those are many interface implementations. Maybe too much but who knows.
@@ -40,10 +39,6 @@ var (
 	_ encoding.TextMarshaler     = (*Decimal)(nil)
 	_ encoding.TextUnmarshaler   = (*Decimal)(nil)
 	_ driver.Valuer              = (*Decimal)(nil)
-	_ proto.Marshaler            = (*Decimal)(nil)
-	_ proto.Unmarshaler          = (*Decimal)(nil)
-	_ proto.Sizer                = (*Decimal)(nil)
-	_ protoMarshalToer           = (*Decimal)(nil)
 	_ sql.Scanner                = (*Decimal)(nil)
 	_ pseudo.Faker               = (*Decimal)(nil)
 )

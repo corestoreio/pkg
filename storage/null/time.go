@@ -17,6 +17,7 @@ package null
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -72,7 +73,7 @@ func (a *Time) UnmarshalJSON(data []byte) error {
 	}
 	var err error
 	var v interface{}
-	if err = jsonUnMarshalFn(data, &v); err != nil {
+	if err = json.Unmarshal(data, &v); err != nil {
 		return err
 	}
 	switch x := v.(type) {
@@ -124,7 +125,7 @@ func (a Time) MarshalBinary() (data []byte, err error) {
 	if !a.Valid {
 		return data, nil
 	}
-	return a.Time.MarshalBinary()
+	return a.NullTime.Time.MarshalBinary()
 }
 
 // UnmarshalBinary parses the byte slice to create a time type.
@@ -171,15 +172,4 @@ func (a Time) Append(args []interface{}) []interface{} {
 		return append(args, a.Time)
 	}
 	return append(args, nil)
-}
-
-func uint64Size(x uint64) (n int) {
-	for {
-		n++
-		x >>= 7
-		if x == 0 {
-			break
-		}
-	}
-	return n
 }

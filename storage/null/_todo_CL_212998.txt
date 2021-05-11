@@ -1,0 +1,17 @@
+this would fix the custom JSON marshaler, etc stuff and would remove the encoding.go file.
+
+Gets release with Go1.17
+
+
+https://go-review.googlesource.com/c/go/+/212998
+
+encoding/json: implement type override for serialization
+
+The CL adds the following APIs:
+	func (*Encoder) Register(f interface{})
+	func (*Decoder) Register(f interface{})
+where f is a function that determines serialization for a specific type
+and takes precedence over the MarshalJSON/UnmarshalJSON methods.
+
+https://github.com/golang/go/issues/5901
+

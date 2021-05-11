@@ -24,7 +24,6 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
-	"github.com/gogo/protobuf/proto"
 )
 
 var (
@@ -36,10 +35,6 @@ var (
 	_ encoding.TextMarshaler     = (*String)(nil)
 	_ encoding.TextUnmarshaler   = (*String)(nil)
 	_ driver.Valuer              = (*String)(nil)
-	_ proto.Marshaler            = (*String)(nil)
-	_ proto.Unmarshaler          = (*String)(nil)
-	_ proto.Sizer                = (*String)(nil)
-	_ protoMarshalToer           = (*String)(nil)
 )
 
 var (

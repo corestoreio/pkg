@@ -15,17 +15,8 @@
 package null
 
 import (
-	"encoding/json"
 	"time"
 )
-
-type protoMarshalToer interface {
-	MarshalTo(data []byte) (n int, err error)
-}
-
-func init() {
-	MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
-}
 
 func maybePanic(err error) {
 	if err != nil {
