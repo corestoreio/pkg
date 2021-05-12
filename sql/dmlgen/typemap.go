@@ -64,10 +64,10 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 
 			// native types of the protobuf implementation. pkg null refers to
 			// storage/null/null.proto file
-			SerializerUNull:    "null.Uint64", // proto unsigned null | no pun intended ;-)
-			SerializerUNotNull: "uint64",      // proto unsigned not null
-			SerializerNull:     "null.Int64",  // proto signed null
-			SerializerNotNull:  "int64",       // proto signed not null
+			SerializerUNull:    "optional uint64", // proto unsigned null | no pun intended ;-)
+			SerializerUNotNull: "uint64",          // proto unsigned not null
+			SerializerNull:     "optional int64",  // proto signed null
+			SerializerNotNull:  "int64",           // proto signed not null
 		},
 		"fbs": {
 			GoUNull:    "null.Uint64",
@@ -77,10 +77,10 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 
 			// native types of the flatbuffers implementation. pkg null refers
 			// to storage/null/null.fbs file
-			SerializerUNull:    "null.Uint64", // fbs unsigned null
-			SerializerUNotNull: "ulong",       // fbs unsigned not null
-			SerializerNull:     "null.Int64",  // fbs signed null
-			SerializerNotNull:  "long",        // fbs signed not null
+			SerializerUNull:    "optional uint64", // fbs unsigned null
+			SerializerUNotNull: "ulong",           // fbs unsigned not null
+			SerializerNull:     "optional int64",  // fbs signed null
+			SerializerNotNull:  "long",            // fbs signed not null
 		},
 	},
 	"int32": {
@@ -95,9 +95,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint32",
 			GoNull:             "null.Int32",
 			GoNotNull:          "int32",
-			SerializerUNull:    "null.Uint32",
+			SerializerUNull:    "optional uint32",
 			SerializerUNotNull: "uint32",
-			SerializerNull:     "null.Int32",
+			SerializerNull:     "optional int32",
 			SerializerNotNull:  "int32",
 		},
 		"fbs": {
@@ -105,9 +105,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint32",
 			GoNull:             "null.Int32",
 			GoNotNull:          "int32",
-			SerializerUNull:    "null.Uint32",
+			SerializerUNull:    "optional uint32",
 			SerializerUNotNull: "uint",
-			SerializerNull:     "null.Int32",
+			SerializerNull:     "optional int32",
 			SerializerNotNull:  "int",
 		},
 	},
@@ -123,9 +123,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint32",
 			GoNull:             "null.Int32",
 			GoNotNull:          "int32",
-			SerializerUNull:    "null.Uint32",
+			SerializerUNull:    "optional uint32",
 			SerializerUNotNull: "uint32",
-			SerializerNull:     "null.Int32",
+			SerializerNull:     "optional int32",
 			SerializerNotNull:  "int32",
 		},
 		"fbs": {
@@ -133,7 +133,7 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint16",
 			GoNull:             "null.Int16",
 			GoNotNull:          "int16",
-			SerializerUNull:    "null.Uint16",
+			SerializerUNull:    "optional uint16",
 			SerializerUNotNull: "ushort",
 			SerializerNull:     "null.Int16",
 			SerializerNotNull:  "short",
@@ -151,9 +151,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint32",
 			GoNull:             "null.Int32",
 			GoNotNull:          "int32",
-			SerializerUNull:    "null.Uint32",
+			SerializerUNull:    "optional uint32",
 			SerializerUNotNull: "uint32",
-			SerializerNull:     "null.Int32",
+			SerializerNull:     "optional int32",
 			SerializerNotNull:  "int32",
 		},
 		"fbs": {
@@ -161,9 +161,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "uint8",
 			GoNull:             "null.Int8",
 			GoNotNull:          "int8",
-			SerializerUNull:    "null.Uint8",
+			SerializerUNull:    "optional uint8",
 			SerializerUNotNull: "ubyte",
-			SerializerNull:     "null.Int8",
+			SerializerNull:     "optional int8",
 			SerializerNotNull:  "byte",
 		},
 	},
@@ -179,9 +179,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "float64",
 			GoNull:             "null.Float64",
 			GoNotNull:          "float64",
-			SerializerUNull:    "null.Float64",
+			SerializerUNull:    "optional float64",
 			SerializerUNotNull: "double",
-			SerializerNull:     "null.Float64",
+			SerializerNull:     "optional float64",
 			SerializerNotNull:  "double",
 		},
 		"fbs": {
@@ -207,9 +207,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "time.Time",
 			GoNull:             "null.Time",
 			GoNotNull:          "time.Time",
-			SerializerUNull:    "null.Time",
+			SerializerUNull:    "optional google.protobuf.Timestamp",
 			SerializerUNotNull: "google.protobuf.Timestamp",
-			SerializerNull:     "null.Time",
+			SerializerNull:     "optional google.protobuf.Timestamp",
 			SerializerNotNull:  "google.protobuf.Timestamp",
 		},
 		"fbs": {
@@ -235,9 +235,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "string",
 			GoNull:             "null.String",
 			GoNotNull:          "string",
-			SerializerUNull:    "null.String",
+			SerializerUNull:    "optional string",
 			SerializerUNotNull: "string",
-			SerializerNull:     "null.String",
+			SerializerNull:     "optional string",
 			SerializerNotNull:  "string",
 		},
 		"fbs": {
@@ -263,9 +263,9 @@ var typeMap = map[string]map[string]*TypeDef{ // immutable
 			GoUNotNull:         "bool",
 			GoNull:             "null.Bool",
 			GoNotNull:          "bool",
-			SerializerUNull:    "null.Bool",
+			SerializerUNull:    "optional bool",
 			SerializerUNotNull: "bool",
-			SerializerNull:     "null.Bool",
+			SerializerNull:     "optional bool",
 			SerializerNotNull:  "bool",
 		},
 		"fbs": {

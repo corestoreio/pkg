@@ -3,14 +3,28 @@
 package dmltestgenerated3
 
 import (
+	"context"
 	"time"
 
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
 )
 
 type catalogCategoryEntityRelations struct {
 	parent                  *CatalogCategoryEntity
 	SequenceCatalogCategory *SequenceCatalogCategory // 1:1 catalog_category_entity.entity_id => sequence_catalog_category.sequence_value
+}
+
+func (e *CatalogCategoryEntity) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *CatalogCategoryEntity) NewRelations() *catalogCategoryEntityRelations {
+	e.Relations = &catalogCategoryEntityRelations{parent: e}
+	return e.Relations
 }
 
 // CatalogCategoryEntity represents a single row for DB table
@@ -20,21 +34,6 @@ type CatalogCategoryEntity struct {
 	EntityID  uint32 // entity_id int(10) unsigned NOT NULL MUL   "Entity Id"
 	RowID     uint32 // row_id int(10) unsigned NOT NULL PRI  auto_increment "Version Id"
 	Relations *catalogCategoryEntityRelations
-}
-
-// CatalogCategoryEntities represents a collection type for DB table
-// catalog_category_entity
-// Not thread safe. Auto generated.
-type CatalogCategoryEntities struct {
-	Data []*CatalogCategoryEntity `json:"data,omitempty"`
-}
-
-// NewCatalogCategoryEntities  creates a new initialized collection. Auto
-// generated.
-func NewCatalogCategoryEntities() *CatalogCategoryEntities {
-	return &CatalogCategoryEntities{
-		Data: make([]*CatalogCategoryEntity, 0, 5),
-	}
 }
 
 // CustomerAddressEntity represents a single row for DB table
@@ -58,25 +57,20 @@ type CustomerAddressEntity struct {
 	Street      string      `max_len:"65535"` // street text NOT NULL    "Street Address"
 }
 
-// CustomerAddressEntities represents a collection type for DB table
-// customer_address_entity
-// Not thread safe. Auto generated.
-//easyjson:json
-type CustomerAddressEntities struct {
-	Data []*CustomerAddressEntity `json:"data,omitempty"`
-}
-
-// NewCustomerAddressEntities  creates a new initialized collection. Auto
-// generated.
-func NewCustomerAddressEntities() *CustomerAddressEntities {
-	return &CustomerAddressEntities{
-		Data: make([]*CustomerAddressEntity, 0, 5),
-	}
-}
-
 type customerEntityRelations struct {
 	parent                  *CustomerEntity
 	Customeraddressentities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+}
+
+func (e *CustomerEntity) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *CustomerEntity) NewRelations() *customerEntityRelations {
+	e.Relations = &customerEntityRelations{parent: e}
+	return e.Relations
 }
 
 // CustomerEntity represents a single row for DB table customer_entity. Auto
@@ -105,6 +99,290 @@ type CustomerEntity struct {
 	Relations        *customerEntityRelations
 }
 
+type sequenceCatalogCategoryRelations struct {
+	parent                *SequenceCatalogCategory
+	CatalogCategoryEntity *CatalogCategoryEntity // Reversed 1:1 sequence_catalog_category.sequence_value => catalog_category_entity.entity_id
+}
+
+func (e *SequenceCatalogCategory) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *SequenceCatalogCategory) NewRelations() *sequenceCatalogCategoryRelations {
+	e.Relations = &sequenceCatalogCategoryRelations{parent: e}
+	return e.Relations
+}
+
+// SequenceCatalogCategory represents a single row for DB table
+// sequence_catalog_category. Auto generated.
+type SequenceCatalogCategory struct {
+	SequenceValue uint32 // sequence_value int(10) unsigned NOT NULL PRI  auto_increment ""
+	Relations     *sequenceCatalogCategoryRelations
+}
+
+type storeRelations struct {
+	parent       *Store
+	StoreGroup   *StoreGroup   `json:"-"` // 1:1 store.group_id => store_group.group_id
+	StoreWebsite *StoreWebsite `json:"-"` // 1:1 store.website_id => store_website.website_id
+}
+
+func (e *Store) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *Store) NewRelations() *storeRelations {
+	e.Relations = &storeRelations{parent: e}
+	return e.Relations
+}
+
+// Store represents a single row for DB table store. Auto generated.
+// Table comment: Stores
+//easyjson:json
+type Store struct {
+	StoreID   uint16      `max_len:"5"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment "Store Id"
+	Code      null.String `max_len:"32"`  // code varchar(32) NULL UNI DEFAULT 'NULL'  "Code"
+	WebsiteID uint16      `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website Id"
+	GroupID   uint16      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Group Id"
+	Name      string      `max_len:"255"` // name varchar(255) NOT NULL    "Store Name"
+	SortOrder uint16      `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'  "Store Sort Order"
+	IsActive  bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Store Activity"
+	Relations *storeRelations
+}
+
+type storeGroupRelations struct {
+	parent       *StoreGroup
+	StoreWebsite *StoreWebsite // 1:1 store_group.website_id => store_website.website_id
+	Stores       *Stores       // Reversed 1:M store_group.group_id => store.group_id
+}
+
+func (e *StoreGroup) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *StoreGroup) NewRelations() *storeGroupRelations {
+	e.Relations = &storeGroupRelations{parent: e}
+	return e.Relations
+}
+
+// StoreGroup represents a single row for DB table store_group. Auto generated.
+// Table comment: Store Groups
+type StoreGroup struct {
+	GroupID        uint16      // group_id smallint(5) unsigned NOT NULL PRI  auto_increment "Group Id"
+	WebsiteID      uint16      // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website Id"
+	Name           string      // name varchar(255) NOT NULL    "Store Group Name"
+	RootCategoryID uint32      // root_category_id int(10) unsigned NOT NULL  DEFAULT '0'  "Root Category Id"
+	DefaultStoreID uint16      // default_store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Store Id"
+	Code           null.String // code varchar(32) NULL UNI DEFAULT 'NULL'  "Store group unique code"
+	Relations      *storeGroupRelations
+}
+
+type storeWebsiteRelations struct {
+	parent      *StoreWebsite
+	Stores      *Stores      // Reversed 1:M store_website.website_id => store.website_id
+	StoreGroups *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
+}
+
+func (e *StoreWebsite) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *StoreWebsite) NewRelations() *storeWebsiteRelations {
+	e.Relations = &storeWebsiteRelations{parent: e}
+	return e.Relations
+}
+
+// StoreWebsite represents a single row for DB table store_website. Auto
+// generated.
+// Table comment: Websites
+type StoreWebsite struct {
+	WebsiteID      uint16      // website_id smallint(5) unsigned NOT NULL PRI  auto_increment "Website Id"
+	Code           null.String // code varchar(32) NULL UNI DEFAULT 'NULL'  "Code"
+	Name           null.String // name varchar(64) NULL  DEFAULT 'NULL'  "Website Name"
+	SortOrder      uint16      // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
+	DefaultGroupID uint16      // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group Id"
+	IsDefault      null.Bool   // is_default smallint(5) unsigned NULL  DEFAULT '0'  "Defines Is Website Default"
+	Relations      *storeWebsiteRelations
+}
+
+func (r *catalogCategoryEntityRelations) DeleteSequenceCatalogCategory(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("SequenceCatalogCategoryDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.RowID)
+	err = dbr.ResultCheckFn(TableNameSequenceCatalogCategory, len(r.SequenceCatalogCategory.Data), res, err)
+	if err == nil && r.SequenceCatalogCategory != nil {
+		r.SequenceCatalogCategory.Clear()
+	}
+	return errors.WithStack(err)
+}
+
+func (r *catalogCategoryEntityRelations) InsertSequenceCatalogCategory(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.SequenceCatalogCategory == nil || len(r.SequenceCatalogCategory.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.SequenceCatalogCategory.Data {
+		e2.SequenceValue = r.parent.RowID
+	}
+	return errors.WithStack(r.SequenceCatalogCategory.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateSequenceCatalogCategory(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.SequenceCatalogCategory == nil || len(r.SequenceCatalogCategory.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("SequenceCatalogCategoryDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.RowID)
+		return dbr.ResultCheckFn(TableNameSequenceCatalogCategory, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.SequenceCatalogCategory.Data {
+		e2.SequenceValue = r.parent.RowID
+	}
+	err = r.SequenceCatalogCategory.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *catalogCategoryEntityRelations) LoadSequenceCatalogCategory(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.SequenceCatalogCategory == nil {
+		r.SequenceCatalogCategory = &SequenceCatalogCategory{}
+	}
+	r.SequenceCatalogCategory.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("SequenceCatalogCategorySelectByFK", opts...).Load(ctx, r.SequenceCatalogCategory, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *catalogCategoryEntityRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertSequenceCatalogCategory(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *catalogCategoryEntityRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadSequenceCatalogCategory(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *catalogCategoryEntityRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateSequenceCatalogCategory(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *catalogCategoryEntityRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteSequenceCatalogCategory(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+// CatalogCategoryEntities represents a collection type for DB table
+// catalog_category_entity
+// Not thread safe. Auto generated.
+type CatalogCategoryEntities struct {
+	Data []*CatalogCategoryEntity `json:"data,omitempty"`
+}
+
+// NewCatalogCategoryEntities  creates a new initialized collection. Auto
+// generated.
+func NewCatalogCategoryEntities() *CatalogCategoryEntities {
+	return &CatalogCategoryEntities{
+		Data: make([]*CatalogCategoryEntity, 0, 5),
+	}
+}
+
+// CustomerAddressEntities represents a collection type for DB table
+// customer_address_entity
+// Not thread safe. Auto generated.
+//easyjson:json
+type CustomerAddressEntities struct {
+	Data []*CustomerAddressEntity `json:"data,omitempty"`
+}
+
+// NewCustomerAddressEntities  creates a new initialized collection. Auto
+// generated.
+func NewCustomerAddressEntities() *CustomerAddressEntities {
+	return &CustomerAddressEntities{
+		Data: make([]*CustomerAddressEntity, 0, 5),
+	}
+}
+
+func (r *customerEntityRelations) DeleteCustomeraddressentities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("CustomeraddressentitiesDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+	err = dbr.ResultCheckFn(TableNameCustomerAddressEntity, len(r.Customeraddressentities.Data), res, err)
+	if err == nil && r.Customeraddressentities != nil {
+		r.Customeraddressentities.Clear()
+	}
+	return errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) InsertCustomeraddressentities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.Customeraddressentities == nil || len(r.Customeraddressentities.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.Customeraddressentities.Data {
+		e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
+	}
+	return errors.WithStack(r.Customeraddressentities.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateCustomeraddressentities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.Customeraddressentities == nil || len(r.Customeraddressentities.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("CustomeraddressentitiesDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+		return dbr.ResultCheckFn(TableNameCustomerAddressEntity, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.Customeraddressentities.Data {
+		e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
+	}
+	err = r.Customeraddressentities.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) LoadCustomeraddressentities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.Customeraddressentities == nil {
+		r.Customeraddressentities = &Customeraddressentities{}
+	}
+	r.Customeraddressentities.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("CustomeraddressentitiesSelectByFK", opts...).Load(ctx, r.Customeraddressentities, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertCustomeraddressentities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *customerEntityRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadCustomeraddressentities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *customerEntityRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateCustomeraddressentities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *customerEntityRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteCustomeraddressentities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
 // CustomerEntities represents a collection type for DB table customer_entity
 // Not thread safe. Auto generated.
 //easyjson:json
@@ -119,16 +397,74 @@ func NewCustomerEntities() *CustomerEntities {
 	}
 }
 
-type sequenceCatalogCategoryRelations struct {
-	parent                *SequenceCatalogCategory
-	CatalogCategoryEntity *CatalogCategoryEntity // Reversed 1:1 sequence_catalog_category.sequence_value => catalog_category_entity.entity_id
+func (r *sequenceCatalogCategoryRelations) DeleteCatalogCategoryEntity(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("CatalogCategoryEntityDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.SequenceValue)
+	err = dbr.ResultCheckFn(TableNameCatalogCategoryEntity, len(r.CatalogCategoryEntity.Data), res, err)
+	if err == nil && r.CatalogCategoryEntity != nil {
+		r.CatalogCategoryEntity.Clear()
+	}
+	return errors.WithStack(err)
 }
 
-// SequenceCatalogCategory represents a single row for DB table
-// sequence_catalog_category. Auto generated.
-type SequenceCatalogCategory struct {
-	SequenceValue uint32 // sequence_value int(10) unsigned NOT NULL PRI  auto_increment ""
-	Relations     *sequenceCatalogCategoryRelations
+func (r *sequenceCatalogCategoryRelations) InsertCatalogCategoryEntity(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.CatalogCategoryEntity == nil || len(r.CatalogCategoryEntity.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.CatalogCategoryEntity.Data {
+		e2.EntityID = r.parent.SequenceValue
+	}
+	return errors.WithStack(r.CatalogCategoryEntity.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateCatalogCategoryEntity(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.CatalogCategoryEntity == nil || len(r.CatalogCategoryEntity.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("CatalogCategoryEntityDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.SequenceValue)
+		return dbr.ResultCheckFn(TableNameCatalogCategoryEntity, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.CatalogCategoryEntity.Data {
+		e2.EntityID = r.parent.SequenceValue
+	}
+	err = r.CatalogCategoryEntity.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *sequenceCatalogCategoryRelations) LoadCatalogCategoryEntity(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.CatalogCategoryEntity == nil {
+		r.CatalogCategoryEntity = &CatalogCategoryEntity{}
+	}
+	r.CatalogCategoryEntity.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("CatalogCategoryEntitySelectByFK", opts...).Load(ctx, r.CatalogCategoryEntity, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *sequenceCatalogCategoryRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertCatalogCategoryEntity(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *sequenceCatalogCategoryRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadCatalogCategoryEntity(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *sequenceCatalogCategoryRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateCatalogCategoryEntity(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *sequenceCatalogCategoryRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteCatalogCategoryEntity(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // SequenceCatalogCategories represents a collection type for DB table
@@ -146,24 +482,128 @@ func NewSequenceCatalogCategories() *SequenceCatalogCategories {
 	}
 }
 
-type storeRelations struct {
-	parent       *Store
-	StoreGroup   *StoreGroup   `json:"-"` // 1:1 store.group_id => store_group.group_id
-	StoreWebsite *StoreWebsite `json:"-"` // 1:1 store.website_id => store_website.website_id
+func (r *storeRelations) DeleteStoreGroup(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoreGroupDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.StoreID)
+	err = dbr.ResultCheckFn(TableNameStoreGroup, len(r.StoreGroup.Data), res, err)
+	if err == nil && r.StoreGroup != nil {
+		r.StoreGroup.Clear()
+	}
+	return errors.WithStack(err)
 }
 
-// Store represents a single row for DB table store. Auto generated.
-// Table comment: Stores
-//easyjson:json
-type Store struct {
-	StoreID   uint16      `max_len:"5"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment "Store Id"
-	Code      null.String `max_len:"32"`  // code varchar(32) NULL UNI DEFAULT 'NULL'  "Code"
-	WebsiteID uint16      `max_len:"5"`   // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website Id"
-	GroupID   uint16      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Group Id"
-	Name      string      `max_len:"255"` // name varchar(255) NOT NULL    "Store Name"
-	SortOrder uint16      `max_len:"5"`   // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'  "Store Sort Order"
-	IsActive  bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Store Activity"
-	Relations *storeRelations
+func (r *storeRelations) InsertStoreGroup(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.StoreGroup == nil || len(r.StoreGroup.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.StoreGroup.Data {
+		e2.GroupID = r.parent.StoreID
+	}
+	return errors.WithStack(r.StoreGroup.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStoreGroup(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.StoreGroup == nil || len(r.StoreGroup.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoreGroupDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.StoreID)
+		return dbr.ResultCheckFn(TableNameStoreGroup, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.StoreGroup.Data {
+		e2.GroupID = r.parent.StoreID
+	}
+	err = r.StoreGroup.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeRelations) LoadStoreGroup(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.StoreGroup == nil {
+		r.StoreGroup = &StoreGroup{}
+	}
+	r.StoreGroup.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoreGroupSelectByFK", opts...).Load(ctx, r.StoreGroup, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeRelations) DeleteStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoreWebsiteDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.StoreID)
+	err = dbr.ResultCheckFn(TableNameStoreWebsite, len(r.StoreWebsite.Data), res, err)
+	if err == nil && r.StoreWebsite != nil {
+		r.StoreWebsite.Clear()
+	}
+	return errors.WithStack(err)
+}
+
+func (r *storeRelations) InsertStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.StoreWebsite == nil || len(r.StoreWebsite.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.StoreWebsite.Data {
+		e2.WebsiteID = r.parent.StoreID
+	}
+	return errors.WithStack(r.StoreWebsite.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.StoreWebsite == nil || len(r.StoreWebsite.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoreWebsiteDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.StoreID)
+		return dbr.ResultCheckFn(TableNameStoreWebsite, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.StoreWebsite.Data {
+		e2.WebsiteID = r.parent.StoreID
+	}
+	err = r.StoreWebsite.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeRelations) LoadStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.StoreWebsite == nil {
+		r.StoreWebsite = &StoreWebsite{}
+	}
+	r.StoreWebsite.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoreWebsiteSelectByFK", opts...).Load(ctx, r.StoreWebsite, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertStoreGroup(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.InsertStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadStoreGroup(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = r.LoadStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateStoreGroup(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.UpdateStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteStoreGroup(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.DeleteStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // Stores represents a collection type for DB table store
@@ -180,22 +620,128 @@ func NewStores() *Stores {
 	}
 }
 
-type storeGroupRelations struct {
-	parent       *StoreGroup
-	StoreWebsite *StoreWebsite // 1:1 store_group.website_id => store_website.website_id
-	Stores       *Stores       // Reversed 1:M store_group.group_id => store.group_id
+func (r *storeGroupRelations) DeleteStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoreWebsiteDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.GroupID)
+	err = dbr.ResultCheckFn(TableNameStoreWebsite, len(r.StoreWebsite.Data), res, err)
+	if err == nil && r.StoreWebsite != nil {
+		r.StoreWebsite.Clear()
+	}
+	return errors.WithStack(err)
 }
 
-// StoreGroup represents a single row for DB table store_group. Auto generated.
-// Table comment: Store Groups
-type StoreGroup struct {
-	GroupID        uint16      // group_id smallint(5) unsigned NOT NULL PRI  auto_increment "Group Id"
-	WebsiteID      uint16      // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Website Id"
-	Name           string      // name varchar(255) NOT NULL    "Store Group Name"
-	RootCategoryID uint32      // root_category_id int(10) unsigned NOT NULL  DEFAULT '0'  "Root Category Id"
-	DefaultStoreID uint16      // default_store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Store Id"
-	Code           null.String // code varchar(32) NULL UNI DEFAULT 'NULL'  "Store group unique code"
-	Relations      *storeGroupRelations
+func (r *storeGroupRelations) InsertStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.StoreWebsite == nil || len(r.StoreWebsite.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.StoreWebsite.Data {
+		e2.WebsiteID = r.parent.GroupID
+	}
+	return errors.WithStack(r.StoreWebsite.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.StoreWebsite == nil || len(r.StoreWebsite.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoreWebsiteDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.GroupID)
+		return dbr.ResultCheckFn(TableNameStoreWebsite, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.StoreWebsite.Data {
+		e2.WebsiteID = r.parent.GroupID
+	}
+	err = r.StoreWebsite.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeGroupRelations) LoadStoreWebsite(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.StoreWebsite == nil {
+		r.StoreWebsite = &StoreWebsite{}
+	}
+	r.StoreWebsite.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoreWebsiteSelectByFK", opts...).Load(ctx, r.StoreWebsite, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeGroupRelations) DeleteStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoresDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.GroupID)
+	err = dbr.ResultCheckFn(TableNameStore, len(r.Stores.Data), res, err)
+	if err == nil && r.Stores != nil {
+		r.Stores.Clear()
+	}
+	return errors.WithStack(err)
+}
+
+func (r *storeGroupRelations) InsertStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.Stores == nil || len(r.Stores.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.Stores.Data {
+		e2.GroupID = r.parent.GroupID
+	}
+	return errors.WithStack(r.Stores.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.Stores == nil || len(r.Stores.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoresDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.GroupID)
+		return dbr.ResultCheckFn(TableNameStore, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.Stores.Data {
+		e2.GroupID = r.parent.GroupID
+	}
+	err = r.Stores.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeGroupRelations) LoadStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.Stores == nil {
+		r.Stores = &Stores{}
+	}
+	r.Stores.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoresSelectByFK", opts...).Load(ctx, r.Stores, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeGroupRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.InsertStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeGroupRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = r.LoadStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeGroupRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.UpdateStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeGroupRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteStoreWebsite(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.DeleteStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // StoreGroups represents a collection type for DB table store_group
@@ -211,23 +757,128 @@ func NewStoreGroups() *StoreGroups {
 	}
 }
 
-type storeWebsiteRelations struct {
-	parent      *StoreWebsite
-	Stores      *Stores      // Reversed 1:M store_website.website_id => store.website_id
-	StoreGroups *StoreGroups // Reversed 1:M store_website.website_id => store_group.website_id
+func (r *storeWebsiteRelations) DeleteStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoresDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.WebsiteID)
+	err = dbr.ResultCheckFn(TableNameStore, len(r.Stores.Data), res, err)
+	if err == nil && r.Stores != nil {
+		r.Stores.Clear()
+	}
+	return errors.WithStack(err)
 }
 
-// StoreWebsite represents a single row for DB table store_website. Auto
-// generated.
-// Table comment: Websites
-type StoreWebsite struct {
-	WebsiteID      uint16      // website_id smallint(5) unsigned NOT NULL PRI  auto_increment "Website Id"
-	Code           null.String // code varchar(32) NULL UNI DEFAULT 'NULL'  "Code"
-	Name           null.String // name varchar(64) NULL  DEFAULT 'NULL'  "Website Name"
-	SortOrder      uint16      // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Sort Order"
-	DefaultGroupID uint16      // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'  "Default Group Id"
-	IsDefault      null.Bool   // is_default smallint(5) unsigned NULL  DEFAULT '0'  "Defines Is Website Default"
-	Relations      *storeWebsiteRelations
+func (r *storeWebsiteRelations) InsertStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.Stores == nil || len(r.Stores.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.Stores.Data {
+		e2.WebsiteID = r.parent.WebsiteID
+	}
+	return errors.WithStack(r.Stores.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.Stores == nil || len(r.Stores.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoresDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.WebsiteID)
+		return dbr.ResultCheckFn(TableNameStore, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.Stores.Data {
+		e2.WebsiteID = r.parent.WebsiteID
+	}
+	err = r.Stores.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeWebsiteRelations) LoadStores(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.Stores == nil {
+		r.Stores = &Stores{}
+	}
+	r.Stores.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoresSelectByFK", opts...).Load(ctx, r.Stores, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeWebsiteRelations) DeleteStoreGroups(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("StoreGroupsDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.WebsiteID)
+	err = dbr.ResultCheckFn(TableNameStoreGroup, len(r.StoreGroups.Data), res, err)
+	if err == nil && r.StoreGroups != nil {
+		r.StoreGroups.Clear()
+	}
+	return errors.WithStack(err)
+}
+
+func (r *storeWebsiteRelations) InsertStoreGroups(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.StoreGroups == nil || len(r.StoreGroups.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.StoreGroups.Data {
+		e2.WebsiteID = r.parent.WebsiteID
+	}
+	return errors.WithStack(r.StoreGroups.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateStoreGroups(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.StoreGroups == nil || len(r.StoreGroups.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("StoreGroupsDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.WebsiteID)
+		return dbr.ResultCheckFn(TableNameStoreGroup, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.StoreGroups.Data {
+		e2.WebsiteID = r.parent.WebsiteID
+	}
+	err = r.StoreGroups.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *storeWebsiteRelations) LoadStoreGroups(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.StoreGroups == nil {
+		r.StoreGroups = &StoreGroups{}
+	}
+	r.StoreGroups.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("StoreGroupsSelectByFK", opts...).Load(ctx, r.StoreGroups, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *storeWebsiteRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.InsertStoreGroups(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeWebsiteRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if _, err = r.LoadStoreGroups(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeWebsiteRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.UpdateStoreGroups(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *storeWebsiteRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteStores(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := r.DeleteStoreGroups(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // StoreWebsites represents a collection type for DB table store_website

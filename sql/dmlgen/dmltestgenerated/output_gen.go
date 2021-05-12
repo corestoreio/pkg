@@ -17,8 +17,177 @@ import (
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/cstrace"
-	"go.opentelemetry.io/otel/api/trace"
 )
+
+// CatalogProductIndexEAVDecimalIDX represents a single row for DB table
+// catalog_product_index_eav_decimal_idx. Auto generated.
+// Table comment: Catalog Product EAV Decimal Indexer Index Table
+type CatalogProductIndexEAVDecimalIDX struct {
+	EntityID    uint32       // entity_id int(10) unsigned NOT NULL PRI   "Entity ID"
+	AttributeID uint32       // attribute_id smallint(5) unsigned NOT NULL PRI   "Attribute ID"
+	StoreID     uint32       // store_id smallint(5) unsigned NOT NULL PRI   "Store ID"
+	SourceID    uint32       // source_id int(10) unsigned NOT NULL PRI DEFAULT '0'  "Original entity Id for attribute value"
+	Value       null.Decimal // value decimal(12,4) NOT NULL MUL   "Value"
+}
+
+// CoreConfiguration represents a single row for DB table core_configuration.
+// Auto generated.
+// Table comment: Config Data
+//easyjson:json
+type CoreConfiguration struct {
+	ConfigID  uint32      `json:"config_id,omitempty" max_len:"10"`  // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
+	Scope     string      `json:"scope,omitempty" max_len:"8"`       // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
+	ScopeID   int32       `json:"scope_id" xml:"scope_id"`           // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
+	Expires   null.Time   `json:"expires,omitempty" `                // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
+	Path      string      `json:"x_path" xml:"y_path" max_len:"255"` // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
+	Value     null.String `json:"value,omitempty" max_len:"65535"`   // value text NULL  DEFAULT 'NULL'  "Value"
+	VersionTs time.Time   `json:"version_ts,omitempty" `             // version_ts timestamp(6) NOT NULL   STORED GENERATED "Timestamp Start Versioning"
+	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
+}
+
+// CustomerAddressEntity represents a single row for DB table
+// customer_address_entity. Auto generated.
+// Table comment: Customer Address Entity
+//easyjson:json
+type CustomerAddressEntity struct {
+	EntityID    uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	IncrementID null.String `max_len:"50"` // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
+	ParentID    null.Uint32 `max_len:"10"` // parent_id int(10) unsigned NULL MUL DEFAULT 'NULL'  "Parent ID"
+	CreatedAt   time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt   time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive    bool        `max_len:"5"`     // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	City        string      `max_len:"255"`   // city varchar(255) NOT NULL    "City"
+	Company     null.String `max_len:"255"`   // company varchar(255) NULL  DEFAULT 'NULL'  "Company"
+	CountryID   string      `max_len:"255"`   // country_id varchar(255) NOT NULL    "Country"
+	Firstname   string      `max_len:"255"`   // firstname varchar(255) NOT NULL    "First Name"
+	Lastname    string      `max_len:"255"`   // lastname varchar(255) NOT NULL    "Last Name"
+	Postcode    null.String `max_len:"255"`   // postcode varchar(255) NULL  DEFAULT 'NULL'  "Zip/Postal Code"
+	Region      null.String `max_len:"255"`   // region varchar(255) NULL  DEFAULT 'NULL'  "State/Province"
+	Street      string      `max_len:"65535"` // street text NOT NULL    "Street Address"
+}
+
+type customerEntityRelations struct {
+	parent                  *CustomerEntity
+	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+}
+
+func (e *CustomerEntity) setRelationParent() {
+	if e.Relations != nil && e.Relations.parent == nil {
+		e.Relations.parent = e
+	}
+}
+
+func (e *CustomerEntity) NewRelations() *customerEntityRelations {
+	e.Relations = &customerEntityRelations{parent: e}
+	return e.Relations
+}
+
+// CustomerEntity represents a single row for DB table customer_entity. Auto
+// generated.
+// Table comment: Customer Entity
+//easyjson:json
+type CustomerEntity struct {
+	EntityID         uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
+	WebsiteID        null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
+	Email            null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
+	GroupID          uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
+	StoreID          null.Uint32 `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
+	CreatedAt        time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
+	UpdatedAt        time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
+	IsActive         bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
+	CreatedIn        null.String `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
+	Firstname        null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
+	Lastname         null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
+	Dob              null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
+	passwordHash     null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
+	RpToken          null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
+	RpTokenCreatedAt null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
+	DefaultBilling   null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
+	DefaultShipping  null.Uint32 `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
+	Gender           null.Uint32 `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
+	Relations        *customerEntityRelations
+}
+
+// DmlgenTypes represents a single row for DB table dmlgen_types. Auto generated.
+// // Just another comment.
+//easyjson:json
+type DmlgenTypes struct {
+	ID             int32        `json:"id,omitempty"  max_len:"10"`                     // id int(11) NOT NULL PRI  auto_increment ""
+	ColBigint1     null.Int64   `json:"col_bigint_1,omitempty"  max_len:"19"`           // col_bigint_1 bigint(20) NULL  DEFAULT 'NULL'  ""
+	ColBigint2     int64        `json:"col_bigint_2,omitempty"  max_len:"19"`           // col_bigint_2 bigint(20) NOT NULL  DEFAULT '0'  ""
+	ColBigint3     null.Uint64  `json:"col_bigint_3,omitempty"  max_len:"20"`           // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
+	ColBigint4     uint64       `json:"col_bigint_4,omitempty"  max_len:"20"`           // col_bigint_4 bigint(20) unsigned NOT NULL  DEFAULT '0'  ""
+	ColBlob        []byte       `json:"col_blob,omitempty"  max_len:"65535"`            // col_blob blob NULL  DEFAULT 'NULL'  ""
+	ColDate1       null.Time    `json:"col_date_1,omitempty"  `                         // col_date_1 date NULL  DEFAULT 'NULL'  ""
+	ColDate2       time.Time    `json:"col_date_2,omitempty"  `                         // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
+	ColDatetime1   null.Time    `json:"col_datetime_1,omitempty"  `                     // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
+	ColDatetime2   time.Time    `json:"col_datetime_2,omitempty"  `                     // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
+	ColDecimal101  null.Decimal `json:"col_decimal_10_1,omitempty"  max_len:"10"`       // col_decimal_10_1 decimal(10,1) unsigned NULL  DEFAULT 'NULL'  ""
+	ColDecimal124  null.Decimal `json:"col_decimal_12_4,omitempty"  max_len:"12"`       // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
+	PriceA124      null.Decimal `json:"price_a_12_4,omitempty"  max_len:"12"`           // price_a_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
+	PriceB124      null.Decimal `json:"price_b_12_4,omitempty"  max_len:"12"`           // price_b_12_4 decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
+	ColDecimal123  null.Decimal `json:"col_decimal_12_3,omitempty"  max_len:"12"`       // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
+	ColDecimal206  null.Decimal `json:"col_decimal_20_6,omitempty"  max_len:"20"`       // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
+	ColDecimal2412 null.Decimal `json:"col_decimal_24_12,omitempty"  max_len:"24"`      // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
+	ColInt1        null.Int32   `json:"col_int_1,omitempty"  max_len:"10"`              // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
+	ColInt2        int32        `json:"col_int_2,omitempty"  max_len:"10"`              // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
+	ColInt3        null.Uint32  `json:"col_int_3,omitempty"  max_len:"10"`              // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
+	ColInt4        uint32       `json:"col_int_4,omitempty"  max_len:"10"`              // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
+	ColLongtext1   null.String  `json:"col_longtext_1,omitempty"  max_len:"4294967295"` // col_longtext_1 longtext NULL  DEFAULT 'NULL'  ""
+	ColLongtext2   string       `json:"col_longtext_2,omitempty"  max_len:"4294967295"` // col_longtext_2 longtext NOT NULL  DEFAULT ''''  ""
+	ColMediumblob  []byte       `json:"col_mediumblob,omitempty"  max_len:"16777215"`   // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
+	ColMediumtext1 null.String  `json:"col_mediumtext_1,omitempty"  max_len:"16777215"` // col_mediumtext_1 mediumtext NULL  DEFAULT 'NULL'  ""
+	ColMediumtext2 string       `json:"col_mediumtext_2,omitempty"  max_len:"16777215"` // col_mediumtext_2 mediumtext NOT NULL  DEFAULT ''''  ""
+	ColSmallint1   null.Int32   `json:"col_smallint_1,omitempty"  max_len:"5"`          // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
+	ColSmallint2   int32        `json:"col_smallint_2,omitempty"  max_len:"5"`          // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
+	ColSmallint3   null.Uint32  `json:"col_smallint_3,omitempty"  max_len:"5"`          // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
+	ColSmallint4   uint32       `json:"col_smallint_4,omitempty"  max_len:"5"`          // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
+	HasSmallint5   bool         `json:"has_smallint_5,omitempty"  max_len:"5"`          // has_smallint_5 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
+	IsSmallint5    null.Bool    `json:"is_smallint_5,omitempty"  max_len:"5"`           // is_smallint_5 smallint(5) NULL  DEFAULT 'NULL'  ""
+	ColText        null.String  `json:"col_text,omitempty"  max_len:"65535"`            // col_text text NULL  DEFAULT 'NULL'  ""
+	ColTimestamp1  time.Time    `json:"col_timestamp_1,omitempty"  `                    // col_timestamp_1 timestamp NOT NULL  DEFAULT 'current_timestamp()'  ""
+	ColTimestamp2  null.Time    `json:"col_timestamp_2,omitempty"  `                    // col_timestamp_2 timestamp NULL  DEFAULT 'NULL'  ""
+	ColTinyint1    int32        `json:"col_tinyint_1,omitempty"  max_len:"3"`           // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
+	ColVarchar1    string       `json:"col_varchar_1,omitempty"  max_len:"1"`           // col_varchar_1 varchar(1) NOT NULL  DEFAULT ''0''  ""
+	ColVarchar100  null.String  `json:"col_varchar_100,omitempty"  max_len:"100"`       // col_varchar_100 varchar(100) NULL  DEFAULT 'NULL'  ""
+	ColVarchar16   string       `json:"col_varchar_16,omitempty"  max_len:"16"`         // col_varchar_16 varchar(16) NOT NULL  DEFAULT ''de_DE''  ""
+	ColChar1       null.String  `json:"col_char_1,omitempty"  max_len:"21"`             // col_char_1 char(21) NULL  DEFAULT 'NULL'  ""
+	ColChar2       string       `json:"col_char_2,omitempty"  max_len:"17"`             // col_char_2 char(17) NOT NULL  DEFAULT ''xchar''  ""
+}
+
+// SalesOrderStatusState represents a single row for DB table
+// sales_order_status_state. Auto generated.
+// Table comment: Sales Order Status Table
+//easyjson:json
+type SalesOrderStatusState struct {
+	Status         string `max_len:"32"` // status varchar(32) NOT NULL PRI   "Status"
+	State          string `max_len:"32"` // state varchar(32) NOT NULL PRI   "Label"
+	IsDefault      bool   `max_len:"5"`  // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Is Default"
+	VisibleOnFront uint32 `max_len:"5"`  // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
+}
+
+// ViewCustomerAutoIncrement represents a single row for DB table
+// view_customer_auto_increment. Auto generated.
+// Table comment: VIEW
+//easyjson:json
+type ViewCustomerAutoIncrement struct {
+	CeEntityID uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
+	Email      null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
+	Firstname  string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
+	Lastname   string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
+	City       string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
+}
+
+// ViewCustomerNoAutoIncrement represents a single row for DB table
+// view_customer_no_auto_increment. Auto generated.
+// Table comment: VIEW
+//easyjson:json
+type ViewCustomerNoAutoIncrement struct {
+	Email     null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
+	Firstname string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
+	Lastname  string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
+	City      string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
+}
 
 // TableName constants define the names of all tables.
 const (
@@ -375,12 +544,6 @@ var Columns = struct {
 	},
 }
 
-var dbmEmptyOpts = []dml.DBRFunc{func(dbr *dml.DBR) {
-	// do nothing because Clone gets called automatically
-}}
-
-func dbmNoopResultCheckFn(_ sql.Result, err error) error { return err }
-
 // Event functions are getting dispatched during before or after handling a
 // collection or an entity.
 // Context is always non-nil but either collection or entity pointer will be set.
@@ -397,7 +560,7 @@ type (
 
 // DBMOption provides various options to the DBM object.
 type DBMOption struct {
-	Trace                                     trace.Tracer
+	Trace                                     cstrace.Tracer
 	TableOptions                              []ddl.TableOption // gets applied at the beginning
 	TableOptionsAfter                         []ddl.TableOption // gets applied at the end
 	InitSelectFn                              func(*dml.Select) *dml.Select
@@ -663,8 +826,16 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 			"CustomerEntityDeleteByPK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerEntity).Delete().Where(
 				dml.Column(`entity_id`).In().PlaceHolder(),
 			)),
-			"CustomerEntityInsert":           dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()),
-			"CustomerEntityUpsertByPK":       dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).OnDuplicateKey(),
+			"CustomerEntityInsert":     dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()),
+			"CustomerEntityUpsertByPK": dbmo.InitInsertFn(tbls.MustTable(TableNameCustomerEntity).Insert()).OnDuplicateKey(),
+			// <FOREIGN_KEY_QUERIES customer_entity >
+			"CustomerAddressEntitiesDeleteByFK": dbmo.InitDeleteFn(tbls.MustTable(TableNameCustomerAddressEntity).Delete().Where(
+				dml.Column(`parent_id`).Equal().PlaceHolder(),
+			)),
+			"CustomerAddressEntitiesSelectByFK": dbmo.InitSelectFn(tbls.MustTable(TableNameCustomerAddressEntity).Select("*").Where(
+				dml.Column(`parent_id`).Equal().PlaceHolder(),
+			)),
+			// </FOREIGN_KEY_QUERIES customer_entity >
 			"DmlgenTypesCollectionSelectAll": dbmo.InitSelectFn(tbls.MustTable(TableNameDmlgenTypes).Select("*")),
 			"DmlgenTypesCollectionSelectByPK": dbmo.InitSelectFn(tbls.MustTable(TableNameDmlgenTypes).Select("*")).Where(
 				dml.Column(`id`).In().PlaceHolder(),
@@ -711,20 +882,9 @@ func NewDBManager(ctx context.Context, dbmo *DBMOption) (*DBM, error) {
 		return nil, err
 	}
 	if dbmo.Trace == nil {
-		dbmo.Trace = trace.NoopTracer{}
+		dbmo.Trace = cstrace.NewNoopTracerProvider().Tracer("")
 	}
 	return &DBM{Tables: tbls, option: *dbmo}, nil
-}
-
-// CatalogProductIndexEAVDecimalIDX represents a single row for DB table
-// catalog_product_index_eav_decimal_idx. Auto generated.
-// Table comment: Catalog Product EAV Decimal Indexer Index Table
-type CatalogProductIndexEAVDecimalIDX struct {
-	EntityID    uint32       // entity_id int(10) unsigned NOT NULL PRI   "Entity ID"
-	AttributeID uint32       // attribute_id smallint(5) unsigned NOT NULL PRI   "Attribute ID"
-	StoreID     uint32       // store_id smallint(5) unsigned NOT NULL PRI   "Store ID"
-	SourceID    uint32       // source_id int(10) unsigned NOT NULL PRI DEFAULT '0'  "Original entity Id for attribute value"
-	Value       null.Decimal // value decimal(12,4) NOT NULL MUL   "Value"
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -924,6 +1084,23 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) Append(n ...*CatalogProductIndexEA
 	return cc
 }
 
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *CatalogProductIndexEAVDecimalIDXes) Clear() *CatalogProductIndexEAVDecimalIDXes {
+	if cc == nil {
+		*cc = CatalogProductIndexEAVDecimalIDXes{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
+}
+
 // Cut will remove items i through j-1. Auto generated via dmlgen.
 func (cc *CatalogProductIndexEAVDecimalIDXes) Cut(i, j int) *CatalogProductIndexEAVDecimalIDXes {
 	z := cc.Data // copy slice header
@@ -955,7 +1132,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) MapColumns(cm *dml.ColumnMap) erro
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e CatalogProductIndexEAVDecimalIDX
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -994,9 +1171,7 @@ type CatalogProductIndexEAVDecimalIDXesDBLoadArgs struct {
 func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *DBM, pkIDs []CatalogProductIndexEAVDecimalIDXesDBLoadArgs, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDX can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID,AttributeID,StoreID,SourceID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -1042,7 +1217,7 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBDelete(ctx context.Context, dbm 
 	return res, nil
 }
 
-func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -1052,60 +1227,54 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpdate(ctx context.Context, dbm 
 	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameCatalogProductIndexEAVDecimalIDX, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
+		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameCatalogProductIndexEAVDecimalIDX, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CatalogProductIndexEAVDecimalIDXes) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CatalogProductIndexEAVDecimalIDXesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
+		return errors.NotValid.Newf("CatalogProductIndexEAVDecimalIDXes can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CatalogProductIndexEAVDecimalIDXUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameCatalogProductIndexEAVDecimalIDX, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCatalogProductIndexEAVDecimalIDXFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -1258,21 +1427,6 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) WriteTo(w io.Writer) (n int64, err
 		n += n2
 	}
 	return n, nil
-}
-
-// CoreConfiguration represents a single row for DB table core_configuration.
-// Auto generated.
-// Table comment: Config Data
-//easyjson:json
-type CoreConfiguration struct {
-	ConfigID  uint32      `json:"config_id,omitempty" max_len:"10"`  // config_id int(10) unsigned NOT NULL PRI  auto_increment "Id"
-	Scope     string      `json:"scope,omitempty" max_len:"8"`       // scope varchar(8) NOT NULL MUL DEFAULT ''default''  "Scope"
-	ScopeID   int32       `json:"scope_id" xml:"scope_id"`           // scope_id int(11) NOT NULL  DEFAULT '0'  "Scope Id"
-	Expires   null.Time   `json:"expires,omitempty" `                // expires datetime NULL  DEFAULT 'NULL'  "Value expiration time"
-	Path      string      `json:"x_path" xml:"y_path" max_len:"255"` // path varchar(255) NOT NULL  DEFAULT ''general''  "Config Path overwritten"
-	Value     null.String `json:"value,omitempty" max_len:"65535"`   // value text NULL  DEFAULT 'NULL'  "Value"
-	VersionTs time.Time   `json:"version_ts,omitempty" `             // version_ts timestamp(6) NOT NULL   STORED GENERATED "Timestamp Start Versioning"
-	VersionTe time.Time   `json:"version_te,omitempty" `             // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -1474,14 +1628,21 @@ func (cc *CoreConfigurations) Append(n ...*CoreConfiguration) *CoreConfiguration
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CoreConfigurations) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CoreConfigurations) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *CoreConfigurations) Clear() *CoreConfigurations {
+	if cc == nil {
+		*cc = CoreConfigurations{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -1523,7 +1684,7 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e CoreConfiguration
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -1548,9 +1709,7 @@ func (cc *CoreConfigurations) MapColumns(cm *dml.ColumnMap) error {
 func (cc *CoreConfigurations) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("CoreConfiguration can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs ConfigID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -1590,7 +1749,7 @@ func (cc *CoreConfigurations) DBDelete(ctx context.Context, dbm *DBM, opts ...dm
 	return res, nil
 }
 
-func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -1600,60 +1759,54 @@ func (cc *CoreConfigurations) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn
 	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("CoreConfigurationUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameCoreConfiguration, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CoreConfigurations) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
+		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CoreConfigurationInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameCoreConfiguration, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CoreConfigurations) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CoreConfigurationsUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CoreConfigurations can't be nil")
+		return errors.NotValid.Newf("CoreConfigurations can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CoreConfigurationUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameCoreConfiguration, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCoreConfigurationFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -1779,27 +1932,6 @@ func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 		n += n2
 	}
 	return n, nil
-}
-
-// CustomerAddressEntity represents a single row for DB table
-// customer_address_entity. Auto generated.
-// Table comment: Customer Address Entity
-//easyjson:json
-type CustomerAddressEntity struct {
-	EntityID    uint32      `max_len:"10"` // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	IncrementID null.String `max_len:"50"` // increment_id varchar(50) NULL  DEFAULT 'NULL'  "Increment Id"
-	ParentID    null.Uint32 `max_len:"10"` // parent_id int(10) unsigned NULL MUL DEFAULT 'NULL'  "Parent ID"
-	CreatedAt   time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt   time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive    bool        `max_len:"5"`     // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	City        string      `max_len:"255"`   // city varchar(255) NOT NULL    "City"
-	Company     null.String `max_len:"255"`   // company varchar(255) NULL  DEFAULT 'NULL'  "Company"
-	CountryID   string      `max_len:"255"`   // country_id varchar(255) NOT NULL    "Country"
-	Firstname   string      `max_len:"255"`   // firstname varchar(255) NOT NULL    "First Name"
-	Lastname    string      `max_len:"255"`   // lastname varchar(255) NOT NULL    "Last Name"
-	Postcode    null.String `max_len:"255"`   // postcode varchar(255) NULL  DEFAULT 'NULL'  "Zip/Postal Code"
-	Region      null.String `max_len:"255"`   // region varchar(255) NULL  DEFAULT 'NULL'  "State/Province"
-	Street      string      `max_len:"65535"` // street text NOT NULL    "Street Address"
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -2023,14 +2155,21 @@ func (cc *CustomerAddressEntities) Append(n ...*CustomerAddressEntity) *Customer
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CustomerAddressEntities) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CustomerAddressEntities) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *CustomerAddressEntities) Clear() *CustomerAddressEntities {
+	if cc == nil {
+		*cc = CustomerAddressEntities{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -2072,7 +2211,7 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e CustomerAddressEntity
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -2097,9 +2236,7 @@ func (cc *CustomerAddressEntities) MapColumns(cm *dml.ColumnMap) error {
 func (cc *CustomerAddressEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("CustomerAddressEntity can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -2139,7 +2276,7 @@ func (cc *CustomerAddressEntities) DBDelete(ctx context.Context, dbm *DBM, opts 
 	return res, nil
 }
 
-func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -2149,60 +2286,54 @@ func (cc *CustomerAddressEntities) DBUpdate(ctx context.Context, dbm *DBM, resCh
 	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameCustomerAddressEntity, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerAddressEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
+		return errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntityInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameCustomerAddressEntity, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CustomerAddressEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerAddressEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerAddressEntitiesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerAddressEntities can't be nil")
+		return errors.NotValid.Newf("CustomerAddressEntities can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntityUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameCustomerAddressEntity, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCustomerAddressEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -2310,47 +2441,74 @@ func (cc *CustomerAddressEntities) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
-type customerEntityRelations struct {
-	parent                  *CustomerEntity
-	CustomerAddressEntities *CustomerAddressEntities // Reversed 1:M customer_entity.entity_id => customer_address_entity.parent_id
+func (r *customerEntityRelations) DeleteCustomerAddressEntities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntitiesDeleteByFK", opts...)
+	res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+	err = dbr.ResultCheckFn(TableNameCustomerAddressEntity, len(r.CustomerAddressEntities.Data), res, err)
+	if err == nil && r.CustomerAddressEntities != nil {
+		r.CustomerAddressEntities.Clear()
+	}
+	return errors.WithStack(err)
 }
 
-func (r *customerEntityRelations) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
-	if len(r.CustomerAddressEntities.Data) > 0 {
-		for _, e2 := range r.CustomerAddressEntities.Data {
-			e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
-		}
-		if _, err := r.CustomerAddressEntities.DBInsert(ctx, dbm, opts...); err != nil {
-			return errors.WithStack(err)
-		}
+func (r *customerEntityRelations) InsertCustomerAddressEntities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if r.CustomerAddressEntities == nil || len(r.CustomerAddressEntities.Data) == 0 {
+		return nil
+	}
+	for _, e2 := range r.CustomerAddressEntities.Data {
+		e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
+	}
+	return errors.WithStack(r.CustomerAddressEntities.DBInsert(ctx, dbm, opts...))
+}
+
+func (r *customerEntityRelations) UpdateCustomerAddressEntities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if r.CustomerAddressEntities == nil || len(r.CustomerAddressEntities.Data) == 0 {
+		dbr := dbm.ConnPool.WithCacheKey("CustomerAddressEntitiesDeleteByFK", opts...)
+		res, err := dbr.ExecContext(ctx, r.parent.EntityID)
+		return dbr.ResultCheckFn(TableNameCustomerAddressEntity, -1, res, errors.WithStack(err))
+	}
+	for _, e2 := range r.CustomerAddressEntities.Data {
+		e2.ParentID = null.MakeUint32(uint32(r.parent.EntityID))
+	}
+	err = r.CustomerAddressEntities.DBUpdate(ctx, dbm, opts...)
+	return errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) LoadCustomerAddressEntities(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (rowCount uint64, err error) {
+	if r.CustomerAddressEntities == nil {
+		r.CustomerAddressEntities = &CustomerAddressEntities{}
+	}
+	r.CustomerAddressEntities.Clear()
+	rowCount, err = dbm.ConnPool.WithCacheKey("CustomerAddressEntitiesSelectByFK", opts...).Load(ctx, r.CustomerAddressEntities, r.parent.EntityID)
+	return rowCount, errors.WithStack(err)
+}
+
+func (r *customerEntityRelations) InsertAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.InsertCustomerAddressEntities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
 	}
 	return nil
 }
 
-// CustomerEntity represents a single row for DB table customer_entity. Auto
-// generated.
-// Table comment: Customer Entity
-//easyjson:json
-type CustomerEntity struct {
-	EntityID         uint32      `max_len:"10"`  // entity_id int(10) unsigned NOT NULL PRI  auto_increment "Entity ID"
-	WebsiteID        null.Uint32 `max_len:"5"`   // website_id smallint(5) unsigned NULL MUL DEFAULT 'NULL'  "Website ID"
-	Email            null.String `max_len:"255"` // email varchar(255) NULL MUL DEFAULT 'NULL'  "Email"
-	GroupID          uint32      `max_len:"5"`   // group_id smallint(5) unsigned NOT NULL  DEFAULT '0'  "Group ID"
-	StoreID          null.Uint32 `max_len:"5"`   // store_id smallint(5) unsigned NULL MUL DEFAULT '0'  "Store ID"
-	CreatedAt        time.Time   // created_at timestamp NOT NULL  DEFAULT 'current_timestamp()'  "Created At"
-	UpdatedAt        time.Time   // updated_at timestamp NOT NULL  DEFAULT 'current_timestamp()' on update current_timestamp() "Updated At"
-	IsActive         bool        `max_len:"5"`   // is_active smallint(5) unsigned NOT NULL  DEFAULT '1'  "Is Active"
-	CreatedIn        null.String `max_len:"255"` // created_in varchar(255) NULL  DEFAULT 'NULL'  "Created From"
-	Firstname        null.String `max_len:"255"` // firstname varchar(255) NULL MUL DEFAULT 'NULL'  "First Name"
-	Lastname         null.String `max_len:"255"` // lastname varchar(255) NULL MUL DEFAULT 'NULL'  "Last Name"
-	Dob              null.Time   // dob date NULL  DEFAULT 'NULL'  "Date of Birth"
-	passwordHash     null.String `max_len:"128"` // password_hash varchar(128) NULL  DEFAULT 'NULL'  "Password_hash"
-	RpToken          null.String `max_len:"128"` // rp_token varchar(128) NULL  DEFAULT 'NULL'  "Reset password token"
-	RpTokenCreatedAt null.Time   // rp_token_created_at datetime NULL  DEFAULT 'NULL'  "Reset password token creation time"
-	DefaultBilling   null.Uint32 `max_len:"10"` // default_billing int(10) unsigned NULL  DEFAULT 'NULL'  "Default Billing Address"
-	DefaultShipping  null.Uint32 `max_len:"10"` // default_shipping int(10) unsigned NULL  DEFAULT 'NULL'  "Default Shipping Address"
-	Gender           null.Uint32 `max_len:"5"`  // gender smallint(5) unsigned NULL  DEFAULT 'NULL'  "Gender"
-	Relations        *customerEntityRelations
+func (r *customerEntityRelations) LoadAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
+	if _, err = r.LoadCustomerAddressEntities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *customerEntityRelations) UpdateAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.UpdateCustomerAddressEntities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (r *customerEntityRelations) DeleteAll(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) error {
+	if err := r.DeleteCustomerAddressEntities(ctx, dbm, opts...); err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -2422,6 +2580,7 @@ func (e *CustomerEntity) Load(ctx context.Context, dbm *DBM, primaryKey uint32, 
 	if e == nil {
 		return errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	e.setRelationParent()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs primaryKey into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, nil, e); err != nil {
@@ -2442,6 +2601,7 @@ func (e *CustomerEntity) Delete(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	e.setRelationParent()
 	qo := dml.FromContextQueryOptions(ctx)
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeDelete, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
@@ -2461,6 +2621,7 @@ func (e *CustomerEntity) Update(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	e.setRelationParent()
 	qo := dml.FromContextQueryOptions(ctx)
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
@@ -2480,6 +2641,7 @@ func (e *CustomerEntity) Insert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	e.setRelationParent()
 	qo := dml.FromContextQueryOptions(ctx)
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
@@ -2499,6 +2661,7 @@ func (e *CustomerEntity) Upsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFu
 	if e == nil {
 		return nil, errors.NotValid.Newf("CustomerEntity can't be nil")
 	}
+	e.setRelationParent()
 	qo := dml.FromContextQueryOptions(ctx)
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, nil, e); err != nil {
 		return nil, errors.WithStack(err)
@@ -2592,14 +2755,21 @@ func (cc *CustomerEntities) Append(n ...*CustomerEntity) *CustomerEntities {
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *CustomerEntities) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *CustomerEntities) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *CustomerEntities) Clear() *CustomerEntities {
+	if cc == nil {
+		*cc = CustomerEntities{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -2641,7 +2811,7 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e CustomerEntity
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -2666,9 +2836,7 @@ func (cc *CustomerEntities) MapColumns(cm *dml.ColumnMap) error {
 func (cc *CustomerEntities) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("CustomerEntity can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs EntityID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -2708,7 +2876,7 @@ func (cc *CustomerEntities) DBDelete(ctx context.Context, dbm *DBM, opts ...dml.
 	return res, nil
 }
 
-func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -2718,60 +2886,54 @@ func (cc *CustomerEntities) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn f
 	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("CustomerEntityUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerEntityUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameCustomerEntity, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerEntities) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
+		return errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerEntityInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameCustomerEntity, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *CustomerEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *CustomerEntities) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "CustomerEntitiesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("CustomerEntities can't be nil")
+		return errors.NotValid.Newf("CustomerEntities can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventCustomerEntityFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("CustomerEntityUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("CustomerEntityUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameCustomerEntity, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventCustomerEntityFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -2877,53 +3039,6 @@ func (cc *CustomerEntities) WriteTo(w io.Writer) (n int64, err error) {
 		n += n2
 	}
 	return n, nil
-}
-
-// DmlgenTypes represents a single row for DB table dmlgen_types. Auto generated.
-// // Just another comment.
-//easyjson:json
-type DmlgenTypes struct {
-	ID             int32        `json:"id,omitempty"  max_len:"10"`                     // id int(11) NOT NULL PRI  auto_increment ""
-	ColBigint1     null.Int64   `json:"col_bigint_1,omitempty"  max_len:"19"`           // col_bigint_1 bigint(20) NULL  DEFAULT 'NULL'  ""
-	ColBigint2     int64        `json:"col_bigint_2,omitempty"  max_len:"19"`           // col_bigint_2 bigint(20) NOT NULL  DEFAULT '0'  ""
-	ColBigint3     null.Uint64  `json:"col_bigint_3,omitempty"  max_len:"20"`           // col_bigint_3 bigint(20) unsigned NULL  DEFAULT 'NULL'  ""
-	ColBigint4     uint64       `json:"col_bigint_4,omitempty"  max_len:"20"`           // col_bigint_4 bigint(20) unsigned NOT NULL  DEFAULT '0'  ""
-	ColBlob        []byte       `json:"col_blob,omitempty"  max_len:"65535"`            // col_blob blob NULL  DEFAULT 'NULL'  ""
-	ColDate1       null.Time    `json:"col_date_1,omitempty"  `                         // col_date_1 date NULL  DEFAULT 'NULL'  ""
-	ColDate2       time.Time    `json:"col_date_2,omitempty"  `                         // col_date_2 date NOT NULL  DEFAULT ''0000-00-00''  ""
-	ColDatetime1   null.Time    `json:"col_datetime_1,omitempty"  `                     // col_datetime_1 datetime NULL  DEFAULT 'NULL'  ""
-	ColDatetime2   time.Time    `json:"col_datetime_2,omitempty"  `                     // col_datetime_2 datetime NOT NULL  DEFAULT ''0000-00-00 00:00:00''  ""
-	ColDecimal101  null.Decimal `json:"col_decimal_10_1,omitempty"  max_len:"10"`       // col_decimal_10_1 decimal(10,1) unsigned NULL  DEFAULT 'NULL'  ""
-	ColDecimal124  null.Decimal `json:"col_decimal_12_4,omitempty"  max_len:"12"`       // col_decimal_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	PriceA124      null.Decimal `json:"price_a_12_4,omitempty"  max_len:"12"`           // price_a_12_4 decimal(12,4) NULL  DEFAULT 'NULL'  ""
-	PriceB124      null.Decimal `json:"price_b_12_4,omitempty"  max_len:"12"`           // price_b_12_4 decimal(12,4) NOT NULL  DEFAULT '0.0000'  ""
-	ColDecimal123  null.Decimal `json:"col_decimal_12_3,omitempty"  max_len:"12"`       // col_decimal_12_3 decimal(12,3) NOT NULL  DEFAULT '0.000'  ""
-	ColDecimal206  null.Decimal `json:"col_decimal_20_6,omitempty"  max_len:"20"`       // col_decimal_20_6 decimal(20,6) NOT NULL  DEFAULT '0.000000'  ""
-	ColDecimal2412 null.Decimal `json:"col_decimal_24_12,omitempty"  max_len:"24"`      // col_decimal_24_12 decimal(24,12) NOT NULL  DEFAULT '0.000000000000'  ""
-	ColInt1        null.Int32   `json:"col_int_1,omitempty"  max_len:"10"`              // col_int_1 int(10) NULL  DEFAULT 'NULL'  ""
-	ColInt2        int32        `json:"col_int_2,omitempty"  max_len:"10"`              // col_int_2 int(10) NOT NULL  DEFAULT '0'  ""
-	ColInt3        null.Uint32  `json:"col_int_3,omitempty"  max_len:"10"`              // col_int_3 int(10) unsigned NULL  DEFAULT 'NULL'  ""
-	ColInt4        uint32       `json:"col_int_4,omitempty"  max_len:"10"`              // col_int_4 int(10) unsigned NOT NULL  DEFAULT '0'  ""
-	ColLongtext1   null.String  `json:"col_longtext_1,omitempty"  max_len:"4294967295"` // col_longtext_1 longtext NULL  DEFAULT 'NULL'  ""
-	ColLongtext2   string       `json:"col_longtext_2,omitempty"  max_len:"4294967295"` // col_longtext_2 longtext NOT NULL  DEFAULT ''''  ""
-	ColMediumblob  []byte       `json:"col_mediumblob,omitempty"  max_len:"16777215"`   // col_mediumblob mediumblob NULL  DEFAULT 'NULL'  ""
-	ColMediumtext1 null.String  `json:"col_mediumtext_1,omitempty"  max_len:"16777215"` // col_mediumtext_1 mediumtext NULL  DEFAULT 'NULL'  ""
-	ColMediumtext2 string       `json:"col_mediumtext_2,omitempty"  max_len:"16777215"` // col_mediumtext_2 mediumtext NOT NULL  DEFAULT ''''  ""
-	ColSmallint1   null.Int32   `json:"col_smallint_1,omitempty"  max_len:"5"`          // col_smallint_1 smallint(5) NULL  DEFAULT 'NULL'  ""
-	ColSmallint2   int32        `json:"col_smallint_2,omitempty"  max_len:"5"`          // col_smallint_2 smallint(5) NOT NULL  DEFAULT '0'  ""
-	ColSmallint3   null.Uint32  `json:"col_smallint_3,omitempty"  max_len:"5"`          // col_smallint_3 smallint(5) unsigned NULL  DEFAULT 'NULL'  ""
-	ColSmallint4   uint32       `json:"col_smallint_4,omitempty"  max_len:"5"`          // col_smallint_4 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
-	HasSmallint5   bool         `json:"has_smallint_5,omitempty"  max_len:"5"`          // has_smallint_5 smallint(5) unsigned NOT NULL  DEFAULT '0'  ""
-	IsSmallint5    null.Bool    `json:"is_smallint_5,omitempty"  max_len:"5"`           // is_smallint_5 smallint(5) NULL  DEFAULT 'NULL'  ""
-	ColText        null.String  `json:"col_text,omitempty"  max_len:"65535"`            // col_text text NULL  DEFAULT 'NULL'  ""
-	ColTimestamp1  time.Time    `json:"col_timestamp_1,omitempty"  `                    // col_timestamp_1 timestamp NOT NULL  DEFAULT 'current_timestamp()'  ""
-	ColTimestamp2  null.Time    `json:"col_timestamp_2,omitempty"  `                    // col_timestamp_2 timestamp NULL  DEFAULT 'NULL'  ""
-	ColTinyint1    int32        `json:"col_tinyint_1,omitempty"  max_len:"3"`           // col_tinyint_1 tinyint(1) NOT NULL  DEFAULT '0'  ""
-	ColVarchar1    string       `json:"col_varchar_1,omitempty"  max_len:"1"`           // col_varchar_1 varchar(1) NOT NULL  DEFAULT ''0''  ""
-	ColVarchar100  null.String  `json:"col_varchar_100,omitempty"  max_len:"100"`       // col_varchar_100 varchar(100) NULL  DEFAULT 'NULL'  ""
-	ColVarchar16   string       `json:"col_varchar_16,omitempty"  max_len:"16"`         // col_varchar_16 varchar(16) NOT NULL  DEFAULT ''de_DE''  ""
-	ColChar1       null.String  `json:"col_char_1,omitempty"  max_len:"21"`             // col_char_1 char(21) NULL  DEFAULT 'NULL'  ""
-	ColChar2       string       `json:"col_char_2,omitempty"  max_len:"17"`             // col_char_2 char(17) NOT NULL  DEFAULT ''xchar''  ""
 }
 
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
@@ -3225,14 +3340,21 @@ func (cc *DmlgenTypesCollection) Append(n ...*DmlgenTypes) *DmlgenTypesCollectio
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *DmlgenTypesCollection) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *DmlgenTypesCollection) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *DmlgenTypesCollection) Clear() *DmlgenTypesCollection {
+	if cc == nil {
+		*cc = DmlgenTypesCollection{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -3274,7 +3396,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e DmlgenTypes
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -3299,9 +3421,7 @@ func (cc *DmlgenTypesCollection) MapColumns(cm *dml.ColumnMap) error {
 func (cc *DmlgenTypesCollection) DBLoad(ctx context.Context, dbm *DBM, pkIDs []int32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("DmlgenTypes can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs ID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -3341,7 +3461,7 @@ func (cc *DmlgenTypesCollection) DBDelete(ctx context.Context, dbm *DBM, opts ..
 	return res, nil
 }
 
-func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -3351,60 +3471,54 @@ func (cc *DmlgenTypesCollection) DBUpdate(ctx context.Context, dbm *DBM, resChec
 	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("DmlgenTypesUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("DmlgenTypesUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameDmlgenTypes, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *DmlgenTypesCollection) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
+		return errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("DmlgenTypesInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameDmlgenTypes, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *DmlgenTypesCollection) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *DmlgenTypesCollection) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "DmlgenTypesCollectionUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
+		return errors.NotValid.Newf("DmlgenTypesCollection can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("DmlgenTypesUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("DmlgenTypesUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameDmlgenTypes, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventDmlgenTypesFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -3632,17 +3746,6 @@ func (cc *DmlgenTypesCollection) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
-// SalesOrderStatusState represents a single row for DB table
-// sales_order_status_state. Auto generated.
-// Table comment: Sales Order Status Table
-//easyjson:json
-type SalesOrderStatusState struct {
-	Status         string `max_len:"32"` // status varchar(32) NOT NULL PRI   "Status"
-	State          string `max_len:"32"` // state varchar(32) NOT NULL PRI   "Label"
-	IsDefault      bool   `max_len:"5"`  // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Is Default"
-	VisibleOnFront uint32 `max_len:"5"`  // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
-}
-
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
@@ -3834,14 +3937,21 @@ func (cc *SalesOrderStatusStates) Append(n ...*SalesOrderStatusState) *SalesOrde
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *SalesOrderStatusStates) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *SalesOrderStatusStates) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *SalesOrderStatusStates) Clear() *SalesOrderStatusStates {
+	if cc == nil {
+		*cc = SalesOrderStatusStates{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -3875,7 +3985,7 @@ func (cc *SalesOrderStatusStates) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e SalesOrderStatusState
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -3908,9 +4018,7 @@ type SalesOrderStatusStatesDBLoadArgs struct {
 func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []SalesOrderStatusStatesDBLoadArgs, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("SalesOrderStatusState can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs Status,State into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -3954,7 +4062,7 @@ func (cc *SalesOrderStatusStates) DBDelete(ctx context.Context, dbm *DBM, opts .
 	return res, nil
 }
 
-func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resCheckFn func(sql.Result, error) error, opts ...dml.DBRFunc) (err error) {
+func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpdateByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
@@ -3964,60 +4072,54 @@ func (cc *SalesOrderStatusStates) DBUpdate(ctx context.Context, dbm *DBM, resChe
 	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpdate, qo.SkipEvents, cc, nil); err != nil {
 		return errors.WithStack(err)
 	}
-	if len(opts) == 0 {
-		opts = dbmEmptyOpts
-	}
-	if resCheckFn == nil {
-		resCheckFn = dbmNoopResultCheckFn
-	}
-	dbrStmt, err := dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpdateByPK", opts...).Prepare(ctx)
+	dbr := dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpdateByPK", opts...)
+	dbrStmt, err := dbr.Prepare(ctx)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	for _, c := range cc.Data {
-		if err := resCheckFn(dbrStmt.ExecContext(ctx, c)); err != nil {
+		res, err := dbrStmt.ExecContext(ctx, c)
+		if err := dbr.ResultCheckFn(TableNameSalesOrderStatusState, 1, res, err); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpdate, qo.SkipEvents, cc, nil))
 }
 
-func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *SalesOrderStatusStates) DBInsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesInsert")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
+		return errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeInsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateInsert", opts...).ExecContext(ctx, cc); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("SalesOrderStatusStateInsert", opts...)
+	res, err := dbr.ExecContext(ctx, cc)
+	if err := dbr.ResultCheckFn(TableNameSalesOrderStatusState, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil)); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterInsert, qo.SkipEvents, cc, nil))
 }
 
-func (cc *SalesOrderStatusStates) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (res sql.Result, err error) {
+func (cc *SalesOrderStatusStates) DBUpsert(ctx context.Context, dbm *DBM, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "SalesOrderStatusStatesUpsertByPK")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
 	if cc == nil {
-		return nil, errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
+		return errors.NotValid.Newf("SalesOrderStatusStates can't be nil")
 	}
 	qo := dml.FromContextQueryOptions(ctx)
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
+	if err := dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagBeforeUpsert, qo.SkipEvents, cc, nil); err != nil {
+		return errors.WithStack(err)
 	}
-	if res, err = dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpsertByPK", opts...).ExecContext(ctx, dml.Qualify("", cc)); err != nil {
-		return nil, errors.WithStack(err)
+	dbr := dbm.ConnPool.WithCacheKey("SalesOrderStatusStateUpsertByPK", opts...)
+	res, err := dbr.ExecContext(ctx, dml.Qualify("", cc))
+	if err := dbr.ResultCheckFn(TableNameSalesOrderStatusState, len(cc.Data), res, err); err != nil {
+		return errors.WithStack(err)
 	}
-	if err = dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return res, nil
+	return errors.WithStack(dbm.eventSalesOrderStatusStateFunc(ctx, dml.EventFlagAfterUpsert, qo.SkipEvents, cc, nil))
 }
 
 // Delete will remove an item from the slice. Auto generated via dmlgen.
@@ -4140,18 +4242,6 @@ func (cc *SalesOrderStatusStates) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
-// ViewCustomerAutoIncrement represents a single row for DB table
-// view_customer_auto_increment. Auto generated.
-// Table comment: VIEW
-//easyjson:json
-type ViewCustomerAutoIncrement struct {
-	CeEntityID uint32      `max_len:"10"`  // ce_entity_id int(10) unsigned NOT NULL  DEFAULT '0'  "Entity ID"
-	Email      null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
-	Firstname  string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
-	Lastname   string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
-	City       string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
-}
-
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *ViewCustomerAutoIncrement) Copy() *ViewCustomerAutoIncrement {
@@ -4264,14 +4354,21 @@ func (cc *ViewCustomerAutoIncrements) Append(n ...*ViewCustomerAutoIncrement) *V
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *ViewCustomerAutoIncrements) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *ViewCustomerAutoIncrements) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *ViewCustomerAutoIncrements) Clear() *ViewCustomerAutoIncrements {
+	if cc == nil {
+		*cc = ViewCustomerAutoIncrements{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -4305,7 +4402,7 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e ViewCustomerAutoIncrement
 		if err := cc.scanColumns(cm, &e); err != nil {
@@ -4321,9 +4418,7 @@ func (cc *ViewCustomerAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 func (cc *ViewCustomerAutoIncrements) DBLoad(ctx context.Context, dbm *DBM, pkIDs []uint32, opts ...dml.DBRFunc) (err error) {
 	ctx, span := dbm.option.Trace.Start(ctx, "ViewCustomerAutoIncrementsDBLoad")
 	defer func() { cstrace.Status(span, err, ""); span.End() }()
-	if cc == nil {
-		return errors.NotValid.Newf("ViewCustomerAutoIncrement can't be nil")
-	}
+	cc.Clear()
 	qo := dml.FromContextQueryOptions(ctx)
 	// put the IDs CeEntityID into the context as value to search for a cache entry in the event function.
 	if err = dbm.eventViewCustomerAutoIncrementFunc(ctx, dml.EventFlagBeforeSelect, qo.SkipEvents, cc, nil); err != nil {
@@ -4434,17 +4529,6 @@ func (cc *ViewCustomerAutoIncrements) WriteTo(w io.Writer) (n int64, err error) 
 	return n, nil
 }
 
-// ViewCustomerNoAutoIncrement represents a single row for DB table
-// view_customer_no_auto_increment. Auto generated.
-// Table comment: VIEW
-//easyjson:json
-type ViewCustomerNoAutoIncrement struct {
-	Email     null.String `max_len:"255"` // email varchar(255) NULL  DEFAULT 'NULL'  "Email"
-	Firstname string      `max_len:"255"` // firstname varchar(255) NOT NULL    "First Name"
-	Lastname  string      `max_len:"255"` // lastname varchar(255) NOT NULL    "Last Name"
-	City      string      `max_len:"255"` // city varchar(255) NOT NULL    "City"
-}
-
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *ViewCustomerNoAutoIncrement) Copy() *ViewCustomerNoAutoIncrement {
@@ -4534,14 +4618,21 @@ func (cc *ViewCustomerNoAutoIncrements) Append(n ...*ViewCustomerNoAutoIncrement
 	return cc
 }
 
-// UnmarshalBinary implements encoding.BinaryUnmarshaler.
-func (cc *ViewCustomerNoAutoIncrements) UnmarshalBinary(data []byte) error {
-	return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf
-}
-
-// MarshalBinary implements encoding.BinaryMarshaler.
-func (cc *ViewCustomerNoAutoIncrements) MarshalBinary() (data []byte, err error) {
-	return cc.Marshal() // Implemented via github.com/gogo/protobuf
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *ViewCustomerNoAutoIncrements) Clear() *ViewCustomerNoAutoIncrements {
+	if cc == nil {
+		*cc = ViewCustomerNoAutoIncrements{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
+	return cc
 }
 
 // Cut will remove items i through j-1. Auto generated via dmlgen.
@@ -4575,7 +4666,7 @@ func (cc *ViewCustomerNoAutoIncrements) MapColumns(cm *dml.ColumnMap) error {
 		}
 	case dml.ColumnMapScan:
 		if cm.Count == 0 {
-			cc.Data = cc.Data[:0]
+			cc.Clear()
 		}
 		var e ViewCustomerNoAutoIncrement
 		if err := cc.scanColumns(cm, &e); err != nil {

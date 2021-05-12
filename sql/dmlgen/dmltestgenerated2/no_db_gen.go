@@ -25,6 +25,16 @@ type CoreConfiguration struct {
 	VersionTe time.Time   // version_te timestamp(6) NOT NULL PRI  STORED GENERATED "Timestamp End Versioning"
 }
 
+// SalesOrderStatusState represents a single row for DB table
+// sales_order_status_state. Auto generated.
+// Table comment: Sales Order Status Table
+type SalesOrderStatusState struct {
+	Status         string // status varchar(32) NOT NULL PRI   "Status"
+	State          string // state varchar(32) NOT NULL PRI   "Label"
+	IsDefault      bool   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Is Default"
+	VisibleOnFront uint16 // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
+}
+
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *CoreConfiguration) Copy() *CoreConfiguration {
@@ -88,6 +98,23 @@ func NewCoreConfigurations() *CoreConfigurations {
 // via dmlgen.
 func (cc *CoreConfigurations) Append(n ...*CoreConfiguration) *CoreConfigurations {
 	cc.Data = append(cc.Data, n...)
+	return cc
+}
+
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *CoreConfigurations) Clear() *CoreConfigurations {
+	if cc == nil {
+		*cc = CoreConfigurations{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
 	return cc
 }
 
@@ -193,16 +220,6 @@ func (cc *CoreConfigurations) WriteTo(w io.Writer) (n int64, err error) {
 	return n, nil
 }
 
-// SalesOrderStatusState represents a single row for DB table
-// sales_order_status_state. Auto generated.
-// Table comment: Sales Order Status Table
-type SalesOrderStatusState struct {
-	Status         string // status varchar(32) NOT NULL PRI   "Status"
-	State          string // state varchar(32) NOT NULL PRI   "Label"
-	IsDefault      bool   // is_default smallint(5) unsigned NOT NULL  DEFAULT '0'  "Is Default"
-	VisibleOnFront uint16 // visible_on_front smallint(5) unsigned NOT NULL  DEFAULT '0'  "Visible on front"
-}
-
 // Copy copies the struct and returns a new pointer. TODO use deepcopy tool to
 // generate code afterwards
 func (e *SalesOrderStatusState) Copy() *SalesOrderStatusState {
@@ -266,6 +283,23 @@ func NewSalesOrderStatusStates() *SalesOrderStatusStates {
 // generated via dmlgen.
 func (cc *SalesOrderStatusStates) Append(n ...*SalesOrderStatusState) *SalesOrderStatusStates {
 	cc.Data = append(cc.Data, n...)
+	return cc
+}
+
+// Clear will reset the data slice or create a new type. Useful for reusing the
+// underlying backing slice array. Auto generated via dmlgen.
+func (cc *SalesOrderStatusStates) Clear() *SalesOrderStatusStates {
+	if cc == nil {
+		*cc = SalesOrderStatusStates{}
+		return cc
+	}
+	if c := cap(cc.Data); c > len(cc.Data) {
+		cc.Data = cc.Data[:c]
+	}
+	for i := 0; i < len(cc.Data); i++ {
+		cc.Data[i] = nil
+	}
+	cc.Data = cc.Data[:0]
 	return cc
 }
 

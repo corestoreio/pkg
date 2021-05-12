@@ -7,10 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/corestoreio/pkg/sql/dml"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
+	"github.com/corestoreio/pkg/sql/dml"
 )
 
 // Option represents a sortable option for the NewGenerator function. Each option
@@ -304,14 +303,6 @@ func WithProtobuf(sc *SerializerConfig) (opt Option) {
 		g.Serializer = "protobuf"
 		g.PackageSerializer = pkg
 		g.PackageSerializerImportPath = sc.PackageImportPath
-		g.SerializerHeaderOptions = []string{
-			"(gogoproto.typedecl_all) = false",
-			"(gogoproto.goproto_getters_all) = false",
-			"(gogoproto.unmarshaler_all) = true",
-			"(gogoproto.marshaler_all) = true",
-			"(gogoproto.sizer_all) = true",
-			"(gogoproto.goproto_unrecognized_all) = false",
-		}
 		g.SerializerHeaderOptions = append(g.SerializerHeaderOptions, sc.AdditionalHeaders...)
 		return nil
 	}

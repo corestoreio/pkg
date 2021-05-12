@@ -41,19 +41,19 @@ func main() {
 		dmlgen.WithTableConfig(
 			"store_website", &dmlgen.TableConfig{
 				Encoders:        []string{"easyjson", "protobuf"},
-				FeaturesExclude: dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
+				FeaturesExclude: dmlgen.FeatureDB,
 				StructTags:      []string{"max_len"},
 			}),
 		dmlgen.WithTableConfig(
 			"store_group", &dmlgen.TableConfig{
 				Encoders:        []string{"easyjson", "protobuf"},
-				FeaturesExclude: dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
+				FeaturesExclude: dmlgen.FeatureDB,
 				StructTags:      []string{"max_len"},
 			}),
 		dmlgen.WithTableConfig(
 			"store", &dmlgen.TableConfig{
 				Encoders:         []string{"easyjson", "protobuf"},
-				FeaturesExclude:  dmlgen.FeatureDB | dmlgen.FeatureCollectionBinaryMarshaler,
+				FeaturesExclude:  dmlgen.FeatureDB,
 				StructTags:       []string{"max_len"},
 				CustomStructTags: []string{"StoreGroup", `faker:"-"`, "StoreWebsite", `faker:"-"`},
 			}),

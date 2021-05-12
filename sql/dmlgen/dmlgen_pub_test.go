@@ -205,11 +205,15 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	g.TestSQLDumpGlobPath = "../testdata/testAll_*_tables.sql"
 
 	writeFile(t, "dmltestgenerated/output_gen.go", g.GenerateGo)
-	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
-	// Generates for all proto files the Go source code.
 
+	g.Package = "dmltestgeneratedpb"
+	g.PackageSerializer = "./dmltestgeneratedpb"
+	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
+
+	// Generates for all proto files the Go source code.
 	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated", &dmlgen.ProtocOptions{
-		ProtoGen: "gogo",
+		GoOutPath:        "./dmltestgenerated/",
+		GoSourceRelative: false,
 	}))
 	assert.NoError(t, dmlgen.GenerateJSON("./dmltestgenerated", "", nil))
 }
@@ -450,14 +454,15 @@ func TestNewGenerator_MToMForeignKeys(t *testing.T) {
 	ts, err := dmlgen.NewGenerator("github.com/corestoreio/pkg/sql/dmlgen/dmltestgeneratedMToM",
 
 		dmlgen.WithTablesFromDB(ctx, db,
-			//"athlete_team_member",
+			"athlete_team_member",
 			"athlete_team", "athlete",
 			"customer_entity", "customer_address_entity",
 		),
 
 		dmlgen.WithTableConfigDefault(dmlgen.TableConfig{
-			StructTags:      []string{"max_len"},
-			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct | dmlgen.FeatureEntityRelationships,
+			StructTags: []string{"max_len"},
+			FeaturesInclude: dmlgen.FeatureEntityStruct | dmlgen.FeatureCollectionStruct |
+				dmlgen.FeatureEntityRelationships | dmlgen.FeatureDB,
 		}),
 		// Just an empty TableConfig to trigger the default config update for
 		// this table. Hacky for now.

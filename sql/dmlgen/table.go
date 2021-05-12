@@ -976,26 +976,6 @@ func (t *Table) fnCollectionAppend(mainGen *codegen.Go, g *Generator) {
 	mainGen.Pln(`}`)
 }
 
-func (t *Table) fnCollectionBinaryMarshaler(mainGen *codegen.Go, g *Generator) {
-	if !t.HasSerializer || !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureCollectionBinaryMarshaler) {
-		return
-	}
-
-	mainGen.C(`UnmarshalBinary implements encoding.BinaryUnmarshaler.`)
-	mainGen.Pln(`func (cc *`, t.CollectionName(), `) UnmarshalBinary(data []byte) error {`)
-	{
-		mainGen.Pln(`return cc.Unmarshal(data) // Implemented via github.com/gogo/protobuf`)
-	}
-	mainGen.Pln(`}`)
-
-	mainGen.C(`MarshalBinary implements encoding.BinaryMarshaler.`)
-	mainGen.Pln(`func (cc *`, t.CollectionName(), `) MarshalBinary() (data []byte, err error) {`)
-	{
-		mainGen.Pln(`return cc.Marshal()  // Implemented via github.com/gogo/protobuf`)
-	}
-	mainGen.Pln(`}`)
-}
-
 func (t *Table) fnEntityValidate(mainGen *codegen.Go, g *Generator) {
 	if !g.hasFeature(t.featuresInclude, t.featuresExclude, FeatureEntityValidate) {
 		return

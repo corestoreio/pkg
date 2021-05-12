@@ -149,7 +149,7 @@ func (g *Generator) sortedTableNames() []string {
 
 func (g *Generator) findColumn(tableName, columnName string) *ddl.Column {
 	if g.Tables[tableName] == nil {
-		panic(fmt.Sprintln("tableName, columnName", tableName, columnName)) // TODO fix this, but how?
+		panic(fmt.Sprintf("table not found in Tables map: tableName:%q columnName:%q\n", tableName, columnName)) // TODO fix this, but how?
 	}
 	return g.Tables[tableName].Table.Columns.ByField(columnName)
 }
@@ -259,7 +259,6 @@ func (g *Generator) GenerateGo(wMain, wTest io.Writer) error {
 
 		t.fnCollectionStruct(mainGen, g)
 		t.fnCollectionAppend(mainGen, g)
-		t.fnCollectionBinaryMarshaler(mainGen, g)
 		t.fnCollectionClear(mainGen, g)
 		t.fnCollectionCut(mainGen, g)
 		t.fnCollectionDBAssignLastInsertID(mainGen, g)

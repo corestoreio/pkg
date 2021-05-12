@@ -8,7 +8,6 @@ type FeatureToggle uint64
 // List of available features
 const (
 	FeatureCollectionAppend FeatureToggle = 1 << iota
-	FeatureCollectionBinaryMarshaler
 	FeatureCollectionClear
 	FeatureCollectionCut
 	FeatureCollectionDelete
@@ -43,7 +42,6 @@ const (
 
 var featureNames = map[FeatureToggle]string{
 	FeatureCollectionAppend:            "FeatureCollectionAppend",
-	FeatureCollectionBinaryMarshaler:   "FeatureCollectionBinaryMarshaler",
 	FeatureCollectionCut:               "FeatureCollectionCut",
 	FeatureCollectionDelete:            "FeatureCollectionDelete",
 	FeatureCollectionEach:              "FeatureCollectionEach",

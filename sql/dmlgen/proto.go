@@ -20,19 +20,28 @@ import (
 
 // ProtocOptions allows to modify the protoc CLI command.
 type ProtocOptions struct {
-	BuildTags          []string
-	WorkingDirectory   string
-	ProtoGen           string // default gofast, options: gogo, gogofast, gogofaster
+	BuildTags        []string // deprecated
+	WorkingDirectory string
+	ProtoGen         string // default go, options: gofast, gogo, gogofast, gogofaster and other installed proto generators
+
+	ProtoPath []string // where to find other *.proto files; if empty the usual defaults apply
+	GoOutPath string   // where to write the generated proto files; default "."
+	GoOpt     []string // each entry generates a "--go_opt" argument
+	// GoSourceRelative if the paths=source_relative flag is specified, the output
+	// file is placed in the same relative directory as the input file. For
+	// example, an input file protos/buzz.proto results in an output file at
+	// protos/buzz.pb.go.
+	GoSourceRelative bool
+
 	GRPC               bool
+	GRPCOpt            []string // each entry generates a "--go-grpc_opt" argument
 	GRPCGatewayOutMap  []string // GRPC must be enabled in the above field
 	GRPCGatewayOutPath string   // GRPC must be enabled in the above field
-	ProtoPath          []string
-	GoGoOutPath        string
-	GoGoOutMap         []string
-	SwaggerOutPath     string
-	CustomArgs         []string
+
+	SwaggerOutPath string
+	CustomArgs     []string
 	// TODO add validation plugin, either
-	//  https://github.com/mwitkow/go-proto-validators as used in github.com/gogo/grpc-example/proto/example.proto
+	//  https://github.com/mwitkow/go-proto-validators as used in github.com/go_go/grpc-example/proto/example.proto
 	//  This github.com/mwitkow/go-proto-validators seems dead.
 	//  or https://github.com/envoyproxy/protoc-gen-validate
 	//  Requirement: error messages must be translatable and maybe use an errors.Kind type
@@ -43,10 +52,7 @@ var defaultProtoPaths = make([]string, 0, 8)
 func init() {
 	preDefinedPaths := [...]string{
 		build.Default.GOPATH + "/src/",
-		build.Default.GOPATH + "/src/github.com/gogo/protobuf/protobuf/",
-		build.Default.GOPATH + "/src/github.com/gogo/googleapis/",
 		"vendor/github.com/grpc-ecosystem/grpc-gateway/",
-		"vendor/github.com/gogo/googleapis/",
 		"vendor/",
 		".",
 	}
@@ -58,57 +64,48 @@ func init() {
 }
 
 func (po *ProtocOptions) toArgs() []string {
-	gogoOut := make([]string, 0, 4)
 	if po.GRPC {
-		gogoOut = append(gogoOut, "plugins=grpc")
 		if po.GRPCGatewayOutMap == nil {
 			po.GRPCGatewayOutMap = []string{
 				"allow_patch_feature=false",
-				"Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types",
-				"Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types",
-				"Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types",
-				"Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api",
-				"Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types",
 			}
 		}
 		if po.GRPCGatewayOutPath == "" {
 			po.GRPCGatewayOutPath = "."
 		}
 	}
-	if po.GoGoOutPath == "" {
-		po.GoGoOutPath = "."
-	}
-	if po.GoGoOutMap == nil {
-		po.GoGoOutMap = []string{
-			"Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api",
-			"Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types",
-			"Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types",
-			"Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types",
-			"Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types",
+	if po.GoOutPath == "" {
+		po.GoOutPath = "."
+	} else {
+		if err := os.MkdirAll(filepath.Clean(po.GoOutPath), 0751); err != nil {
+			panic(err)
 		}
 	}
-	gogoOut = append(gogoOut, po.GoGoOutMap...)
-
 	if po.ProtoPath == nil {
 		po.ProtoPath = append(po.ProtoPath, defaultProtoPaths...)
 	}
-
 	if po.ProtoGen == "" {
-		po.ProtoGen = "gofast"
-	} else {
-		switch po.ProtoGen {
-		case "gofast", "gogo", "gogofast", "gogofaster":
-			// ok
-		default:
-			panic(fmt.Sprintf("[dmlgen] ProtoGen CLI command %q not supported, allowed: gofast, gogo, gogofast, gogofaster", po.ProtoGen))
-		}
+		po.ProtoGen = "go"
 	}
 
-	// To generate PHP Code replace `gogo_out` with `php_out`.
-	// Java bit similar. Java has ~15k LOC, Go ~3.7k
 	args := []string{
-		"--" + po.ProtoGen + "_out", fmt.Sprintf("%s:%s", strings.Join(gogoOut, ","), po.GoGoOutPath),
+		"--" + po.ProtoGen + "_out=" + po.GoOutPath,
 		"--proto_path", strings.Join(po.ProtoPath, ":"),
+	}
+	if po.GoSourceRelative {
+		args = append(args, "--go_opt=paths=source_relative")
+	}
+	for _, o := range po.GoOpt {
+		args = append(args, "--go_opt="+o)
+	}
+	if po.GRPC {
+		args = append(args, "--go-grpc_out="+po.GoOutPath)
+		if po.GoSourceRelative {
+			args = append(args, "--go-grpc_opt=paths=source_relative")
+		}
+		for _, o := range po.GRPCOpt {
+			args = append(args, "--go-grpc_opt="+o)
+		}
 	}
 	if po.GRPC && len(po.GRPCGatewayOutMap) > 0 {
 		args = append(args, "--grpc-gateway_out="+strings.Join(po.GRPCGatewayOutMap, ",")+":"+po.GRPCGatewayOutPath)
@@ -216,27 +213,6 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 	return nil
 }
 
-// serializerCustomType switches the default type from function serializerType
-// to the new type. For now supports only protobuf.
-func (g *Generator) serializerCustomType(c *ddl.Column) []string {
-	pt := g.toSerializerType(c, true)
-	var buf []string
-	if pt == "google.protobuf.Timestamp" {
-		buf = append(buf, "(gogoproto.stdtime)=true")
-	}
-	if pt == "bytes" {
-		return nil // bytes can be null
-	}
-	if c.IsNull() || strings.IndexByte(pt, '.') > 0 /*whenever it is a custom type like null. or google.proto.timestamp*/ {
-		// Indeed nullable Go Types must be not-nullable in HasSerializer because we
-		// have a non-pointer struct type which contains the field Valid.
-		// HasSerializer treats nullable fields as pointer fields, but that is
-		// ridiculous.
-		buf = append(buf, "(gogoproto.nullable)=false")
-	}
-	return buf
-}
-
 // GenerateSerializer writes the protocol buffer specifications into `w` and its test
 // sources into wTest, if there are any tests.
 func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
@@ -246,7 +222,7 @@ func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 			return errors.WithStack(err)
 		}
 	case "fbs":
-
+		panic("not yet supported")
 	case "", "default", "none":
 		return nil // do nothing
 	default:
@@ -257,13 +233,7 @@ func (g *Generator) GenerateSerializer(wMain, wTest io.Writer) error {
 }
 
 func (g *Generator) generateProto(w io.Writer) error {
-	pPkg := g.PackageSerializer
-	if pPkg == "" {
-		pPkg = g.Package
-	}
-
-	proto := codegen.NewProto(pPkg)
-	proto.Pln(`import "github.com/gogo/protobuf/gogoproto/gogo.proto";`)
+	proto := codegen.NewProto(g.Package)
 
 	const importTimeStamp = `import "google/protobuf/timestamp.proto";`
 	proto.Pln(importTimeStamp)
@@ -276,7 +246,7 @@ func (g *Generator) generateProto(w io.Writer) error {
 		}
 	}
 	if !hasGoPackageOption {
-		proto.Pln(`option go_package = `, fmt.Sprintf("%q;", pPkg))
+		proto.Pln(`option go_package = `, fmt.Sprintf("%q;", g.PackageSerializer))
 	}
 
 	var hasTimestampField bool
@@ -305,12 +275,9 @@ func (g *Generator) generateProto(w io.Writer) error {
 					if !hasTimestampField && strings.HasPrefix(serType, "google.protobuf.Timestamp") {
 						hasTimestampField = true
 					}
-					var optionConcret string
-					if options := g.serializerCustomType(c); len(options) > 0 {
-						optionConcret = `[` + strings.Join(options, ",") + `]`
-					}
+
 					// extend here with a custom code option, if someone needs
-					proto.Pln(serType, strs.ToGoCamelCase(c.Field), `=`, c.Pos, optionConcret+`;`)
+					proto.Pln(serType, strs.ToGoCamelCase(c.Field), `=`, c.Pos, `; //`, c.Comment)
 					lastColumnPos = c.Pos
 				}
 			})
