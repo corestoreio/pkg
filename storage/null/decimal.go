@@ -46,8 +46,9 @@ var bytesZero = []byte(`0`)
 // decimal/numeric/float/double data type and their representation in Go. It can
 // store arbitrary large values. Decimal does not perform any kind of
 // calculations. Helpful packages for arbitrary precision calculations are
-// github.com/ericlagergren/decimal or gopkg.in/inf.v0 or
+// github.com/ericlagergren/decimal or
 // github.com/shopspring/decimal or a future new Go type.
+// https://github.com/bojanz/currency
 // https://dev.mysql.com/doc/refman/5.7/en/precision-math-decimal-characteristics.html
 // https://dev.mysql.com/doc/refman/5.7/en/floating-point-types.html
 type Decimal struct {
