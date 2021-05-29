@@ -169,10 +169,10 @@ func (a *String) UnmarshalText(text []byte) error {
 }
 
 // SetValid changes this String's value and also sets it to be non-null.
-func (a String) SetValid(v string) String { a.Data = v; a.Valid = true; return a }
+func (a *String) SetValid(v string) { a.Data = v; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a String) SetNull() String { return String{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *String) Reset() { *a = String{} }
 
 // Ptr returns a pointer to this String's value, or a nil pointer if this String is null.
 func (a String) Ptr() *string {
@@ -180,6 +180,15 @@ func (a String) Ptr() *string {
 		return nil
 	}
 	return &a.Data
+}
+
+// SetPtr sets v according to the rules.
+func (a *String) SetPtr(v *string) {
+	a.Valid = v != nil
+	a.Data = ""
+	if v != nil {
+		a.Data = *v
+	}
 }
 
 // IsZero returns true for null strings, for potential future omitempty support.

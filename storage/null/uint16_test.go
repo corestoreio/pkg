@@ -161,7 +161,7 @@ func TestNullUint16_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, string(uint16JSON), "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeUint16(0).SetNull()
+	var null Uint16
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -219,10 +219,17 @@ func TestUint16IsZero(t *testing.T) {
 }
 
 func TestUint16SetValid(t *testing.T) {
-	change := MakeUint16(0).SetNull()
+	var change Uint16
 	assertNullUint16(t, change, "SetValid()")
+	change.SetValid(math.MaxUint16)
+	assertUint16(t, change, "SetValid()")
+}
 
-	assertUint16(t, change.SetValid(math.MaxUint16), "SetValid()")
+func TestUint16SetPtr(t *testing.T) {
+	var change Uint16
+	v := uint16(math.MaxUint16)
+	change.SetPtr(&v)
+	assertUint16(t, change, "SetPtr()")
 }
 
 func TestUint16Scan(t *testing.T) {

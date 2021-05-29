@@ -172,10 +172,10 @@ func (a Uint8) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Uint8's value and also sets it to be non-null.
-func (a Uint8) SetValid(n uint8) Uint8 { a.Uint8 = n; a.Valid = true; return a }
+func (a *Uint8) SetValid(n uint8) { a.Uint8 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Uint8) SetNull() Uint8 { return Uint8{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Uint8) Reset() { *a = Uint8{} }
 
 // Ptr returns a pointer to this Uint8's value, or a nil pointer if this Uint8 is null.
 func (a Uint8) Ptr() *uint8 {
@@ -183,6 +183,15 @@ func (a Uint8) Ptr() *uint8 {
 		return nil
 	}
 	return &a.Uint8
+}
+
+// SetPtr sets v according to the rules.
+func (a *Uint8) SetPtr(v *uint8) {
+	a.Valid = v != nil
+	a.Uint8 = 0
+	if v != nil {
+		a.Uint8 = *v
+	}
 }
 
 // IsZero returns true for invalid Uint8's, for future omitempty support (Go 1.4?)

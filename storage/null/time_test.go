@@ -171,9 +171,17 @@ func TestTimeFrom(t *testing.T) {
 
 func TestTimeSetValid(t *testing.T) {
 	var ti time.Time
-	change := MakeTime(ti).SetNull() // stupid code
+	change := MakeTime(ti)
+	change.Reset() // stupid code
 	assertNullTime(t, change, "SetValid()")
-	assertTime(t, change.SetValid(timeValue), "SetValid()")
+	change.SetValid(timeValue)
+	assertTime(t, change, "SetValid()")
+}
+
+func TestTimeSetPtr(t *testing.T) {
+	var change Time
+	change.SetPtr(&timeValue)
+	assertTime(t, change, "SetPtr()")
 }
 
 func TestTimePointer(t *testing.T) {

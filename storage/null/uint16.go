@@ -172,10 +172,10 @@ func (a Uint16) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Uint16's value and also sets it to be non-null.
-func (a Uint16) SetValid(n uint16) Uint16 { a.Uint16 = n; a.Valid = true; return a }
+func (a *Uint16) SetValid(n uint16) { a.Uint16 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Uint16) SetNull() Uint16 { return Uint16{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Uint16) Reset() { *a = Uint16{} }
 
 // Ptr returns a pointer to this Uint16's value, or a nil pointer if this Uint16 is null.
 func (a Uint16) Ptr() *uint16 {
@@ -183,6 +183,15 @@ func (a Uint16) Ptr() *uint16 {
 		return nil
 	}
 	return &a.Uint16
+}
+
+// SetPtr sets v according to the rules.
+func (a *Uint16) SetPtr(v *uint16) {
+	a.Valid = v != nil
+	a.Uint16 = 0
+	if v != nil {
+		a.Uint16 = *v
+	}
 }
 
 // IsZero returns true for invalid Uint16's, for future omitempty support (Go 1.4?)

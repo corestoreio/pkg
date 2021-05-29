@@ -172,10 +172,10 @@ func (a Uint32) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Uint32's value and also sets it to be non-null.
-func (a Uint32) SetValid(n uint32) Uint32 { a.Uint32 = n; a.Valid = true; return a }
+func (a *Uint32) SetValid(n uint32) { a.Uint32 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Uint32) SetNull() Uint32 { return Uint32{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Uint32) Reset() { *a = Uint32{} }
 
 // Ptr returns a pointer to this Uint32's value, or a nil pointer if this Uint32 is null.
 func (a Uint32) Ptr() *uint32 {
@@ -183,6 +183,15 @@ func (a Uint32) Ptr() *uint32 {
 		return nil
 	}
 	return &a.Uint32
+}
+
+// SetPtr sets v according to the rules.
+func (a *Uint32) SetPtr(v *uint32) {
+	a.Valid = v != nil
+	a.Uint32 = 0
+	if v != nil {
+		a.Uint32 = *v
+	}
 }
 
 // IsZero returns true for invalid Uint32's, for future omitempty support (Go 1.4?)

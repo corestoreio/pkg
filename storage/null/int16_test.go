@@ -171,7 +171,7 @@ func TestNullInt16_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, string(int16JSON), "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeInt16(0).SetNull()
+	var null Int16
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -219,7 +219,7 @@ func TestInt16IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeInt16(0).SetNull()
+	var null Int16
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
@@ -231,10 +231,17 @@ func TestInt16IsZero(t *testing.T) {
 }
 
 func TestInt16SetValid(t *testing.T) {
-	change := MakeInt16(0).SetNull()
+	var change Int16
 	assertNullInt16(t, change, "SetValid()")
+	change.SetValid(math.MaxInt16)
+	assertInt16(t, change, "SetValid()")
+}
 
-	assertInt16(t, change.SetValid(math.MaxInt16), "SetValid()")
+func TestInt16SetPtr(t *testing.T) {
+	var change Int16
+	v := int16(math.MaxInt16)
+	change.SetPtr(&v)
+	assertInt16(t, change, "SetPtr()")
 }
 
 func TestInt16Scan(t *testing.T) {

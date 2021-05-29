@@ -178,8 +178,24 @@ func (d *Decimal) Scan(value interface{}) (err error) {
 	return
 }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (d Decimal) SetNull() Decimal { return Decimal{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (d *Decimal) Reset() { *d = Decimal{} }
+
+// Ptr returns a pointer to this value, or a nil pointer if value is null.
+func (d Decimal) Ptr() *Decimal {
+	if !d.Valid {
+		return nil
+	}
+	return &d
+}
+
+// SetPtr sets v according to the rules.
+func (d *Decimal) SetPtr(v *Decimal) {
+	*d = Decimal{}
+	if v != nil {
+		*d = *v
+	}
+}
 
 // Equal compares another Decimal object for equality. Equality can only succeed
 // when both `Valid` fields are true.

@@ -171,7 +171,7 @@ func TestNullInt8_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, string(int8JSON), "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeInt8(0).SetNull()
+	var null Int8
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -219,7 +219,7 @@ func TestInt8IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeInt8(0).SetNull()
+	var null Int8
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
@@ -231,10 +231,17 @@ func TestInt8IsZero(t *testing.T) {
 }
 
 func TestInt8SetValid(t *testing.T) {
-	change := MakeInt8(0).SetNull()
+	var change Int8
 	assertNullInt8(t, change, "SetValid()")
+	change.SetValid(math.MaxInt8)
+	assertInt8(t, change, "SetValid()")
+}
 
-	assertInt8(t, change.SetValid(math.MaxInt8), "SetValid()")
+func TestInt8SetPtr(t *testing.T) {
+	var change Int8
+	v := int8(math.MaxInt8)
+	change.SetPtr(&v)
+	assertInt8(t, change, "SetPtr()")
 }
 
 func TestInt8Scan(t *testing.T) {

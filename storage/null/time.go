@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -140,10 +142,10 @@ func (a *Time) UnmarshalBinary(data []byte) error {
 }
 
 // SetValid changes this Time's value and sets it to be non-null.
-func (a Time) SetValid(v time.Time) Time { a.Time = v; a.Valid = true; return a }
+func (a *Time) SetValid(v time.Time) { a.Time = v; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Time) SetNull() Time { return Time{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Time) Reset() { *a = Time{} }
 
 // Ptr returns a pointer to this Time's value, or a nil pointer if this Time is
 // null.
@@ -152,6 +154,30 @@ func (a Time) Ptr() *time.Time {
 		return nil
 	}
 	return &a.Time
+}
+
+// SetPtr sets v according to the rules.
+func (a *Time) SetPtr(v *time.Time) {
+	a.Valid = v != nil
+	a.Time = time.Time{}
+	if v != nil {
+		a.Time = *v
+	}
+}
+
+func (a *Time) SetProto(v *timestamppb.Timestamp) {
+	a.Valid = v != nil
+	a.Time = time.Time{}
+	if v != nil {
+		a.Time = v.AsTime()
+	}
+}
+
+func (a *Time) Proto() *timestamppb.Timestamp {
+	if a == nil || !a.Valid {
+		return nil
+	}
+	return timestamppb.New(a.Time)
 }
 
 // WriteTo uses a special dialect to encode the value and write it into w. w

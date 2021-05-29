@@ -165,10 +165,10 @@ func (a Uint64) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Uint64's value and also sets it to be non-null.
-func (a Uint64) SetValid(n uint64) Uint64 { a.Uint64 = n; a.Valid = true; return a }
+func (a *Uint64) SetValid(n uint64) { a.Uint64 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Uint64) SetNull() Uint64 { return Uint64{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Uint64) Reset() { *a = Uint64{} }
 
 // Ptr returns a pointer to this Uint64's value, or a nil pointer if this Uint64 is null.
 func (a Uint64) Ptr() *uint64 {
@@ -176,6 +176,15 @@ func (a Uint64) Ptr() *uint64 {
 		return nil
 	}
 	return &a.Uint64
+}
+
+// SetPtr sets v according to the rules.
+func (a *Uint64) SetPtr(v *uint64) {
+	a.Valid = v != nil
+	a.Uint64 = 0
+	if v != nil {
+		a.Uint64 = *v
+	}
 }
 
 // IsZero returns true for invalid Uint64's, for future omitempty support (Go 1.4?)

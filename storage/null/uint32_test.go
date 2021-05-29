@@ -161,7 +161,7 @@ func TestNullUint32_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, string(uint32JSON), "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeUint32(0).SetNull()
+	var null Uint32
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -219,10 +219,17 @@ func TestUint32IsZero(t *testing.T) {
 }
 
 func TestUint32SetValid(t *testing.T) {
-	change := MakeUint32(0).SetNull()
+	var change Uint32
 	assertNullUint32(t, change, "SetValid()")
+	change.SetValid(math.MaxUint32)
+	assertUint32(t, change, "SetValid()")
+}
 
-	assertUint32(t, change.SetValid(math.MaxUint32), "SetValid()")
+func TestUint32SetPtr(t *testing.T) {
+	var change Uint32
+	v := uint32(math.MaxUint32)
+	change.SetPtr(&v)
+	assertUint32(t, change, "SetPtr()")
 }
 
 func TestUint32Scan(t *testing.T) {

@@ -143,7 +143,7 @@ func TestNullBool_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, "false", "zero text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeBool(false).SetNull()
+	var null Bool
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -196,7 +196,7 @@ func TestBoolPointer(t *testing.T) {
 		t.Errorf("bad %s bool: %#v ≠ %v\n", "pointer", ptr, true)
 	}
 
-	null := MakeBool(false).SetNull()
+	var null Bool
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s bool: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -209,7 +209,7 @@ func TestBoolIsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeBool(false).SetNull()
+	var null Bool
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
@@ -220,10 +220,18 @@ func TestBoolIsZero(t *testing.T) {
 	}
 }
 
+func TestBoolSetPtr(t *testing.T) {
+	var change Bool
+	v := true
+	change.SetPtr(&v)
+	assertBool(t, change, "SetPtr()")
+}
+
 func TestBoolSetValid(t *testing.T) {
-	change := MakeBool(false).SetNull()
+	var change Bool
 	assertNullBool(t, change, "SetValid()")
-	assertBool(t, change.SetValid(true), "SetValid()")
+	change.SetValid(true)
+	assertBool(t, change, "SetValid()")
 }
 
 func TestBoolScan(t *testing.T) {

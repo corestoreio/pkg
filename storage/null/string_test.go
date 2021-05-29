@@ -203,9 +203,10 @@ func TestStringIsZero(t *testing.T) {
 }
 
 func TestStringSetValid(t *testing.T) {
-	change := MakeString("").SetNull()
+	var change String
 	assertNullStr(t, change, "SetValid()")
-	assertStr(t, change.SetValid("test"), "SetValid()")
+	change.SetValid("test")
+	assertStr(t, change, "SetValid()")
 }
 
 func TestNullString_Scan(t *testing.T) {
@@ -236,7 +237,8 @@ func TestString_GoString(t *testing.T) {
 	s := MakeString("test")
 	assert.Exactly(t, "null.MakeString(`test`)", s.GoString())
 
-	s = MakeString("test").SetNull()
+	s = MakeString("test")
+	s.Reset()
 	assert.Exactly(t, "null.String{}", s.GoString())
 
 	s = MakeString("te`st")
@@ -244,6 +246,13 @@ func TestString_GoString(t *testing.T) {
 	if !bytes.Equal(gsWant, []byte(s.GoString())) {
 		t.Errorf("Have: %#v Want: %v", s.GoString(), string(gsWant))
 	}
+}
+
+func TestStringSetPtr(t *testing.T) {
+	var change String
+	v := "test"
+	change.SetPtr(&v)
+	assertStr(t, change, "SetPtr()")
 }
 
 func assertStr(t *testing.T, s String, from string) {

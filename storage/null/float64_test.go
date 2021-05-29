@@ -134,7 +134,7 @@ func TestNullFloat64_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, "1.2345", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeFloat64(0).SetNull()
+	var null Float64
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -167,7 +167,7 @@ func TestFloat64Pointer(t *testing.T) {
 		t.Errorf("bad %s float64: %#v ≠ %v\n", "pointer", ptr, 1.2345)
 	}
 
-	null := MakeFloat64(0).SetNull()
+	var null Float64
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s float64: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -180,7 +180,7 @@ func TestFloat64IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeFloat64(0).SetNull()
+	var null Float64
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
@@ -191,10 +191,18 @@ func TestFloat64IsZero(t *testing.T) {
 	}
 }
 
+func TestFloat64SetPtr(t *testing.T) {
+	var change Float64
+	v := 1.2345
+	change.SetPtr(&v)
+	assertFloat64(t, change, "SetPtr()")
+}
+
 func TestFloat64SetValid(t *testing.T) {
 	var change Float64
 	assertNullFloat64(t, change, "SetValid()")
-	assertFloat64(t, change.SetValid(1.2345), "SetValid()")
+	change.SetValid(1.2345)
+	assertFloat64(t, change, "SetValid()")
 }
 
 func TestFloat64Scan(t *testing.T) {

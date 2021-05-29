@@ -175,10 +175,10 @@ func (a Float64) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Float64's value and also sets it to be non-null.
-func (a Float64) SetValid(n float64) Float64 { a.Float64 = n; a.Valid = true; return a }
+func (a *Float64) SetValid(n float64) { a.Float64 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Float64) SetNull() Float64 { return Float64{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Float64) Reset() { *a = Float64{} }
 
 // Ptr returns a pointer to this Float64's value, or a nil pointer if this Float64 is null.
 func (a Float64) Ptr() *float64 {
@@ -186,6 +186,15 @@ func (a Float64) Ptr() *float64 {
 		return nil
 	}
 	return &a.Float64
+}
+
+// SetPtr sets v according to the rules.
+func (a *Float64) SetPtr(v *float64) {
+	a.Valid = v != nil
+	a.Float64 = 0
+	if v != nil {
+		a.Float64 = *v
+	}
 }
 
 // IsZero returns true for invalid Float64s, for future omitempty support (Go 1.4?)

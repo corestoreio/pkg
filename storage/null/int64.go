@@ -167,17 +167,26 @@ func (a Int64) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Int64's value and also sets it to be non-null.
-func (a Int64) SetValid(n int64) Int64 { a.Int64 = n; a.Valid = true; return a }
+func (a *Int64) SetValid(n int64) { a.Int64 = n; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Int64) SetNull() Int64 { return Int64{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Int64) Reset() { *a = Int64{} }
 
-// Ptr returns a pointer to this Int64's value, or a nil pointer if this Int64 is null.
+// Ptr returns a pointer to this value, or a nil pointer if value is null.
 func (a Int64) Ptr() *int64 {
 	if !a.Valid {
 		return nil
 	}
 	return &a.Int64
+}
+
+// SetPtr sets v according to the rules.
+func (a *Int64) SetPtr(v *int64) {
+	a.Valid = v != nil
+	a.Int64 = 0
+	if v != nil {
+		a.Int64 = *v
+	}
 }
 
 // IsZero returns true for invalid Int64's, for future omitempty support (Go 1.4?)

@@ -171,10 +171,10 @@ func (a Bool) MarshalText() ([]byte, error) {
 }
 
 // SetValid changes this Bool's value and also sets it to be non-null.
-func (a Bool) SetValid(v bool) Bool { a.Bool = v; a.Valid = true; return a }
+func (a *Bool) SetValid(v bool) { a.Bool = v; a.Valid = true }
 
-// SetNull sets the value to Go's default value and Valid to false.
-func (a Bool) SetNull() Bool { return Bool{} }
+// Reset sets the value to Go's default value and Valid to false.
+func (a *Bool) Reset() { *a = Bool{} }
 
 // Ptr returns a pointer to this Bool's value, or a nil pointer if this
 // Bool is null.
@@ -183,6 +183,15 @@ func (a Bool) Ptr() *bool {
 		return nil
 	}
 	return &a.Bool
+}
+
+// SetPtr sets v according to the rules.
+func (a *Bool) SetPtr(v *bool) {
+	a.Valid = v != nil
+	a.Bool = false
+	if v != nil {
+		a.Bool = *v
+	}
 }
 
 // IsZero returns true for invalid Bools, for future omitempty support (Go 1.4?)

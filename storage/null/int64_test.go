@@ -171,7 +171,7 @@ func TestNullInt64_MarshalText(t *testing.T) {
 	assertJSONEquals(t, data, "9223372036854775806", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := MakeInt64(0).SetNull()
+	var null Int64
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -219,7 +219,7 @@ func TestInt64IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := MakeInt64(0).SetNull()
+	var null Int64
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
@@ -231,10 +231,20 @@ func TestInt64IsZero(t *testing.T) {
 }
 
 func TestInt64SetValid(t *testing.T) {
-	change := MakeInt64(0).SetNull()
+	var change Int64
 	assertNullInt64(t, change, "SetValid()")
+	change.SetValid(9223372036854775806)
+	assertInt64(t, change, "SetValid()")
+	change = Int64{}
+	change.SetValid(9223372036854775806)
+	assertInt64(t, change, "SetValid()")
+}
 
-	assertInt64(t, change.SetValid(9223372036854775806), "SetValid()")
+func TestInt64SetPtr(t *testing.T) {
+	var change Int64
+	v := int64(9223372036854775806)
+	change.SetPtr(&v)
+	assertInt64(t, change, "SetPtr()")
 }
 
 func TestInt64Scan(t *testing.T) {
