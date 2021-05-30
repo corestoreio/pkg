@@ -211,7 +211,7 @@ func TestNewGenerator_Protobuf_Json(t *testing.T) {
 	writeFile(t, "dmltestgenerated/output_gen.proto", g.GenerateSerializer)
 
 	// Generates for all proto files the Go source code.
-	assert.NoError(t, dmlgen.GenerateProto("./dmltestgenerated", &dmlgen.ProtocOptions{
+	assert.NoError(t, dmlgen.RunProtoc("./dmltestgenerated", &dmlgen.ProtocOptions{
 		GoOutPath:        "./dmltestgenerated/",
 		GoSourceRelative: false,
 	}))

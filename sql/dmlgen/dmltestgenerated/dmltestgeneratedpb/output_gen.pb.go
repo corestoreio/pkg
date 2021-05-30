@@ -9,12 +9,13 @@
 package dmltestgeneratedpb
 
 import (
+	reflect "reflect"
+	sync "sync"
+
 	null "github.com/corestoreio/pkg/storage/null"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
 )
 
 const (
@@ -1895,27 +1896,30 @@ func file_dmltestgenerated_output_gen_proto_rawDescGZIP() []byte {
 	return file_dmltestgenerated_output_gen_proto_rawDescData
 }
 
-var file_dmltestgenerated_output_gen_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
-var file_dmltestgenerated_output_gen_proto_goTypes = []interface{}{
-	(*CatalogProductIndexEAVDecimalIDX)(nil),   // 0: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDX
-	(*CatalogProductIndexEAVDecimalIDXes)(nil), // 1: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDXes
-	(*CoreConfiguration)(nil),                  // 2: dmltestgeneratedpb.CoreConfiguration
-	(*CoreConfigurations)(nil),                 // 3: dmltestgeneratedpb.CoreConfigurations
-	(*CustomerAddressEntity)(nil),              // 4: dmltestgeneratedpb.CustomerAddressEntity
-	(*CustomerAddressEntities)(nil),            // 5: dmltestgeneratedpb.CustomerAddressEntities
-	(*CustomerEntity)(nil),                     // 6: dmltestgeneratedpb.CustomerEntity
-	(*CustomerEntities)(nil),                   // 7: dmltestgeneratedpb.CustomerEntities
-	(*DmlgenTypes)(nil),                        // 8: dmltestgeneratedpb.DmlgenTypes
-	(*DmlgenTypesCollection)(nil),              // 9: dmltestgeneratedpb.DmlgenTypesCollection
-	(*SalesOrderStatusState)(nil),              // 10: dmltestgeneratedpb.SalesOrderStatusState
-	(*SalesOrderStatusStates)(nil),             // 11: dmltestgeneratedpb.SalesOrderStatusStates
-	(*ViewCustomerAutoIncrement)(nil),          // 12: dmltestgeneratedpb.ViewCustomerAutoIncrement
-	(*ViewCustomerAutoIncrements)(nil),         // 13: dmltestgeneratedpb.ViewCustomerAutoIncrements
-	(*ViewCustomerNoAutoIncrement)(nil),        // 14: dmltestgeneratedpb.ViewCustomerNoAutoIncrement
-	(*ViewCustomerNoAutoIncrements)(nil),       // 15: dmltestgeneratedpb.ViewCustomerNoAutoIncrements
-	(*null.Decimal)(nil),                       // 16: null.Decimal
-	(*timestamppb.Timestamp)(nil),              // 17: google.protobuf.Timestamp
-}
+var (
+	file_dmltestgenerated_output_gen_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+	file_dmltestgenerated_output_gen_proto_goTypes  = []interface{}{
+		(*CatalogProductIndexEAVDecimalIDX)(nil),   // 0: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDX
+		(*CatalogProductIndexEAVDecimalIDXes)(nil), // 1: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDXes
+		(*CoreConfiguration)(nil),                  // 2: dmltestgeneratedpb.CoreConfiguration
+		(*CoreConfigurations)(nil),                 // 3: dmltestgeneratedpb.CoreConfigurations
+		(*CustomerAddressEntity)(nil),              // 4: dmltestgeneratedpb.CustomerAddressEntity
+		(*CustomerAddressEntities)(nil),            // 5: dmltestgeneratedpb.CustomerAddressEntities
+		(*CustomerEntity)(nil),                     // 6: dmltestgeneratedpb.CustomerEntity
+		(*CustomerEntities)(nil),                   // 7: dmltestgeneratedpb.CustomerEntities
+		(*DmlgenTypes)(nil),                        // 8: dmltestgeneratedpb.DmlgenTypes
+		(*DmlgenTypesCollection)(nil),              // 9: dmltestgeneratedpb.DmlgenTypesCollection
+		(*SalesOrderStatusState)(nil),              // 10: dmltestgeneratedpb.SalesOrderStatusState
+		(*SalesOrderStatusStates)(nil),             // 11: dmltestgeneratedpb.SalesOrderStatusStates
+		(*ViewCustomerAutoIncrement)(nil),          // 12: dmltestgeneratedpb.ViewCustomerAutoIncrement
+		(*ViewCustomerAutoIncrements)(nil),         // 13: dmltestgeneratedpb.ViewCustomerAutoIncrements
+		(*ViewCustomerNoAutoIncrement)(nil),        // 14: dmltestgeneratedpb.ViewCustomerNoAutoIncrement
+		(*ViewCustomerNoAutoIncrements)(nil),       // 15: dmltestgeneratedpb.ViewCustomerNoAutoIncrements
+		(*null.Decimal)(nil),                       // 16: null.Decimal
+		(*timestamppb.Timestamp)(nil),              // 17: google.protobuf.Timestamp
+	}
+)
+
 var file_dmltestgenerated_output_gen_proto_depIdxs = []int32{
 	16, // 0: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDX.Value:type_name -> null.Decimal
 	0,  // 1: dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDXes.Data:type_name -> dmltestgeneratedpb.CatalogProductIndexEAVDecimalIDX

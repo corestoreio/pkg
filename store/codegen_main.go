@@ -95,10 +95,8 @@ func main() {
 	// 	g.TestSQLDumpGlobPath = "test_*_tables.sql"
 	writeFile("entities_db_gen.go", g.GenerateGo)
 
-	mustCheckErr(dmlgen.GenerateProto("./", &dmlgen.ProtocOptions{
-		BuildTags: []string{"csall proto"},
-		Debug:     true,
-		GRPC:      true,
+	mustCheckErr(dmlgen.RunProtoc("./", &dmlgen.ProtocOptions{
+		GRPC: true,
 	}))
 }
 

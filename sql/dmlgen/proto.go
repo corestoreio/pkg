@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"go/ast"
 	"go/build"
+	"go/token"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,15 +14,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alecthomas/repr"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/util/codegen"
 	"github.com/corestoreio/pkg/util/strs"
+	"golang.org/x/tools/go/packages"
 )
 
 // ProtocOptions allows to modify the protoc CLI command.
 type ProtocOptions struct {
-	BuildTags        []string // deprecated
 	WorkingDirectory string
 	ProtoGen         string // default go, options: gofast, gogo, gogofast, gogofaster and other installed proto generators
 
@@ -133,9 +136,9 @@ func (po *ProtocOptions) chdir() (deferred func(), _ error) {
 	return deferred, nil
 }
 
-// GenerateProto searches all *.proto files in the given path and calls protoc
+// RunProtoc searches all *.proto files in the given path and calls protoc
 // to generate the Go source code.
-func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
+func RunProtoc(protoFilesPath string, po *ProtocOptions) error {
 	restoreFn, err := po.chdir()
 	if err != nil {
 		return errors.WithStack(err)
@@ -195,20 +198,12 @@ func GenerateProto(protoFilesPath string, po *ProtocOptions) error {
 			fContent = bytes.Replace(fContent, ri, nil, -1)
 		}
 
-		var buf bytes.Buffer
-		for _, bt := range po.BuildTags {
-			fmt.Fprintf(&buf, "// +build %s\n", bt)
-		}
-		if buf.Len() > 0 {
-			buf.WriteByte('\n')
-			buf.Write(fContent)
-			fContent = buf.Bytes()
-		}
-
 		if err := ioutil.WriteFile(file, fContent, 0o644); err != nil {
 			return errors.WithStack(err)
 		}
 	}
+
+	// build a mapper between DB and proto :-(
 
 	return nil
 }
@@ -401,4 +396,239 @@ func (g *Generator) generateProto(w io.Writer) error {
 		proto.WriteString(removedImport)
 	}
 	return proto.GenerateFile(w)
+}
+
+func buildDMLProtoMapper(dmlGoFilesFullImportPath, protoGoFilesFullImportPath string) error {
+	cfg := &packages.Config{Mode: packages.NeedFiles | packages.NeedSyntax}
+	pkgs, err := packages.Load(cfg, dmlGoFilesFullImportPath, protoGoFilesFullImportPath)
+	if err != nil {
+		return fmt.Errorf("failed to packages.Load: %w", err)
+	}
+	if packages.PrintErrors(pkgs) > 0 {
+		panic("errors occurred")
+	}
+
+	dmlgenTypes := map[string][]fieldTypeInfo{}
+	protoTypes := map[string][]fieldTypeInfo{}
+	var protoPackageName string
+	var dmlgenPackageName string
+	// Print the names of the source files
+	// for each package listed on the command line.
+	for _, pkg := range pkgs {
+
+		repr.Println(pkg.PkgPath, pkg.ID, pkg.GoFiles)
+		for _, sntx := range pkg.Syntax {
+
+			structNameAndType := buildDMLProtoASTDecl(sntx.Decls)
+			switch {
+			case dmlGoFilesFullImportPath == pkg.ID:
+				dmlgenPackageName = sntx.Name.Name
+				for n, fti := range structNameAndType {
+					dmlgenTypes[n] = append(dmlgenTypes[n], fti...)
+				}
+			case protoGoFilesFullImportPath == pkg.ID:
+				protoPackageName = sntx.Name.Name
+				for n, fti := range structNameAndType {
+					protoTypes[n] = append(protoTypes[n], fti...)
+				}
+			}
+		}
+	}
+
+	if protoPackageName == "" {
+		return fmt.Errorf("protoPackageName cannot be empty or no files found to parse")
+	}
+	repr.Println(dmlgenTypes)
+	repr.Println(protoTypes)
+
+	// <generate converter from proto to dml>
+	cg := codegen.NewGo(protoPackageName)
+	cg.AddImports(dmlGoFilesFullImportPath)
+	for protoStructName, protoFieldTypeInfos := range protoTypes {
+
+		cg.Pln(`func (x *`, protoStructName, `) ToDBType(optional *`, dmlgenPackageName, `.`, protoStructName, `) *`, dmlgenPackageName, `.`, protoStructName, `{`)
+		cg.In()
+		cg.Pln(`if optional == nil { optional = new(`, dmlgenPackageName, `.`, protoStructName, `) }`)
+		cg.In()
+
+		dmlgenFieldTypeInfos, ok := dmlgenTypes[protoStructName]
+		if !ok {
+			return fmt.Errorf("proto struct %q not found in generated dml package %q", protoStructName, dmlgenPackageName)
+		}
+
+		for idx, pft := range protoFieldTypeInfos {
+			dmlft := dmlgenFieldTypeInfos[idx]
+
+			if pft.isPointer && pft.externalPkgName == "null" {
+				cg.Pln(`optional.`, pft.fname, ` .Reset()`)
+			}
+
+			getter := codegen.SkipWS(`Get`, pft.fname, `()`)
+			switch {
+			case pft.isSlice:
+				cg.Pln(`optional.`, dmlft.fname, ` = optional.`, dmlft.fname, `[:0]`)
+				cg.Pln(`for _, d := range x.`, pft.fname, ` {`)
+				{
+					cg.Pln(`optional.`, dmlft.fname, ` = append(optional.`, pft.fname, `, d.ToDBType(nil))`)
+				}
+				cg.Pln(`}`)
+
+			case pft.isPointer && pft.isStruct: // proto type is a pointer
+
+				switch {
+				case strings.HasSuffix(dmlft.ftype, "time.Time") && strings.HasSuffix(pft.ftype, "timestamppb.Timestamp"):
+					cg.Pln(`optional.`, dmlft.fname, ` = x.`, getter, `.AsTime() `)
+
+				case strings.HasSuffix(dmlft.ftype, "null.Time") && strings.HasSuffix(pft.ftype, "timestamppb.Timestamp"):
+					cg.Pln(`optional.`, dmlft.fname, `.SetProto( x.`, getter, `)`)
+
+				case strings.HasSuffix(dmlft.ftype, "null.Decimal") && strings.HasSuffix(pft.ftype, "null.Decimal"):
+					cg.Pln(`optional.`, dmlft.fname, `.SetPtr( x.`, getter, `)`)
+
+				default:
+					cg.Pln(`optional.`, dmlft.fname, ` = *x.`, pft.fname, `// TODO BUG fix`, pft.ftype, "isStruct", pft.isStruct)
+				}
+
+			case pft.isPointer:
+
+				if dmlgenFieldTypeInfos[idx].externalPkgName == "null" {
+					cg.Pln(`optional.`, dmlft.fname, `.SetPtr( x.`, pft.fname, `)`, `//1`, pft.ftype, "isStruct", pft.isStruct)
+				} else {
+					cg.Pln(`optional.`, dmlft.fname, ` =   x.`, pft.fname, `//2`, dmlft.ftype, "=>", pft.ftype, "isStruct", pft.isStruct, pft.isSlice, dmlft.isSlice)
+				}
+			default:
+				cg.Pln(`optional.`, dmlft.fname, ` = x.`, pft.fname, `//3`, pft.ftype, "isStruct", pft.isStruct)
+			}
+		}
+		cg.Out()
+		cg.Pln(`return optional`) // end &type{
+		cg.Out()
+		cg.Pln(`}`) // end func
+	}
+
+	mapperFileName := filepath.Join(build.Default.GOPATH, "src", protoGoFilesFullImportPath, "/mapper.go")
+	f, err := os.Create(mapperFileName)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer f.Close()
+	return cg.GenerateFile(f)
+	// </generate converter from proto to dml>
+
+	return nil
+}
+
+type fieldTypeInfo struct {
+	fname           string
+	ftype           string
+	externalPkgName string
+	isPointer       bool
+	isStruct        bool // if false, then a primitive and true then a struct type like *timestamppb.Timestamp
+	isSlice         bool
+}
+
+func buildDMLProtoASTDecl(decls []ast.Decl) map[string][]fieldTypeInfo { // map[structName] []Fields
+	ret := map[string][]fieldTypeInfo{}
+	for _, node := range decls {
+		switch node.(type) {
+		case *ast.GenDecl:
+			genDecl := node.(*ast.GenDecl)
+		genDeclSpecsLOOP:
+			for _, spec := range genDecl.Specs {
+				switch spec.(type) {
+				case *ast.TypeSpec:
+					typeSpec := spec.(*ast.TypeSpec)
+					if !typeSpec.Name.IsExported() {
+						continue genDeclSpecsLOOP
+					}
+
+					switch tst := typeSpec.Type.(type) {
+					case *ast.StructType:
+
+						fieldTypeInfos := []fieldTypeInfo{}
+
+						for _, field := range tst.Fields.List {
+							fieldType := fieldToType(field)
+							for _, name := range field.Names {
+								if isExported(name.Name) {
+									fieldType.fname = name.Name
+									fieldTypeInfos = append(fieldTypeInfos, fieldType)
+								}
+							} // end for
+						} // end for
+						ret[typeSpec.Name.Name] = fieldTypeInfos
+					}
+				}
+			}
+		}
+	}
+	return ret
+}
+
+// fieldToType returns the type name and whether if it's exported.
+func fieldToType(f *ast.Field) fieldTypeInfo {
+	switch arg := f.Type.(type) {
+	case *ast.ArrayType:
+		n := astNodeName(arg.Elt)
+
+		_, isSlice := arg.Elt.(*ast.StarExpr) // special custom slice, not []byte or anything else.
+
+		return fieldTypeInfo{ftype: "[]" + n, isSlice: isSlice}
+	case *ast.Ellipsis:
+		n := astNodeName(arg.Elt)
+		return fieldTypeInfo{ftype: n}
+	case *ast.FuncType:
+		// Do not print the function signature to not overload the trace.
+		return fieldTypeInfo{ftype: "func"}
+	case *ast.Ident:
+		return fieldTypeInfo{ftype: arg.Name}
+	case *ast.InterfaceType:
+		return fieldTypeInfo{ftype: "interface{}"}
+	case *ast.SelectorExpr:
+
+		if ident, ok := arg.X.(*ast.Ident); ok && ident.Name != "" {
+			return fieldTypeInfo{ftype: ident.Name + "." + arg.Sel.Name, externalPkgName: ident.Name, isStruct: true}
+		}
+		return fieldTypeInfo{ftype: arg.Sel.Name}
+	case *ast.StarExpr:
+		if sel, ok := arg.X.(*ast.SelectorExpr); ok {
+			if ident, ok := sel.X.(*ast.Ident); ok && ident.Name != "" {
+				n := astNodeName(arg.X)
+				return fieldTypeInfo{ftype: "*" + ident.Name + "." + n, externalPkgName: ident.Name, isPointer: true, isStruct: true}
+			}
+		}
+		n := astNodeName(arg.X)
+		return fieldTypeInfo{ftype: "*" + n, isPointer: true}
+	case *ast.MapType:
+		return fieldTypeInfo{ftype: fmt.Sprintf("map[%s]%s", astNodeName(arg.Key), astNodeName(arg.Value))}
+	case *ast.ChanType:
+		return fieldTypeInfo{ftype: fmt.Sprintf("chan %s", astNodeName(arg.Value))}
+	default:
+		return fieldTypeInfo{ftype: "<unknown>"}
+	}
+}
+
+func isExported(name string) bool {
+	switch name {
+	case "bool", "uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64",
+		"float32", "float64", "complex64", "complex128",
+		"string", "int", "uint", "uintptr", "byte", "rune":
+		return true
+	}
+	return token.IsExported(name)
+}
+
+func astNodeName(n ast.Node) string {
+	switch t := n.(type) {
+	case *ast.InterfaceType:
+		return "interface{}"
+	case *ast.Ident:
+		return t.Name
+	case *ast.SelectorExpr:
+		return t.Sel.Name
+	case *ast.StarExpr:
+		return "*" + astNodeName(t.X)
+	default:
+		return "<unknown>"
+	}
 }
