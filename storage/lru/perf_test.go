@@ -27,7 +27,7 @@ func (mv MyValue) Size() int {
 }
 
 func BenchmarkGet(b *testing.B) {
-	cache := New(64 * 1024 * 1024)
+	cache := New[string](64 * 1024 * 1024)
 	value := make(MyValue, 1000)
 	cache.Set("stuff1", value)
 	value2 := make(MyValue, 1100)
