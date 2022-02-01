@@ -50,7 +50,7 @@ func (c gobCodec) NewDecoder(r io.Reader) objcache.Decoder {
 
 func TestWithSimpleSlowCacheMap_Delete(t *testing.T) {
 	t.Parallel()
-	newTestServiceDelete(t, objcache.NewCacheSimpleInmemory)
+	newTestServiceDelete(t, objcache.NewCacheSimpleInmemory[string])
 }
 
 func lookupRedisEnv(t testing.TB) string {

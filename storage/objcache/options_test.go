@@ -39,7 +39,7 @@ func (c JSONCodec) NewDecoder(r io.Reader) Decoder {
 func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
 	t.Parallel()
 
-	p, err := NewService(NewBlackHoleClient(nil), NewCacheSimpleInmemory, &ServiceOptions{Codec: JSONCodec{}})
+	p, err := NewService[string](NewBlackHoleClient[string](nil), NewCacheSimpleInmemory[string], &ServiceOptions{Codec: JSONCodec{}})
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
 
@@ -49,7 +49,6 @@ func TestWithSimpleSlowCacheMap_Expires(t *testing.T) {
 	})
 
 	t.Run("key expires", func(t *testing.T) {
-
 		err := p.Set(context.TODO(), "keyEx", 3.14159, time.Second)
 		assert.NoError(t, err)
 		var f float64
@@ -71,7 +70,7 @@ var (
 )
 
 func TestMakeBinary(t *testing.T) {
-	p, err := NewService(NewCacheSimpleInmemory, NewCacheSimpleInmemory, &ServiceOptions{Codec: JSONCodec{}})
+	p, err := NewService(NewCacheSimpleInmemory[string], NewCacheSimpleInmemory[string], &ServiceOptions{Codec: JSONCodec{}})
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
 
@@ -97,14 +96,14 @@ func TestMakeBinary(t *testing.T) {
 		b2 := MakeBinary()
 		b3 := MakeBinary()
 		keys := []string{"mb10", "mb20", "mb30"}
-		vals := []interface{}{&b1, &b2, &b3}
+		vals := []any{&b1, &b2, &b3}
 		err := p.SetMulti(context.TODO(), keys, vals, nil)
 		assert.NoError(t, err)
 
 		b1a := MakeBinary()
 		b2a := MakeBinary()
 		b3a := MakeBinary()
-		vals2 := []interface{}{&b1a, &b2a, &b3a}
+		vals2 := []any{&b1a, &b2a, &b3a}
 		err = p.GetMulti(context.TODO(), keys, vals2)
 		assert.NoError(t, err)
 		assert.True(t, b1a.IsValid(), "Binary b1a should be valid")
@@ -117,7 +116,7 @@ func TestMakeBinary(t *testing.T) {
 		b2 := MakeBinary()
 		b3 := MakeBinary()
 		keys := []string{"mb10", "mb20a", "mb30a"}
-		vals := []interface{}{&b1, &b2, &b3}
+		vals := []any{&b1, &b2, &b3}
 
 		err = p.GetMulti(context.TODO(), keys, vals)
 		assert.NoError(t, err)
@@ -125,5 +124,4 @@ func TestMakeBinary(t *testing.T) {
 		assert.False(t, b2.IsValid(), "Binary b2 should not be valid")
 		assert.False(t, b3.IsValid(), "Binary b3 should not be valid")
 	})
-
 }

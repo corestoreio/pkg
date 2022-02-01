@@ -39,7 +39,7 @@ func benchmarkCountry(iterationsSetGet int, level2 objcache.NewStorageFn, opts *
 				b.Fatal(err)
 			}
 		}()
-		var cntry interface{} = mustGetTestCountry() // type already gob.Registered ...
+		var cntry any = mustGetTestCountry() // type already gob.Registered ...
 		const wantCountryISO = "US"
 		ctx := context.TODO()
 		b.ReportAllocs()
@@ -78,7 +78,7 @@ func benchmarkStores(iterationsSetGet int, level2 objcache.NewStorageFn, opts *o
 				b.Fatal(err)
 			}
 		}()
-		var ts interface{} = getTestStores() // type already gob.Registered ...
+		var ts any = getTestStores() // type already gob.Registered ...
 		const wantStoreCode = "nz"
 		ctx := context.TODO()
 		b.ReportAllocs()

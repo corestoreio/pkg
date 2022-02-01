@@ -56,7 +56,7 @@ func ExampleWithPooledEncoder() {
 		// Playing around? Try removing P{}, Q{}, R{} from the next line and see what happens.
 		&objcache.ServiceOptions{
 			Codec:        gobCodec{},
-			PrimeObjects: []interface{}{P{}, Q{}, R{}},
+			PrimeObjects: []any{P{}, Q{}, R{}},
 		},
 	)
 	if err != nil {

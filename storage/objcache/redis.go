@@ -162,8 +162,8 @@ func makeRedisWrapper(rp *redis.Pool, ro *RedisOption) redisWrapper {
 	return redisWrapper{
 		Pool: rp,
 		// ipf: &sync.Pool{
-		// 	New: func() interface{} {
-		// 		ifs := make([]interface{}, 0, 10)
+		// 	New: func() any {
+		// 		ifs := make([]any, 0, 10)
 		// 		return &ifs
 		// 	},
 		// },
@@ -186,7 +186,7 @@ func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte, exp
 		}
 	}()
 
-	args := make([]interface{}, 0, len(keys)*3)
+	args := make([]any, 0, len(keys)*3)
 	for i, key := range keys {
 		e := expirations[i].Seconds() // e = expires in x seconds
 		if e < 1 {
@@ -243,10 +243,10 @@ func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, er
 	return
 }
 
-func strSliceToIFaces(ret []interface{}, sl []string) []interface{} {
+func strSliceToIFaces(ret []any, sl []string) []any {
 	// TODO use a sync.Pool but write before hand appropriate concurrent running benchmarks
 	if ret == nil {
-		ret = make([]interface{}, 0, len(sl))
+		ret = make([]any, 0, len(sl))
 	}
 	for _, s := range sl {
 		ret = append(ret, s)

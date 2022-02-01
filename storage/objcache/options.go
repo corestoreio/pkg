@@ -18,6 +18,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"golang.org/x/exp/maps"
 )
 
 var now = time.Now
@@ -33,27 +35,30 @@ type ServiceOptions struct {
 	// which means that no type information will be stored in the cache. If you
 	// use gob you must use still gob.Register() your types. TL;DR: Skips type
 	// information in the cache.
-	PrimeObjects   []interface{}
+	PrimeObjects   []any
 	DefaultExpires time.Duration
 }
 
 // NewCacheSimpleInmemory creates an in-memory map map[string]string as cache
 // backend which supports expiration.
-func NewCacheSimpleInmemory() (Storager, error) {
-	mc := &mapCache{}
+func NewCacheSimpleInmemory[K comparable]() (Storager[K], error) {
+	mc := &mapCache[K]{
+		items: make(map[K]mapCacheItem),
+	}
 	return mc, nil
 }
 
 type mapCacheItem struct {
-	value      string
+	value      []byte
 	expiration time.Time
 }
 
-type mapCache struct {
-	items sync.Map
+type mapCache[K comparable] struct {
+	rwmu  sync.RWMutex
+	items map[K]mapCacheItem
 }
 
-func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (mc *mapCache[K]) Set(_ context.Context, keys []K, values [][]byte, expirations []time.Duration) (err error) {
 	hasExp := len(expirations) > 0
 	n := now()
 	for i, key := range keys {
@@ -63,17 +68,17 @@ func (mc *mapCache) Set(_ context.Context, keys []string, values [][]byte, expir
 				e = n.Add(ed)
 			}
 		}
-		mc.items.Store(key, &mapCacheItem{value: string(values[i]), expiration: e})
+		mc.items[key] = mapCacheItem{value: values[i], expiration: e}
 	}
 	return nil
 }
 
-func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+func (mc *mapCache[K]) Get(_ context.Context, keys []K) (values [][]byte, err error) {
 	n := now()
 	for _, key := range keys {
-		val, ok := mc.items.Load(key)
-		if v, ok2 := val.(*mapCacheItem); ok2 && ok && (v.expiration.IsZero() || v.expiration.After(n)) {
-			values = append(values, []byte(v.value))
+		v, ok := mc.items[key]
+		if ok && (v.expiration.IsZero() || v.expiration.After(n)) {
+			values = append(values, v.value)
 		} else {
 			values = append(values, nil)
 		}
@@ -81,44 +86,45 @@ func (mc *mapCache) Get(_ context.Context, keys []string) (values [][]byte, err 
 	return values, nil
 }
 
-func (mc *mapCache) Delete(_ context.Context, keys []string) (err error) {
+func (mc *mapCache[K]) Delete(_ context.Context, keys []K) error {
 	for _, key := range keys {
-		mc.items.Delete(key)
+		delete(mc.items, key)
 	}
 	return nil
 }
-func (mc *mapCache) Truncate(ctx context.Context) (err error) {
-	mc.items.Range(func(key, value interface{}) bool {
-		value = nil
-		mc.items.Delete(key)
+
+func (mc *mapCache[K]) Truncate(ctx context.Context) (err error) {
+	mc.rwmu.Lock()
+	defer mc.rwmu.Unlock()
+	maps.DeleteFunc(mc.items, func(k K, v mapCacheItem) bool {
+		v.value = nil
 		return true
 	})
-	mc.items = sync.Map{}
 	return nil
 }
-func (mc *mapCache) Close() error { return nil }
+func (mc *mapCache[K]) Close() error { return nil }
 
 // NewBlackHoleClient creates a black hole client for testing with the ability
 // to return errors.
-func NewBlackHoleClient(optionalTestErr error) NewStorageFn {
-	return func() (Storager, error) { return blackHole{err: optionalTestErr}, nil }
+func NewBlackHoleClient[K comparable](optionalTestErr error) NewStorageFn[K] {
+	return func() (Storager[K], error) { return blackHole[K]{err: optionalTestErr}, nil }
 }
 
-type blackHole struct {
+type blackHole[K comparable] struct {
 	err error
 }
 
-func (mc blackHole) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (mc blackHole[K]) Set(_ context.Context, keys []K, values [][]byte, expirations []time.Duration) (err error) {
 	return mc.err
 }
 
-func (mc blackHole) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+func (mc blackHole[K]) Get(_ context.Context, keys []K) (values [][]byte, err error) {
 	return nil, mc.err
 }
 
-func (mc blackHole) Delete(_ context.Context, keys []string) (err error) { return mc.err }
-func (mc blackHole) Truncate(ctx context.Context) (err error)            { return mc.err }
-func (mc blackHole) Close() error                                        { return mc.err }
+func (mc blackHole[K]) Delete(_ context.Context, keys []K) (err error) { return mc.err }
+func (mc blackHole[K]) Truncate(ctx context.Context) (err error)       { return mc.err }
+func (mc blackHole[K]) Close() error                                   { return mc.err }
 
 // binary a simple type to use the Service as a set-algorithm to e.g. check if a
 // key exists.

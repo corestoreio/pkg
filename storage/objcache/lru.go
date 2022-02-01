@@ -24,23 +24,23 @@ import (
 // LRUOptions allows to track the cache items either by object count or total
 // size in bytes. If tracking by `TrackBySize` gets enabled then `Capacity` must
 // have the value in bytes. Default 64MB.
-type LRUOptions struct {
+type LRUOptions[K comparable] struct {
 	Capacity           int64 // default 5000 objects
 	TrackBySize        bool
 	TrackByObjectCount bool // default
-	LRUCache           *lru.Cache
+	LRUCache           *lru.Cache[K]
 }
 
 // lruCache is an LRU cache. It is safe for concurrent access.
-type lruCache struct {
-	opt LRUOptions
+type lruCache[K comparable] struct {
+	opt LRUOptions[K]
 }
 
 // NewLRU creates a new LRU Storage. Expirations are not supported. Argument `o`
 // can be nil, if so default values get applied.
-func NewLRU(o *LRUOptions) NewStorageFn {
+func NewLRU[K comparable](o *LRUOptions[K]) NewStorageFn[K] {
 	if o == nil {
-		o = &LRUOptions{}
+		o = &LRUOptions[K]{}
 	}
 	switch {
 	case o.TrackBySize && o.Capacity == 0:
@@ -56,10 +56,10 @@ func NewLRU(o *LRUOptions) NewStorageFn {
 		o.Capacity = 5000
 	}
 	if o.LRUCache == nil {
-		o.LRUCache = lru.New(o.Capacity)
+		o.LRUCache = lru.New[K](o.Capacity)
 	}
-	return func() (Storager, error) {
-		return lruCache{
+	return func() (Storager[K], error) {
+		return lruCache[K]{
 			opt: *o,
 		}, nil
 	}
@@ -73,7 +73,7 @@ type itemByCount []byte
 
 func (li itemByCount) Size() int { return 1 }
 
-func (c lruCache) Set(_ context.Context, keys []string, values [][]byte, _ []time.Duration) (err error) {
+func (c lruCache[K]) Set(_ context.Context, keys []K, values [][]byte, _ []time.Duration) (err error) {
 	for i, key := range keys {
 		var v lru.Value = itemByCount(values[i])
 		if c.opt.TrackBySize {
@@ -85,14 +85,14 @@ func (c lruCache) Set(_ context.Context, keys []string, values [][]byte, _ []tim
 }
 
 // Get looks up a key's value from the cache.
-func (c lruCache) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+func (c lruCache[K]) Get(_ context.Context, keys []K) (values [][]byte, err error) {
 	for _, key := range keys {
 		itm, ok := c.opt.LRUCache.Get(key)
 		if ok {
 			if c.opt.TrackByObjectCount {
-				values = append(values, []byte(itm.(itemByCount)))
+				values = append(values, itm.(itemByCount))
 			} else {
-				values = append(values, []byte(itm.(itemBySize)))
+				values = append(values, itm.(itemBySize))
 			}
 		} else {
 			values = append(values, nil)
@@ -101,19 +101,19 @@ func (c lruCache) Get(_ context.Context, keys []string) (values [][]byte, err er
 	return
 }
 
-func (c lruCache) Truncate(_ context.Context) (err error) {
+func (c lruCache[K]) Truncate(_ context.Context) (err error) {
 	c.opt.LRUCache.Clear()
 	return nil
 }
 
-func (c lruCache) Delete(_ context.Context, keys []string) (err error) {
+func (c lruCache[K]) Delete(_ context.Context, keys []K) (err error) {
 	for _, key := range keys {
 		c.opt.LRUCache.Delete(key)
 	}
 	return nil
 }
 
-func (c lruCache) Close() error {
+func (c lruCache[K]) Close() error {
 	c.opt.LRUCache.Clear()
 	return nil
 }

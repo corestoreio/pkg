@@ -21,16 +21,16 @@ import (
 )
 
 func TestNewCacheLRU_Delete(t *testing.T) {
-	newTestServiceDelete(t, objcache.NewLRU(nil))
+	newTestServiceDelete(t, objcache.NewLRU[string](nil))
 }
 
 func TestNewCacheLRU_ComplexParallel(t *testing.T) {
 	t.Run("gob", func(t *testing.T) {
-		newServiceComplexParallelTest(t, objcache.NewLRU(nil), nil)
+		newServiceComplexParallelTest(t, objcache.NewLRU[string](nil), nil)
 	})
 
 	t.Run("json", func(t *testing.T) {
-		newServiceComplexParallelTest(t, objcache.NewLRU(nil), &objcache.ServiceOptions{
+		newServiceComplexParallelTest(t, objcache.NewLRU[string](nil), &objcache.ServiceOptions{
 			Codec: JSONCodec{},
 		})
 	})

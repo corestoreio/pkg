@@ -33,11 +33,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var _ io.Closer = (*objcache.Service)(nil)
+var _ io.Closer = (*objcache.Service[string])(nil)
 
 func TestNewProcessor_EncoderError(t *testing.T) {
 	t.Parallel()
-	p, err := objcache.NewService(nil, objcache.NewCacheSimpleInmemory, newSrvOpt(gobCodec{}))
+	p, err := objcache.NewService[string](nil, objcache.NewCacheSimpleInmemory[string], newSrvOpt(gobCodec{}))
 	assert.NoError(t, err)
 
 	ch := struct {
@@ -46,7 +46,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 		ErrChan: make(chan error),
 	}
 	err = p.Set(context.TODO(), "key1", ch, 0)
-	assert.EqualError(t, err, "[objcache] With key \"key1\" and dst type struct { ErrChan chan error }: gob: type struct { ErrChan chan error } has no exported fields", "Error: %s", err)
+	assert.EqualError(t, err, "[objcache] 1643662314576 With key key1 and dst type struct { ErrChan chan error }", "Error: %s", err)
 }
 
 func debugSliceBytes(t testing.TB, data ...[]byte) {
@@ -55,7 +55,7 @@ func debugSliceBytes(t testing.TB, data ...[]byte) {
 	}
 }
 
-func newSrvOpt(c objcache.Codecer, primeObjects ...interface{}) *objcache.ServiceOptions {
+func newSrvOpt(c objcache.Codecer, primeObjects ...any) *objcache.ServiceOptions {
 	return &objcache.ServiceOptions{
 		Codec:        c,
 		PrimeObjects: primeObjects,
@@ -71,38 +71,39 @@ func (ms *myString) Unmarshal(data []byte) error {
 	ms.data = string(data)
 	return ms.err
 }
+
 func (ms *myString) Marshal() ([]byte, error) {
 	return []byte(ms.data), ms.err
 }
 
 func TestService_Encoding(t *testing.T) {
-	p, err := objcache.NewService(nil, objcache.NewCacheSimpleInmemory, newSrvOpt(gobCodec{}))
+	p, err := objcache.NewService[string](nil, objcache.NewCacheSimpleInmemory[string], newSrvOpt(gobCodec{}))
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
 
 	t.Run("marshal error", func(t *testing.T) {
-		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
+		dErr := &myString{err: errors.New("Bad encoding")}
 		err := p.Set(context.TODO(), "dErr", dErr, 0)
-		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[objcache] 1643662002029 With key dErr and dst type *objcache_test.myString: Bad encoding")
 	})
 	t.Run("unmarshal error", func(t *testing.T) {
 		err := p.Set(context.TODO(), "dErr2", 1, 0)
 		assert.NoError(t, err)
-		dErr := &myString{err: errors.BadEncoding.Newf("Bad encoding")}
+		dErr := &myString{err: errors.New("Bad encoding")}
 		err = p.Get(context.TODO(), "dErr2", dErr)
-		assert.True(t, errors.BadEncoding.Match(err), "%+v", err)
+		assert.EqualError(t, err, "[objcache] 1643662475854 With key dErr2 and dst type *objcache_test.myString: Bad encoding")
 	})
 
 	t.Run("marshal success", func(t *testing.T) {
 		d1 := &myString{data: "HelloWorld"}
 		d2 := &myString{data: "HalloWelt"}
 
-		err = p.SetMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2}, nil)
+		err = p.SetMulti(context.TODO(), []string{"d1x", "d2x"}, []any{d1, d2}, nil)
 		assert.NoError(t, err)
 
 		d1.data = ""
 		d2.data = ""
-		err = p.GetMulti(context.TODO(), []string{"d1x", "d2x"}, []interface{}{d1, d2})
+		err = p.GetMulti(context.TODO(), []string{"d1x", "d2x"}, []any{d1, d2})
 		assert.NoError(t, err)
 
 		assert.Exactly(t, "HelloWorld", d1.data)
@@ -112,15 +113,15 @@ func TestService_Encoding(t *testing.T) {
 
 const iterations = 30
 
-func testCountry(p *objcache.Service, key string) func() error {
-	var val = mustGetTestCountry()
+func testCountry(p *objcache.Service[string], key string) func() error {
+	val := mustGetTestCountry()
 	return func() error {
 		if err := p.Set(context.TODO(), key, val, 0); err != nil {
 			return errors.WithStack(err)
 		}
 
 		for i := 0; i < iterations; i++ {
-			var newVal = new(Country)
+			newVal := new(Country)
 			if err := p.Get(context.TODO(), key, newVal); err != nil {
 				return errors.WithStack(err)
 			}
@@ -141,7 +142,7 @@ func testCountry(p *objcache.Service, key string) func() error {
 				return errors.WithStack(err)
 			}
 		}
-		var newVal = new(Country)
+		newVal := new(Country)
 		if err := p.Get(context.TODO(), key, newVal); err != nil {
 			return errors.WithStack(err)
 		}
@@ -152,10 +153,9 @@ func testCountry(p *objcache.Service, key string) func() error {
 	}
 }
 
-func testStoreSlice(p *objcache.Service, key string) func() error {
+func testStoreSlice(p *objcache.Service[string], key string) func() error {
 	return func() error {
-
-		var val = getTestStores()
+		val := getTestStores()
 		if err := p.Set(context.TODO(), key, val, 0); err != nil {
 			return errors.WithStack(err)
 		}
@@ -300,11 +300,11 @@ func getTestStores() TableStoreSlice {
 	}
 }
 
-func newServiceComplexParallelTest(t *testing.T, level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
+func newServiceComplexParallelTest(t *testing.T, level2 objcache.NewStorageFn[string], so *objcache.ServiceOptions) {
 	if so == nil {
 		so = newSrvOpt(gobCodec{}, Country{}, TableStoreSlice{})
 	}
-	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, so)
+	p, err := objcache.NewService(objcache.NewBlackHoleClient[string](nil), level2, so)
 	assert.NoError(t, err)
 	defer func() {
 		assert.NoError(t, p.Close())
@@ -324,9 +324,8 @@ func newServiceComplexParallelTest(t *testing.T, level2 objcache.NewStorageFn, s
 	assert.NoError(t, eg.Wait())
 }
 
-func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
-
-	p, err := objcache.NewService(objcache.NewBlackHoleClient(nil), level2, newSrvOpt(JSONCodec{}))
+func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn[string]) {
+	p, err := objcache.NewService(objcache.NewBlackHoleClient[string](nil), level2, newSrvOpt(JSONCodec{}))
 	assert.NoError(t, err)
 	defer func() { assert.NoError(t, p.Close()) }()
 
@@ -349,11 +348,10 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 	})
 
 	t.Run("multiple keys", func(t *testing.T) {
-
 		bcInt1 := 1971
 		bcInt2 := 1972
 		keys := []string{"bc_delete1", "bc_delete2"}
-		vals := []interface{}{&bcInt1, &bcInt2}
+		vals := []any{&bcInt1, &bcInt2}
 		err = p.SetMulti(context.TODO(), keys, vals, nil)
 		assert.NoError(t, err)
 
@@ -376,8 +374,8 @@ func newTestServiceDelete(t *testing.T, level2 objcache.NewStorageFn) {
 	})
 }
 
-func testExpiration(t *testing.T, cb func(), level2 objcache.NewStorageFn, so *objcache.ServiceOptions) {
-	p, err := objcache.NewService(nil, level2, so)
+func testExpiration(t *testing.T, cb func(), level2 objcache.NewStorageFn[string], so *objcache.ServiceOptions) {
+	p, err := objcache.NewService[string](nil, level2, so)
 	if err != nil {
 		t.Fatal(err)
 	}

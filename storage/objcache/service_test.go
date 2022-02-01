@@ -24,11 +24,10 @@ import (
 )
 
 func TestNewProcessor_NewError(t *testing.T) {
-
 	t.Run("level1 error", func(t *testing.T) {
-		p, err := NewService(
-			func() (Storager, error) { return nil, errors.NotImplemented.Newf("ups") },
-			NewBlackHoleClient(nil),
+		p, err := NewService[string](
+			func() (Storager[string], error) { return nil, errors.NotImplemented.Newf("ups") },
+			NewBlackHoleClient[string](nil),
 			nil,
 		)
 		assert.Nil(t, p)
@@ -37,8 +36,8 @@ func TestNewProcessor_NewError(t *testing.T) {
 
 	t.Run("level2 error", func(t *testing.T) {
 		p, err := NewService(
-			NewBlackHoleClient(nil),
-			func() (Storager, error) { return nil, errors.NotImplemented.Newf("ups") },
+			NewBlackHoleClient[string](nil),
+			func() (Storager[string], error) { return nil, errors.NotImplemented.Newf("ups") },
 			nil,
 		)
 		assert.Nil(t, p)
@@ -73,7 +72,7 @@ func TestEncoding_Text_Binary(t *testing.T) {
 	t.Parallel()
 
 	// Not using any codec
-	p, err := NewService(NewCacheSimpleInmemory, NewCacheSimpleInmemory, &ServiceOptions{Codec: nil})
+	p, err := NewService[string](NewCacheSimpleInmemory[string], NewCacheSimpleInmemory[string], &ServiceOptions{Codec: nil})
 	assert.NoError(t, err)
 	defer assert.NoError(t, p.Close())
 

@@ -28,9 +28,9 @@ type pooledCodec struct {
 // decoder each type an encoder or a decoder object will be returned from the
 // pool. This function panics if the types, used for priming, can neither be
 // encoded nor decoded.
-func newPooledCodec(codec Codecer, types ...interface{}) Codecer {
+func newPooledCodec(codec Codecer, types ...any) Codecer {
 	return &pooledCodec{
-		encoderPool: sync.Pool{New: func() interface{} {
+		encoderPool: sync.Pool{New: func() any {
 			var enc delegateEncoder
 			enc.Encoder = codec.NewEncoder(&enc)
 			if len(types) > 0 {
@@ -42,7 +42,7 @@ func newPooledCodec(codec Codecer, types ...interface{}) Codecer {
 			}
 			return &enc
 		}},
-		decoderPool: sync.Pool{New: func() interface{} {
+		decoderPool: sync.Pool{New: func() any {
 			var dec delegateDecoder
 			dec.Decoder = codec.NewDecoder(&dec)
 			if len(types) > 0 {
@@ -51,7 +51,7 @@ func newPooledCodec(codec Codecer, types ...interface{}) Codecer {
 				if err := enc.Encode(types); err != nil {
 					panic(err)
 				}
-				var testTypes []interface{}
+				var testTypes []any
 				dec.Reader = buf
 				if err := dec.Decode(&testTypes); err != nil {
 					panic(err)
