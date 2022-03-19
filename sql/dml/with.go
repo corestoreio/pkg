@@ -119,7 +119,7 @@ func (b *With) Recursive() *With {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *With) ToSQL() (string, []interface{}, error) {
+func (b *With) ToSQL() (string, []any, error) {
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

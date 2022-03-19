@@ -73,8 +73,8 @@ func (o Op) String() string {
 	return string(o)
 }
 
-func (o Op) write(w *bytes.Buffer, args ...interface{}) (err error) {
-	var arg interface{}
+func (o Op) write(w *bytes.Buffer, args ...any) (err error) {
+	var arg any
 	if len(args) == 1 {
 		arg = args[0]
 	}
@@ -238,9 +238,9 @@ type Condition struct {
 		// digits.
 		PlaceHolder string
 		// arg gets written into the SQL string as a persistent argument
-		arg interface{} // Only set in case of no expression
+		arg any // Only set in case of no expression
 		// args same as arg but only used in case of an expression.
-		args []interface{}
+		args []any
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -275,7 +275,7 @@ func (c *Condition) Clone() *Condition {
 	c2 := *c
 	c2.previousErr = nil
 	if c2.Right.args != nil {
-		a2 := make([]interface{}, len(c2.Right.args))
+		a2 := make([]any, len(c2.Right.args))
 		copy(a2, c2.Right.args)
 		c2.Right.args = a2
 	}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package cache implements a LRU cache.
+// Package lru implements a LRU cache.
 //
 // The implementation borrows heavily from SmallLRUCache
 // (originally by Nathan Schrenk). The object maintains a doubly-linked list of

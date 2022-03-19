@@ -356,7 +356,7 @@ func (b *Select) CrossJoin(table id, onConditions ...*Condition) *Select {
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled.
-func (b *Select) ToSQL() (string, []interface{}, error) {
+func (b *Select) ToSQL() (string, []any, error) {
 	rawSQL, err := b.buildToSQL(b)
 	return rawSQL, nil, err
 }

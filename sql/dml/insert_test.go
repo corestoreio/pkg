@@ -111,7 +111,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 	defer testCloser(t, s)
 	ins := NewInsert("dml_people").AddColumns("name", "key").WithDBR(s.DB)
 
-	compareExecContext(t, ins, []interface{}{"Barack", "44"}, 0, 1)
+	compareExecContext(t, ins, []any{"Barack", "44"}, 0, 1)
 }
 
 func TestInsertReal(t *testing.T) {
@@ -125,7 +125,7 @@ func TestInsertReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	ins := s.WithQueryBuilder(NewInsert("dml_people").AddColumns("name", "email"))
-	lastInsertID, _ := compareExecContext(t, ins, []interface{}{"Barack", "obama@whitehouse.gov"}, 3, 0)
+	lastInsertID, _ := compareExecContext(t, ins, []any{"Barack", "obama@whitehouse.gov"}, 3, 0)
 	validateInsertingBarack(t, s, lastInsertID)
 
 	// Insert by specifying a record (ptr to struct)
@@ -133,7 +133,7 @@ func TestInsertReal(t *testing.T) {
 	person := dmlPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.Data = "obama@whitehouse.gov"
-	lastInsertID, _ = compareExecContext(t, ins, []interface{}{Qualify("", &person)}, 4, 0)
+	lastInsertID, _ = compareExecContext(t, ins, []any{Qualify("", &person)}, 4, 0)
 
 	validateInsertingBarack(t, s, lastInsertID)
 }
@@ -406,7 +406,7 @@ func TestInsert_DisableBuildCache(t *testing.T) {
 			sql, args, err := insA.TestWithArgs(1, 2, 3, 4, 5, 6).ToSQL()
 			assert.NoError(t, err)
 			assert.Exactly(t, cachedSQLPlaceHolder, sql)
-			assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args)
+			assert.Exactly(t, []any{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args)
 			insA.Reset()
 		}
 	})
@@ -557,7 +557,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 // TestInsert_Parallel_Bind_Slice is a tough test because first a complex SQL
 // statement from a collection and second it runs in parallel.
 func TestInsert_Parallel_Bind_Slice(t *testing.T) {
-	wantArgs := []interface{}{
+	wantArgs := []any{
 		"Muffin Hat", "Muffin@Hat.head",
 		"Marianne Phyllis Finch", "marianne@phyllis.finch",
 		"Daphne Augusta Perry", "daphne@augusta.perry",

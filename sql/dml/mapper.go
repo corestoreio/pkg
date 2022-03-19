@@ -48,7 +48,7 @@ type ColumnMapper interface {
 // database/sql does :-(  The method receiver functions have the same names as
 // in type ColumnMap.
 type ColumnMap struct {
-	args []interface{}
+	args []any
 
 	// initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
@@ -59,7 +59,7 @@ type ColumnMap struct {
 	HasRows bool
 	// Count increments on call to Scan.
 	Count    uint64
-	scanArgs []interface{} // could be a sync.Pool but check it in benchmarks.
+	scanArgs []any // could be a sync.Pool but check it in benchmarks.
 	scanCol  []scannedColumn
 	// Columns contains the names of the column returned from the query or
 	// needed to build a query aka reading the arguments in the ColumnMapper
@@ -76,10 +76,10 @@ type ColumnMap struct {
 
 // NewColumnMap exported for testing reasons.
 func NewColumnMap(cap int, columns ...string) *ColumnMap {
-	var a []interface{}
+	var a []any
 	if cap > 0 {
 		// Need the IF in case whe use sync.Pool
-		a = make([]interface{}, 0, cap)
+		a = make([]any, 0, cap)
 	}
 	cm := &ColumnMap{args: a}
 	cm.setColumns(columns)
@@ -215,7 +215,7 @@ func (s *scannedColumn) reset() {
 	s.byte = s.byte[:0]
 }
 
-func (s *scannedColumn) Scan(src interface{}) (err error) {
+func (s *scannedColumn) Scan(src any) (err error) {
 	switch val := src.(type) {
 	case []byte: // most important case
 		s.field = 'y'
@@ -274,7 +274,7 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 			b.scanArgs = b.scanArgs[:b.columnsLen]
 		} else {
 			b.scanCol = make([]scannedColumn, b.columnsLen)
-			b.scanArgs = make([]interface{}, b.columnsLen)
+			b.scanArgs = make([]any, b.columnsLen)
 			for i := 0; i < b.columnsLen; i++ {
 				b.scanArgs[i] = &b.scanCol[i]
 			}
@@ -1326,7 +1326,7 @@ func (b *ColumnMap) NullTime(ptr *null.Time) *ColumnMap {
 
 const columnMapErrMsgSlices = "[dml] ColumnMap.%s does only support mode ColumnMapCollectionReadSet"
 
-func (b *ColumnMap) addSlice(fnName string, slice interface{}) *ColumnMap {
+func (b *ColumnMap) addSlice(fnName string, slice any) *ColumnMap {
 	if b.shouldCollectArgs() && b.scanErr == nil && b.Mode() == ColumnMapCollectionReadSet {
 		b.args = append(b.args, slice)
 	} else {

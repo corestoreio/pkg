@@ -290,7 +290,7 @@ func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 func compareToSQL(
 	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
 	wantSQLPlaceholders, wantSQLInterpolated string,
-	wantArgs ...interface{},
+	wantArgs ...any,
 ) {
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
@@ -328,7 +328,7 @@ func compareToSQL(
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL2(
 	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
-	wantSQL string, wantArgs ...interface{},
+	wantSQL string, wantArgs ...any,
 ) {
 	t.Helper()
 	sqlStr, args, err := qb.ToSQL()
@@ -341,7 +341,7 @@ func compareToSQL2(
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")
 }
 
-func compareExecContext(t testing.TB, ex StmtExecer, args []interface{}, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
+func compareExecContext(t testing.TB, ex StmtExecer, args []any, lastInsertID, rowsAffected int64) (retLastInsertID, retRowsAffected int64) {
 	res, err := ex.ExecContext(context.Background(), args...)
 	assert.NoError(t, err)
 	assert.NotNil(t, res, "Returned result from ExecContext should not be nil")
@@ -359,11 +359,11 @@ func compareExecContext(t testing.TB, ex StmtExecer, args []interface{}, lastIns
 	return
 }
 
-func notEqualPointers(t *testing.T, o1, o2 interface{}, msgAndArgs ...interface{}) {
+func notEqualPointers(t *testing.T, o1, o2 any, msgAndArgs ...any) {
 	p1 := reflect.ValueOf(o1)
 	p2 := reflect.ValueOf(o2)
 	if len(msgAndArgs) == 0 {
-		msgAndArgs = []interface{}{"Pointers for type o1:%T o2:%T should not be equal", o1, o2}
+		msgAndArgs = []any{"Pointers for type o1:%T o2:%T should not be equal", o1, o2}
 	}
 	assert.NotEqual(t, p1.Pointer(), p2.Pointer(), msgAndArgs...)
 }

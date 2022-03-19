@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build redis csall
+package objcacheredis
 
-package objcache
+import "github.com/corestoreio/pkg/storage/objcache"
 
-var _ Storager = (*redisWrapper)(nil)
+var _ objcache.Storager[int] = (*redisWrapper[int])(nil)

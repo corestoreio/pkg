@@ -361,7 +361,7 @@ func (a *DBR) WithQualifiedColumnsAliases(aliases ...string) *DBR {
 }
 
 // ToSQL generates the SQL string.
-func (a *DBR) ToSQL() (string, []interface{}, error) {
+func (a *DBR) ToSQL() (string, []any, error) {
 	sqlStr, _, err := a.prepareQueryAndArgs(nil)
 	return sqlStr, nil, err
 }
@@ -369,9 +369,9 @@ func (a *DBR) ToSQL() (string, []interface{}, error) {
 // TestWithArgs returns a QueryBuilder with resolved arguments. Mostly used for
 // testing and in examples to skip the calls to ExecContext or QueryContext.
 // Every 2nd call arguments are getting interpolated.
-func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
+func (a *DBR) TestWithArgs(args ...any) QueryBuilder {
 	var secondCallInterpolates uint
-	return QuerySQLFn(func() (string, []interface{}, error) {
+	return QuerySQLFn(func() (string, []any, error) {
 		if secondCallInterpolates > 0 && secondCallInterpolates%2 == 1 {
 			a.Interpolate()
 		} else if a.Options&argOptionInterpolate != 0 {
@@ -384,8 +384,8 @@ func (a *DBR) TestWithArgs(args ...interface{}) QueryBuilder {
 	})
 }
 
-func (a *DBR) testWithArgs(args ...interface{}) QueryBuilder {
-	return QuerySQLFn(func() (string, []interface{}, error) {
+func (a *DBR) testWithArgs(args ...any) QueryBuilder {
+	return QuerySQLFn(func() (string, []any, error) {
 		sqlStr, args, err := a.prepareQueryAndArgs(args)
 		return sqlStr, args, err
 	})
@@ -413,13 +413,13 @@ func (a *DBR) ExpandPlaceHolders() *DBR {
 	return a
 }
 
-// prepareQueryAndArgs transforms mainly the DBR into []interface{}. It appends
+// prepareQueryAndArgs transforms mainly the DBR into []any. It appends
 // its arguments to the `extArgs` arguments from the Exec+ or Query+ function.
 // This allows for a developer to reuse the interface slice and save
 // allocations. All method receivers are not thread safe. The returned interface
 // slice is the same as `extArgs`.
 // The returned []QualifiedRecord slice is needed to use interface LastInsertIDAssigner.
-func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interface{}, err error) {
+func (a *DBR) prepareQueryAndArgs(extArgs []any) (_ string, _ []any, err error) {
 	if a.previousErr != nil {
 		return "", nil, errors.WithStack(a.previousErr)
 	}
@@ -427,7 +427,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	var hasNamedArgs uint8
 	var qualifiedRecordCount int
 	var primitiveCount int
-	var args []interface{}
+	var args []any
 	if lenExtArgs > 0 {
 		args = pooledInterfacesGet()
 		defer pooledInterfacesPut(args)
@@ -566,7 +566,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []interface{}) (_ string, _ []interfac
 	return sqlBuf.First.String(), expandInterfaces(args), nil
 }
 
-func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []interface{}, containsQualifiedRecords int) ([]interface{}, error) {
+func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArgs []any, containsQualifiedRecords int) ([]any, error) {
 	templateStmtCount := a.cachedSQL.templateStmtCount
 	if a.cachedSQL.templateStmtCount == 0 {
 		templateStmtCount = 1
@@ -647,7 +647,7 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 					// If the argument cannot be found in the records then we assume the argument
 					// has a numerical position and we grab just the next unnamed argument.
 					var ok bool
-					var pArg interface{}
+					var pArg any
 					if pArg, nextUnnamedArgPos, ok = a.nextUnnamedArg(nextUnnamedArgPos, collectedArgs); ok {
 						cm.args = append(cm.args, pArg)
 					}
@@ -666,7 +666,7 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 // prepareQueryAndArgsInsert prepares the special arguments for an INSERT statement. The
 // returned interface slice is the same as the `extArgs` slice. extArgs =
 // external arguments.
-func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts int) (string, []interface{}, error) {
+func (a *DBR) prepareQueryAndArgsInsert(extArgs []any, primitiveCounts int) (string, []any, error) {
 	sqlBuf := bufferpool.GetTwin()
 	defer bufferpool.PutTwin(sqlBuf)
 	cm := NewColumnMap(2*primitiveCounts, a.cachedSQL.qualifiedColumns...)
@@ -750,7 +750,7 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []interface{}, primitiveCounts i
 }
 
 // nextUnnamedArg returns an unnamed argument by its position.
-func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []interface{}) (interface{}, int, bool) {
+func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []any) (any, int, bool) {
 	var unnamedCounter int
 	for _, arg := range args {
 		switch arg.(type) {
@@ -771,7 +771,7 @@ func (a *DBR) nextUnnamedArg(nextUnnamedArgPos int, args []interface{}) (interfa
 // mapColumns allows to merge one argument slice with another depending on the
 // matched columns. Each argument in the slice must be a named argument.
 // Implements interface ColumnMapper.
-func (a *DBR) mapColumns(containsQualifiedRecords int, args []interface{}, cm *ColumnMap) error {
+func (a *DBR) mapColumns(containsQualifiedRecords int, args []any, cm *ColumnMap) error {
 	if cm.Mode() == ColumnMapEntityReadAll {
 		cm.args = append(cm.args, args...)
 		return cm.Err()
@@ -881,7 +881,7 @@ func (a *DBR) Close() error {
 *****************************************************************************************************/
 
 var pooledColumnMap = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return NewColumnMap(30, "")
 	},
 }
@@ -907,16 +907,16 @@ const argumentPoolMaxSize = 256
 // they also uses a []byte slice in the pool and not a pointer
 
 var pooledInterfaces = sync.Pool{
-	New: func() interface{} {
-		return make([]interface{}, 0, argumentPoolMaxSize)
+	New: func() any {
+		return make([]any, 0, argumentPoolMaxSize)
 	},
 }
 
-func pooledInterfacesGet() []interface{} {
-	return pooledInterfaces.Get().([]interface{})
+func pooledInterfacesGet() []any {
+	return pooledInterfaces.Get().([]any)
 }
 
-func pooledInterfacesPut(args []interface{}) {
+func pooledInterfacesPut(args []any) {
 	if cap(args) <= argumentPoolMaxSize {
 		args = args[:0]
 		pooledInterfaces.Put(args)
@@ -933,17 +933,17 @@ func pooledInterfacesPut(args []interface{}) {
 // LastInsertID gets assigned incrementally to the objects. Pro tip: you can use
 // function ExecValidateOneAffectedRow to check if the underlying SQL statement
 // has affected only one row.
-func (a *DBR) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (a *DBR) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
 	return a.exec(ctx, args)
 }
 
 // QueryContext traditional way of the databasel/sql package.
-func (a *DBR) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+func (a *DBR) QueryContext(ctx context.Context, args ...any) (*sql.Rows, error) {
 	return a.query(ctx, args)
 }
 
 // QueryRowContext traditional way of the databasel/sql package.
-func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+func (a *DBR) QueryRowContext(ctx context.Context, args ...any) *sql.Row {
 	sqlStr, args, err := a.prepareQueryAndArgs(args)
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug(
@@ -958,7 +958,7 @@ func (a *DBR) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
 // IterateSerial iterates in serial order over the result set by loading one row each
 // iteration and then discarding it. Handles records one by one. The context
 // gets only used in the Query function.
-func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error, args ...any) (err error) {
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug(
 			"IterateSerial",
@@ -1030,7 +1030,7 @@ func iterateParallelForNextLoop(ctx context.Context, r *sql.Rows, rowChan chan<-
 // worker. concurrencyLevel should be the number of CPUs. You should use this
 // function when you expect to process large amount of rows returned from a
 // query.
-func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...interface{}) (err error) {
+func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBack func(*ColumnMap) error, args ...any) (err error) {
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug("IterateParallel", log.String("id", a.cachedSQL.id), log.Err(err))
 	}
@@ -1073,7 +1073,7 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 // Load loads data from a query into an object. Load can load a single row or
 // multiple-rows. It checks on top if ColumnMapper `s` implements io.Closer, to
 // call the custom close function. This is useful for e.g. unlocking a mutex.
-func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (rowCount uint64, err error) {
+func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...any) (rowCount uint64, err error) {
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug("Load", log.String("id", a.cachedSQL.id), log.Err(err), log.ObjectTypeOf("ColumnMapper", s), log.Uint64("row_count", rowCount))
 	}
@@ -1116,7 +1116,7 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...interface{}) (ro
 
 // LoadNullInt64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *DBR) LoadNullInt64(ctx context.Context, args ...interface{}) (nv null.Int64, found bool, err error) {
+func (a *DBR) LoadNullInt64(ctx context.Context, args ...any) (nv null.Int64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
@@ -1125,40 +1125,40 @@ func (a *DBR) LoadNullInt64(ctx context.Context, args ...interface{}) (nv null.I
 // current type. `Found` might be false if there are no matching rows.
 // This function with ptr type uint64 comes in handy when performing
 // a COUNT(*) query. See function `Select.Count`.
-func (a *DBR) LoadNullUint64(ctx context.Context, args ...interface{}) (nv null.Uint64, found bool, err error) {
+func (a *DBR) LoadNullUint64(ctx context.Context, args ...any) (nv null.Uint64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullFloat64 executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *DBR) LoadNullFloat64(ctx context.Context, args ...interface{}) (nv null.Float64, found bool, err error) {
+func (a *DBR) LoadNullFloat64(ctx context.Context, args ...any) (nv null.Float64, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullString executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *DBR) LoadNullString(ctx context.Context, args ...interface{}) (nv null.String, found bool, err error) {
+func (a *DBR) LoadNullString(ctx context.Context, args ...any) (nv null.String, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadNullTime executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *DBR) LoadNullTime(ctx context.Context, args ...interface{}) (nv null.Time, found bool, err error) {
+func (a *DBR) LoadNullTime(ctx context.Context, args ...any) (nv null.Time, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
 // LoadDecimal executes the query and returns the first row parsed into the
 // current type. `Found` might be false if there are no matching rows.
-func (a *DBR) LoadDecimal(ctx context.Context, args ...interface{}) (nv null.Decimal, found bool, err error) {
+func (a *DBR) LoadDecimal(ctx context.Context, args ...any) (nv null.Decimal, found bool, err error) {
 	found, err = a.loadPrimitive(ctx, &nv, args...)
 	return
 }
 
-func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interface{}) (found bool, err error) {
+func (a *DBR) loadPrimitive(ctx context.Context, ptr any, args ...any) (found bool, err error) {
 	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.log).Debug("LoadPrimitive", log.String("id", a.cachedSQL.id), log.Err(err), log.ObjectTypeOf("ptr_type", ptr))
@@ -1188,7 +1188,7 @@ func (a *DBR) loadPrimitive(ctx context.Context, ptr interface{}, args ...interf
 
 // LoadInt64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{}) (_ []int64, err error) {
+func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...any) (_ []int64, err error) {
 	var rowCount int
 	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1225,7 +1225,7 @@ func (a *DBR) LoadInt64s(ctx context.Context, dest []int64, args ...interface{})
 
 // LoadUint64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{}) (_ []uint64, err error) {
+func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...any) (_ []uint64, err error) {
 	var rowCount int
 	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1262,7 +1262,7 @@ func (a *DBR) LoadUint64s(ctx context.Context, dest []uint64, args ...interface{
 
 // LoadFloat64s executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interface{}) (_ []float64, err error) {
+func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...any) (_ []float64, err error) {
 	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
 		defer log.WhenDone(a.log).Debug("LoadFloat64s", log.String("id", a.cachedSQL.id), log.Err(err))
@@ -1297,7 +1297,7 @@ func (a *DBR) LoadFloat64s(ctx context.Context, dest []float64, args ...interfac
 
 // LoadStrings executes the query and returns the values appended to slice
 // dest. It ignores and skips NULL values.
-func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{}) (_ []string, err error) {
+func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...any) (_ []string, err error) {
 	var rowCount int
 	if a.log != nil && a.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -1330,7 +1330,7 @@ func (a *DBR) LoadStrings(ctx context.Context, dest []string, args ...interface{
 	return dest, err
 }
 
-func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, err error) {
+func (a *DBR) query(ctx context.Context, args []any) (rows *sql.Rows, err error) {
 	sqlStr, args, err := a.prepareQueryAndArgs(args)
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug(
@@ -1349,7 +1349,7 @@ func (a *DBR) query(ctx context.Context, args []interface{}) (rows *sql.Rows, er
 	return rows, err
 }
 
-func (a *DBR) exec(ctx context.Context, rawArgs []interface{}) (result sql.Result, err error) {
+func (a *DBR) exec(ctx context.Context, rawArgs []any) (result sql.Result, err error) {
 	sqlStr, args, err := a.prepareQueryAndArgs(rawArgs)
 	if a.log != nil && a.log.IsDebug() {
 		defer log.WhenDone(a.log).Debug("Exec", log.String("sql", sqlStr),

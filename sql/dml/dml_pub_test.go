@@ -16,7 +16,6 @@ package dml_test
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -32,13 +31,12 @@ import (
 )
 
 var now = func() time.Time {
-	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
+	return time.Date(2006, 1, 2, 15, 4, 5, 0o2, time.FixedZone("hardcoded", -7))
 }
 
 func init() {
 	// Freeze time in package log
 	log.Now = now
-	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
 }
 
 var _ dml.ColumnMapper = (*dmlPerson)(nil)
@@ -125,7 +123,7 @@ func installFixtures(t testing.TB, db *sql.DB) {
 func compareToSQL(
 	t testing.TB, qb dml.QueryBuilder, wantErrKind errors.Kind,
 	wantSQLPlaceholders, wantSQLInterpolated string,
-	wantArgs ...interface{},
+	wantArgs ...any,
 ) {
 	sqlStr, args, err := qb.ToSQL()
 	if wantErrKind.Empty() {
@@ -159,7 +157,7 @@ func compareToSQL(
 	assert.Exactly(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
 
-func ifNotEqualPanic(have, want interface{}, msg ...string) {
+func ifNotEqualPanic(have, want any, msg ...string) {
 	// The reason for this function is that I have no idea why testing.T is
 	// blocking inside the bgwork.Wait function.
 	if !reflect.DeepEqual(have, want) {
@@ -173,11 +171,11 @@ func ifErrPanic(err error) {
 	}
 }
 
-func notEqualPointers(t *testing.T, o1, o2 interface{}, msgAndArgs ...interface{}) {
+func notEqualPointers(t *testing.T, o1, o2 any, msgAndArgs ...any) {
 	p1 := reflect.ValueOf(o1)
 	p2 := reflect.ValueOf(o2)
 	if len(msgAndArgs) == 0 {
-		msgAndArgs = []interface{}{"Pointers for type o1:%T o2:%T should not be equal", o1, o2}
+		msgAndArgs = []any{"Pointers for type o1:%T o2:%T should not be equal", o1, o2}
 	}
 	assert.NotEqual(t, p1.Pointer(), p2.Pointer(), msgAndArgs...)
 }

@@ -55,11 +55,11 @@ func Qualify(q string, record ColumnMapper) QualifiedRecord {
 }
 
 // internalNULLNIL represent an internal indicator that the value NULL should be
-// written, if an interface{} is nil, then nothing gets written in function
+// written, if an any is nil, then nothing gets written in function
 // writeInterfaceValue.
 type internalNULLNIL struct{}
 
-func sliceLen(arg interface{}) (l int, isSlice bool) {
+func sliceLen(arg any) (l int, isSlice bool) {
 	switch v := arg.(type) {
 	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, null.String, null.Int64, null.Float64, null.Bool, null.Time:
 		l = 1
@@ -112,7 +112,7 @@ func sliceLen(arg interface{}) (l int, isSlice bool) {
 	return
 }
 
-func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error) {
+func writeInterfaceValue(arg any, w *bytes.Buffer, pos uint) (err error) {
 	var requestPos bool
 	if pos > 0 {
 		requestPos = true
@@ -120,38 +120,38 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 	}
 	switch v := arg.(type) {
 	case int8:
-		err = writeInt64(w, int64(v))
+		err = writeNumber(w, int64(v))
 	case int16:
-		err = writeInt64(w, int64(v))
+		err = writeNumber(w, int64(v))
 	case int32:
-		err = writeInt64(w, int64(v))
+		err = writeNumber(w, int64(v))
 	case int:
-		err = writeInt64(w, int64(v))
+		err = writeNumber(w, int64(v))
 	case int64:
-		err = writeInt64(w, v)
+		err = writeNumber(w, v)
 	case []int:
 		if requestPos {
-			err = writeInt64(w, int64(v[pos]))
+			err = writeNumber(w, int64(v[pos]))
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeInt64(w, int64(v[i]))
+				err = writeNumber(w, int64(v[i]))
 			}
 			w.WriteByte(')')
 		}
 	case []int64:
 		if requestPos {
-			err = writeInt64(w, v[pos])
+			err = writeNumber(w, v[pos])
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeInt64(w, v[i])
+				err = writeNumber(w, v[i])
 			}
 			w.WriteByte(')')
 		}
@@ -171,66 +171,66 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 			w.WriteByte(')')
 		}
 	case uint64:
-		err = writeUint64(w, v)
+		err = writeNumber(w, v)
 	case uint:
-		err = writeUint64(w, uint64(v))
+		err = writeNumber(w, v)
 	case uint8:
-		err = writeUint64(w, uint64(v))
+		err = writeNumber(w, v)
 	case uint16:
-		err = writeUint64(w, uint64(v))
+		err = writeNumber(w, v)
 	case uint32:
-		err = writeUint64(w, uint64(v))
+		err = writeNumber(w, v)
 	case []uint64:
 		if requestPos {
-			err = writeUint64(w, v[pos])
+			err = writeNumber(w, v[pos])
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeUint64(w, v[i])
+				err = writeNumber(w, v[i])
 			}
 			w.WriteByte(')')
 		}
 	case []uint:
 		if requestPos {
-			err = writeUint64(w, uint64(v[pos]))
+			err = writeNumber(w, uint64(v[pos]))
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeUint64(w, uint64(v[i]))
+				err = writeNumber(w, uint64(v[i]))
 			}
 			w.WriteByte(')')
 		}
 	case []uint32:
 		if requestPos {
-			err = writeUint64(w, uint64(v[pos]))
+			err = writeNumber(w, uint64(v[pos]))
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeUint64(w, uint64(v[i]))
+				err = writeNumber(w, uint64(v[i]))
 			}
 			w.WriteByte(')')
 		}
 	case float64:
-		err = writeFloat64(w, v)
+		err = writeNumber(w, v)
 	case []float64:
 		if requestPos {
-			err = writeFloat64(w, v[pos])
+			err = writeNumber(w, v[pos])
 		} else {
 			w.WriteByte('(')
 			for l, i := len(v), 0; i < l && err == nil; i++ {
 				if i > 0 {
 					w.WriteByte(',')
 				}
-				err = writeFloat64(w, v[i])
+				err = writeNumber(w, v[i])
 			}
 			w.WriteByte(')')
 		}
@@ -383,12 +383,12 @@ func writeInterfaceValue(arg interface{}, w *bytes.Buffer, pos uint) (err error)
 // multiplyInterfaceValues repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func multiplyInterfaceValues(inArg []interface{}, factor int) []interface{} {
+func multiplyInterfaceValues(inArg []any, factor int) []any {
 	if factor < 2 {
 		return inArg
 	}
 	lArgs := len(inArg)
-	newA := make([]interface{}, lArgs*factor)
+	newA := make([]any, lArgs*factor)
 	for i := 0; i < factor; i++ {
 		copy(newA[i*lArgs:], inArg)
 	}
@@ -396,7 +396,7 @@ func multiplyInterfaceValues(inArg []interface{}, factor int) []interface{} {
 }
 
 // Len returns the total length of all arguments.
-func totalSliceLenSimple(args []interface{}) (l int) {
+func totalSliceLenSimple(args []any) (l int) {
 	for _, arg := range args {
 		al, _ := sliceLen(arg)
 		l += al
@@ -404,7 +404,7 @@ func totalSliceLenSimple(args []interface{}) (l int) {
 	return l
 }
 
-func totalSliceLen(args []interface{}) (l int, containsAtLeastOneSlice bool) {
+func totalSliceLen(args []any) (l int, containsAtLeastOneSlice bool) {
 	for _, arg := range args {
 		al, isSlice := sliceLen(arg)
 		if isSlice {
@@ -416,7 +416,7 @@ func totalSliceLen(args []interface{}) (l int, containsAtLeastOneSlice bool) {
 }
 
 // Write writes all arguments into buf and separates by a comma.
-func writeInterfaces(buf *bytes.Buffer, args []interface{}) error {
+func writeInterfaces(buf *bytes.Buffer, args []any) error {
 	if len(args) > 1 {
 		buf.WriteByte('(')
 	}
@@ -437,19 +437,19 @@ func writeInterfaces(buf *bytes.Buffer, args []interface{}) error {
 // expandInterfaces creates an interface slice with flatten values. E.g. a
 // string slice gets expanded into its strings. Each type is one of the allowed
 // types in driver.Value. It appends its values to the `args` slice.
-func expandInterfaces(args []interface{}) []interface{} {
+func expandInterfaces(args []any) []any {
 	lenArgs := len(args)
 	if lenArgs == 0 {
 		return nil
 	}
-	appendTo := make([]interface{}, 0, 3*lenArgs)
+	appendTo := make([]any, 0, 3*lenArgs)
 	for _, arg := range args {
 		appendTo = expandInterface(appendTo, arg)
 	}
 	return appendTo
 }
 
-func expandInterface(appendTo []interface{}, arg interface{}) []interface{} {
+func expandInterface(appendTo []any, arg any) []any {
 	switch vv := arg.(type) {
 
 	case bool, string, []byte, time.Time, float64, int64, nil:
@@ -649,7 +649,7 @@ func expandInterface(appendTo []interface{}, arg interface{}) []interface{} {
 	return appendTo
 }
 
-func driverValue(appendTo []interface{}, dvs ...driver.Valuer) ([]interface{}, error) {
+func driverValue(appendTo []any, dvs ...driver.Valuer) ([]any, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -691,7 +691,7 @@ func driverValue(appendTo []interface{}, dvs ...driver.Valuer) ([]interface{}, e
 		}
 	}
 
-	var arg interface{}
+	var arg any
 	switch {
 	case len(i64s) > 0:
 		arg = i64s
@@ -709,7 +709,7 @@ func driverValue(appendTo []interface{}, dvs ...driver.Valuer) ([]interface{}, e
 	return append(appendTo, arg), nil
 }
 
-func driverValues(appendToArgs []interface{}, dvs ...driver.Valuer) ([]interface{}, error) {
+func driverValues(appendToArgs []any, dvs ...driver.Valuer) ([]any, error) {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -728,7 +728,7 @@ func driverValues(appendToArgs []interface{}, dvs ...driver.Valuer) ([]interface
 		if err != nil {
 			return nil, errors.Fatal.New(err, "[dml] Driver.Values error for %#v", dv)
 		}
-		var a interface{}
+		var a any
 		switch t := v.(type) {
 		case nil:
 			// nothing to do or TODO consider internal nil type
@@ -742,7 +742,7 @@ func driverValues(appendToArgs []interface{}, dvs ...driver.Valuer) ([]interface
 	return appendToArgs, nil
 }
 
-func iFaceToArgs(args []interface{}, values ...interface{}) ([]interface{}, error) {
+func iFaceToArgs(args []any, values ...any) ([]any, error) {
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:

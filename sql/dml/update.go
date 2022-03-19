@@ -114,7 +114,7 @@ func (b *Update) Limit(limit uint64) *Update {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *Update) ToSQL() (string, []interface{}, error) {
+func (b *Update) ToSQL() (string, []any, error) {
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

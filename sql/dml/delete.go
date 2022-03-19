@@ -167,7 +167,7 @@ func (b *Delete) Limit(limit uint64) *Delete {
 
 // ToSQL generates the SQL string and might caches it internally, if not
 // disabled. The returned interface slice is always nil.
-func (b *Delete) ToSQL() (string, []interface{}, error) {
+func (b *Delete) ToSQL() (string, []any, error) {
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

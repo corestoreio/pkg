@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	benchmarkGlobalVals []interface{}
+	benchmarkGlobalVals []any
 	benchmarkSelectStr  string
 )
 
@@ -290,7 +290,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	var haveSQL string
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var args []interface{}
+		var args []any
 		var err error
 		haveSQL, args, err = NewSelect().
 			AddColumns(" entity_id ,   value").

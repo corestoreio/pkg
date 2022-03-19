@@ -169,7 +169,7 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
-func (u *Union) ToSQL() (string, []interface{}, error) {
+func (u *Union) ToSQL() (string, []any, error) {
 	rawSQL, err := u.buildToSQL(u)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

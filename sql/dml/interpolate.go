@@ -89,7 +89,7 @@ func expandPlaceHolderTuples(buf *bytes.Buffer, sql []byte, argCount int) error 
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func expandPlaceHolders(buf writer, sql []byte, args []interface{}) error {
+func expandPlaceHolders(buf writer, sql []byte, args []any) error {
 	i := 0
 	pos := 0
 
@@ -130,7 +130,7 @@ func expandPlaceHolders(buf writer, sql []byte, args []interface{}) error {
 // pool for optimal slice usage.
 type ip struct {
 	queryCache string
-	args       []interface{}
+	args       []any
 	// ärgErr represents an argument error caused in any of the other functions.
 	// A stack has been attached to the error to identify properly the source.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
@@ -143,7 +143,7 @@ type ip struct {
 func Interpolate(sql string) *ip {
 	return &ip{
 		queryCache: sql,
-		args:       make([]interface{}, 0, 10),
+		args:       make([]any, 0, 10),
 	}
 }
 
@@ -167,7 +167,7 @@ func (in *ip) MustString() string {
 }
 
 // ToSQL implements dml.QueryBuilder. The interface slice is always nil.
-func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
+func (in *ip) ToSQL() (_ string, alwaysNil []any, _ error) {
 	if in.ärgErr != nil {
 		return "", nil, in.ärgErr
 	}
@@ -183,14 +183,14 @@ func (in *ip) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 // allocations.
 func (in *ip) Reset() *ip {
 	for i := range in.args {
-		var v interface{}
+		var v any
 		in.args[i] = v
 	}
 	in.args = in.args[:0]
 	return in
 }
 func (in *ip) Null() *ip { in.args = append(in.args, internalNULLNIL{}); return in }
-func (in *ip) Unsafe(args ...interface{}) *ip {
+func (in *ip) Unsafe(args ...any) *ip {
 	for i, a := range args {
 		if a == nil {
 			args[i] = internalNULLNIL{}
@@ -271,7 +271,7 @@ func (in *ip) Named(nArgs ...sql.NamedArg) *ip {
 
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf *bytes.Buffer, sql string, args []interface{}) error {
+func writeInterpolate(buf *bytes.Buffer, sql string, args []any) error {
 	// TODO support :name identifier and the name field in argument
 
 	phCount, argCount := strings.Count(sql, placeHolderStr), len(args)
@@ -320,7 +320,7 @@ func writeInterpolate(buf *bytes.Buffer, sql string, args []interface{}) error {
 // writeInterpolateByte same as writeInterpolate. Maybe package unsafe can do
 // here some magic to avoid duplicate code, but for now we stick with a copy of
 // the above original function writeInterpolateByte.
-func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args []interface{}) error {
+func writeInterpolateBytes(buf *bytes.Buffer, sql []byte, args []any) error {
 	args2 := args[:0] // filter without memory allocation
 	for _, arg := range args {
 		switch arg.(type) {

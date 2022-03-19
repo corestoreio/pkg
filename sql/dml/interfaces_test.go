@@ -39,20 +39,20 @@ func (pm dbMock) PrepareContext(ctx context.Context, query string) (*sql.Stmt, e
 	return new(sql.Stmt), nil
 }
 
-func (pm dbMock) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (pm dbMock) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	if pm.error != nil {
 		return nil, pm.error
 	}
 	return new(sql.Rows), nil
 }
 
-func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (pm dbMock) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	if pm.error != nil {
 		return nil, pm.error
 	}
 	return nil, nil
 }
 
-func (pm dbMock) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (pm dbMock) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
 	return new(sql.Row)
 }

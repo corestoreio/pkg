@@ -163,7 +163,7 @@ type baseTestCollection struct {
 	CheckValidUTF8 bool
 }
 
-func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
+func (vs *baseTestCollection) ToSQL() (string, []any, error) {
 	return "SELECT * FROM `test`", nil, nil
 }
 

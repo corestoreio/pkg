@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build redis csall
-
-package objcache
+package objcacheredis
 
 import (
 	"context"
 	gourl "net/url"
 	"strconv"
 	"time"
+
+	"github.com/corestoreio/pkg/storage/objcache"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/net/url"
@@ -34,9 +34,9 @@ type RedisOption struct {
 
 // NewRedisClient connects to the Redis server and does a ping to check if the
 // connection works correctly.
-func NewRedisClient(pool *redis.Pool, ro *RedisOption) NewStorageFn {
-	return func() (Storager, error) {
-		w := makeRedisWrapper(pool, ro)
+func NewRedisClient[K comparable](pool *redis.Pool, ro *RedisOption) objcache.NewStorageFn[K] {
+	return func() (objcache.Storager[K], error) {
+		w := makeRedisWrapper[K](pool, ro)
 		w.ping = true
 		if err := doPing(w); err != nil {
 			return nil, errors.WithStack(err)
@@ -82,8 +82,8 @@ func parseInt(keys []string, ds []*int, params gourl.Values) (err error) {
 // For example:
 // 		redis://localhost:6379/?db=3
 // 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s&max_conn_lifetime=1m&key_prefix=xcache_
-func NewRedisByURLClient(rawURL string) NewStorageFn {
-	return func() (Storager, error) {
+func NewRedisByURLClient[K comparable](rawURL string) objcache.NewStorageFn[K] {
+	return func() (objcache.Storager[K], error) {
 		addr, _, password, params, err := url.ParseConnection(rawURL)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[objcache] Redis error parsing URL %q", rawURL)
@@ -135,13 +135,13 @@ func NewRedisByURLClient(rawURL string) NewStorageFn {
 		// 	o.TLSConfig = &tls.Config{ServerName: o.Addr} // TODO check if might be wrong the Addr,
 		// }
 
-		return NewRedisClient(pool, &RedisOption{
+		return NewRedisClient[K](pool, &RedisOption{
 			KeyPrefix: params.Get("key_prefix"),
 		})()
 	}
 }
 
-func doPing(w redisWrapper) error {
+func doPing[K comparable](w redisWrapper[K]) error {
 	if !w.ping {
 		return nil
 	}
@@ -158,8 +158,8 @@ func doPing(w redisWrapper) error {
 	return nil
 }
 
-func makeRedisWrapper(rp *redis.Pool, ro *RedisOption) redisWrapper {
-	return redisWrapper{
+func makeRedisWrapper[K comparable](rp *redis.Pool, ro *RedisOption) redisWrapper[K] {
+	return redisWrapper[K]{
 		Pool: rp,
 		// ipf: &sync.Pool{
 		// 	New: func() any {
@@ -171,14 +171,14 @@ func makeRedisWrapper(rp *redis.Pool, ro *RedisOption) redisWrapper {
 	}
 }
 
-type redisWrapper struct {
+type redisWrapper[K comparable] struct {
 	*redis.Pool
 	ping      bool
 	keyPrefix string
 	// ifp  *sync.Pool
 }
 
-func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte, expirations []time.Duration) (err error) {
+func (w redisWrapper[K]) Set(_ context.Context, keys []K, values [][]byte, expirations []time.Duration) (err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {
@@ -193,7 +193,7 @@ func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte, exp
 			args = append(args, key, values[i])
 		} else {
 			if _, err2 := conn.Do("SETEX", key, e, values[i]); err2 != nil {
-				err = errors.Wrapf(err2, "[objcache] With key %q", key)
+				err = errors.Wrapf(err2, "[objcache] With key %v", key)
 				return
 			}
 		}
@@ -209,7 +209,7 @@ func (w redisWrapper) Set(_ context.Context, keys []string, values [][]byte, exp
 	return err
 }
 
-func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, err error) {
+func (w redisWrapper[K]) Get(_ context.Context, keys []K) (values [][]byte, err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {
@@ -243,7 +243,7 @@ func (w redisWrapper) Get(_ context.Context, keys []string) (values [][]byte, er
 	return
 }
 
-func strSliceToIFaces(ret []any, sl []string) []any {
+func strSliceToIFaces[K comparable](ret []any, sl []K) []any {
 	// TODO use a sync.Pool but write before hand appropriate concurrent running benchmarks
 	if ret == nil {
 		ret = make([]any, 0, len(sl))
@@ -254,24 +254,24 @@ func strSliceToIFaces(ret []any, sl []string) []any {
 	return ret
 }
 
-func (w redisWrapper) Delete(_ context.Context, keys []string) (err error) {
+func (w redisWrapper[K]) Delete(_ context.Context, keys []K) (err error) {
 	conn := w.Pool.Get()
 	defer func() {
 		if err2 := conn.Close(); err == nil && err2 != nil {
 			err = err2
 		}
 	}()
-	if _, err = conn.Do("DEL", strSliceToIFaces(nil, keys)...); err != nil {
+	if _, err = conn.Do("DEL", strSliceToIFaces[K](nil, keys)...); err != nil {
 		err = errors.Wrapf(err, "[objcache] With keys %v", keys)
 	}
 	return
 }
 
-func (w redisWrapper) Truncate(ctx context.Context) (err error) {
+func (w redisWrapper[K]) Truncate(ctx context.Context) (err error) {
 	// TODO flush redis by key prefix
 	return nil
 }
 
-func (w redisWrapper) Close() error {
+func (w redisWrapper[K]) Close() error {
 	return w.Pool.Close()
 }

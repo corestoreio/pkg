@@ -216,7 +216,7 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments.
-func (b *Insert) ToSQL() (string, []interface{}, error) {
+func (b *Insert) ToSQL() (string, []any, error) {
 	rawSQL, err := b.buildToSQL(b)
 	if err != nil {
 		return "", nil, errors.WithStack(err)

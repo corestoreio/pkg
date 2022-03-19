@@ -262,7 +262,7 @@ func BenchmarkJackC_GoDBBench(b *testing.B) {
 	})
 	b.Run("SelectMultipleRowsEntity Interface", func(b *testing.B) {
 		ctx := context.Background()
-		var args [2]interface{}
+		var args [2]any
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			id := randPersonIDs[i%len(randPersonIDs)]

@@ -432,10 +432,10 @@ func TestInterpolate_Slices_Strings_Between(t *testing.T) {
 }
 
 func TestInterpolate_Different(t *testing.T) {
-	ifs := func(vals ...interface{}) []interface{} { return vals }
+	ifs := func(vals ...any) []any { return vals }
 	tests := []struct {
 		sql     string
-		argsIn  []interface{}
+		argsIn  []any
 		expSQL  string
 		errKind errors.Kind
 	}{

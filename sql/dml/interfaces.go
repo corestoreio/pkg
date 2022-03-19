@@ -37,13 +37,13 @@ type Preparer interface {
 // or a *sql.Tx (an in-progress database transaction).
 type Execer interface {
 	// ExecContext executes a query that doesn't return rows.
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
 // StmtExecer executes a prepared statement.
 type StmtExecer interface {
 	// ExecContext executes a query that doesn't return rows.
-	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, args ...any) (sql.Result, error)
 }
 
 // Querier can execute a returning query. The underlying type can be either a
@@ -52,14 +52,14 @@ type StmtExecer interface {
 type Querier interface {
 	// QueryContext executes a query that returns rows, typically a SELECT. The
 	// args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
 // StmtQuerier executes a prepared statement query.
 type StmtQuerier interface {
 	// QueryContext executes a query that returns rows, typically a SELECT. The
 	// args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
+	QueryContext(ctx context.Context, args ...any) (*sql.Rows, error)
 }
 
 // QueryExecPreparer can execute a returning query and prepare a returning query.
@@ -74,7 +74,7 @@ type QueryExecPreparer interface {
 	Preparer
 	Querier
 	Execer
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
 type ioCloser interface {

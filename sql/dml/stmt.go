@@ -23,9 +23,9 @@ import (
 
 type stmtWrapper struct {
 	stmt interface {
-		ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
-		QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
-		QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
+		ExecContext(ctx context.Context, args ...any) (sql.Result, error)
+		QueryContext(ctx context.Context, args ...any) (*sql.Rows, error)
+		QueryRowContext(ctx context.Context, args ...any) *sql.Row
 		ioCloser
 	}
 }
@@ -34,15 +34,15 @@ func (sw stmtWrapper) PrepareContext(_ context.Context, _ string) (*sql.Stmt, er
 	return nil, errors.NotImplemented.Newf("[dml] A *sql.Stmt cannot prepare anything")
 }
 
-func (sw stmtWrapper) ExecContext(ctx context.Context, _ string, args ...interface{}) (sql.Result, error) {
+func (sw stmtWrapper) ExecContext(ctx context.Context, _ string, args ...any) (sql.Result, error) {
 	return sw.stmt.ExecContext(ctx, args...)
 }
 
-func (sw stmtWrapper) QueryContext(ctx context.Context, _ string, args ...interface{}) (*sql.Rows, error) {
+func (sw stmtWrapper) QueryContext(ctx context.Context, _ string, args ...any) (*sql.Rows, error) {
 	return sw.stmt.QueryContext(ctx, args...)
 }
 
-func (sw stmtWrapper) QueryRowContext(ctx context.Context, _ string, args ...interface{}) *sql.Row {
+func (sw stmtWrapper) QueryRowContext(ctx context.Context, _ string, args ...any) *sql.Row {
 	return sw.stmt.QueryRowContext(ctx, args...)
 }
 

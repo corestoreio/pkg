@@ -64,25 +64,25 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	nt := now().In(time.UTC)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := append([]interface{}{},
+		args := append([]any{},
 			nil, -1, int64(1), uint64(9898), uint64(2), 3.1, true, "eCom1", []byte(`eCom2`), nt,
 			null.MakeString("eCom3"), null.MakeInt64(4), null.MakeFloat64(2.7),
 			null.MakeBool(true), null.MakeTime(nt))
 		assert.Exactly(t, 15, totalSliceLenSimple(args), "Length mismatch")
 
 		assert.Exactly(t,
-			fmt.Sprint([]interface{}{nil, -1, 1, 9898, 2, 3.1, true, "eCom1", []byte("eCom2"), nt, "eCom3", 4, 2.7, true, nt}),
+			fmt.Sprint([]any{nil, -1, 1, 9898, 2, 3.1, true, "eCom1", []byte("eCom2"), nt, "eCom3", 4, 2.7, true, nt}),
 			fmt.Sprint(expandInterfaces(args)))
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := append([]interface{}{},
+		args := append([]any{},
 			nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte(`eCom2`), nt,
 			null.String{}, null.Int64{}, null.Float64{},
 			null.Bool{}, null.Time{})
 		assert.Exactly(t, 14, totalSliceLenSimple(args), "Length mismatch")
 		assert.Exactly(t,
-			fmt.Sprint([]interface{}{
+			fmt.Sprint([]any{
 				nil, -1, int64(1), uint64(2), 3.1, true, "eCom1", []byte("eCom2"), nt, nil, nil, nil, nil, nil,
 			}),
 			fmt.Sprint(expandInterfaces(args)),
@@ -90,7 +90,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 	})
 
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := append([]interface{}{},
+		args := append([]any{},
 			nil, -1, []int64{1, 2}, []uint{567, 765}, []uint64{2}, []float64{1.2, 3.1},
 			[]bool{false, true}, []string{"eCom1", "eCom11"}, [][]byte{nil, []byte(`eCom2`)}, []time.Time{nt, nt},
 			[]null.String{null.MakeString("eCom3"), null.MakeString("eCom3")},
@@ -100,7 +100,7 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 			[]null.Time{null.MakeTime(nt), null.MakeTime(nt)})
 		assert.Exactly(t, 26, totalSliceLenSimple(args), "Length mismatch")
 		assert.Exactly(t,
-			fmt.Sprint([]interface{}{
+			fmt.Sprint([]any{
 				nil, -1, 1, 2, 567, 765, 2, 1.2, 3.1, false, true, "eCom1", "eCom11", []byte(nil), []byte("eCom2"),
 				nt,
 				nt,
@@ -129,7 +129,7 @@ func TestIFaceToArgs(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		assert.Exactly(t, []interface{}{
+		assert.Exactly(t, []any{
 			float64(2.299999952316284), float64(2.2),
 			int64(5), int64(6), int64(7), int64(8), int64(9),
 			int64(math.MaxUint32), int64(math.MaxUint16), int64(math.MaxUint8),

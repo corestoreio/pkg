@@ -35,7 +35,7 @@ func TestTransactionReal(t *testing.T) {
 		"selectID": NewSelect("*").From("dml_people").Where(Column("id").PlaceHolder()),
 	})
 
-	lastInsertID, _ := compareExecContext(t, tx.WithCacheKey("insert01"), []interface{}{
+	lastInsertID, _ := compareExecContext(t, tx.WithCacheKey("insert01"), []any{
 		"Barack", "obama@whitehouse.gov",
 		"Obama", "barack@whitehouse.gov",
 	}, 3, 2)

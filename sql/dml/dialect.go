@@ -118,11 +118,11 @@ func (d mysqlDialect) ApplyLimitAndOffset(w *bytes.Buffer, limit, offset uint64)
 		// In MYSQL, OFFSET cannot be used alone. Set the limit to the max possible value.
 		w.WriteString("18446744073709551615")
 	} else {
-		writeUint64(w, limit)
+		writeNumber(w, limit)
 	}
 	if offset > 0 {
 		w.WriteString(" OFFSET ")
-		writeUint64(w, offset)
+		writeNumber(w, offset)
 	}
 }
 

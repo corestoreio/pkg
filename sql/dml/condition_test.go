@@ -242,7 +242,7 @@ func TestConditionColumn(t *testing.T) {
 }
 
 func TestConditions_writeOnDuplicateKey(t *testing.T) {
-	runner := func(cnds Conditions, wantSQL string, wantArgs ...interface{}) func(*testing.T) {
+	runner := func(cnds Conditions, wantSQL string, wantArgs ...any) func(*testing.T) {
 		return func(t *testing.T) {
 			buf := new(bytes.Buffer)
 
@@ -455,7 +455,7 @@ func TestCondition_Columns_Tuples(t *testing.T) {
 	t.Run("interpolate tuples DBR", func(t *testing.T) {
 		sql, args, err := NewSelect("*").From("sales_order_status_state").Where(
 			Columns("status", "state").In().Tuples(),
-		).WithDBR(dbMock{}).Interpolate().prepareQueryAndArgs([]interface{}{"a1", "a2", "b1", "b2"})
+		).WithDBR(dbMock{}).Interpolate().prepareQueryAndArgs([]any{"a1", "a2", "b1", "b2"})
 		assert.NoError(t, err)
 		assert.Empty(t, args)
 		assert.Exactly(t, "SELECT * FROM `sales_order_status_state` WHERE ((`status`, `state`) IN (('a1','a2'),('b1','b2')))", sql)

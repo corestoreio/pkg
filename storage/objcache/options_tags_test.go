@@ -15,50 +15,12 @@
 package objcache_test
 
 import (
-	"encoding/gob"
-	"encoding/json"
-	"io"
-	"os"
 	"testing"
 
 	"github.com/corestoreio/pkg/storage/objcache"
 )
 
-var _ objcache.Codecer = (*JSONCodec)(nil)
-
-type JSONCodec struct{}
-
-func (c JSONCodec) NewEncoder(w io.Writer) objcache.Encoder {
-	return json.NewEncoder(w)
-}
-
-func (c JSONCodec) NewDecoder(r io.Reader) objcache.Decoder {
-	return json.NewDecoder(r)
-}
-
-var _ objcache.Codecer = gobCodec{}
-
-type gobCodec struct{}
-
-func (c gobCodec) NewEncoder(w io.Writer) objcache.Encoder {
-	return gob.NewEncoder(w)
-}
-
-func (c gobCodec) NewDecoder(r io.Reader) objcache.Decoder {
-	return gob.NewDecoder(r)
-}
-
 func TestWithSimpleSlowCacheMap_Delete(t *testing.T) {
 	t.Parallel()
 	newTestServiceDelete(t, objcache.NewCacheSimpleInmemory[string])
-}
-
-func lookupRedisEnv(t testing.TB) string {
-	redConURL := os.Getenv("CS_REDIS_TEST")
-	if redConURL == "" {
-		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-	export CS_REDIS_TEST="redis://127.0.0.1:6379/?db=3"
-		`)
-	}
-	return redConURL
 }

@@ -45,16 +45,16 @@ type writer interface {
 // substitution and the arguments. The input arguments might be modified and
 // returned as plain primitive types.
 type QueryBuilder interface {
-	ToSQL() (string, []interface{}, error)
+	ToSQL() (string, []any, error)
 }
 
 // QuerySQL a helper type to transform a string into a QueryBuilder compatible
 // type.
-type QuerySQLFn func() (string, []interface{}, error)
+type QuerySQLFn func() (string, []any, error)
 
 // ToSQL satisfies interface QueryBuilder and returns always nil arguments and
 // nil error.
-func (fn QuerySQLFn) ToSQL() (string, []interface{}, error) {
+func (fn QuerySQLFn) ToSQL() (string, []any, error) {
 	return fn()
 }
 
@@ -63,7 +63,7 @@ type QuerySQL string
 
 // ToSQL satisfies interface QueryBuilder and returns always nil arguments and
 // nil error.
-func (qs QuerySQL) ToSQL() (string, []interface{}, error) {
+func (qs QuerySQL) ToSQL() (string, []any, error) {
 	return string(qs), nil, nil
 }
 
@@ -241,31 +241,38 @@ func sqlWriteLimitOffset(w *bytes.Buffer, limitValid, offsetValid bool, offsetCo
 	if limitValid {
 		w.WriteString(" LIMIT ")
 		if offsetValid {
-			writeUint64(w, offsetCount)
+			writeNumber(w, offsetCount)
 			w.WriteByte(',')
 		}
-		writeUint64(w, limitCount)
+		writeNumber(w, limitCount)
 	}
 }
 
-func writeFloat64(w *bytes.Buffer, f float64) (err error) {
-	d := w.Bytes()
-	w.Reset()
-	_, err = w.Write(strconv.AppendFloat(d, f, 'g', -1, 64))
-	return err
+type writeNumberTypes interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~int64 | ~float64
 }
 
-func writeInt64(w *bytes.Buffer, i int64) (err error) {
+func writeNumber[N writeNumberTypes](w *bytes.Buffer, i N) (err error) {
 	d := w.Bytes()
 	w.Reset()
-	_, err = w.Write(strconv.AppendInt(d, i, 10))
-	return err
-}
-
-func writeUint64(w *bytes.Buffer, i uint64) (err error) {
-	d := w.Bytes()
-	w.Reset()
-	_, err = w.Write(strconv.AppendUint(d, i, 10))
+	switch it := any(i).(type) { // https://github.com/golang/go/issues/45380#issuecomment-1014950980
+	case uint:
+		_, err = w.Write(strconv.AppendUint(d, uint64(it), 10))
+	case uint8:
+		_, err = w.Write(strconv.AppendUint(d, uint64(it), 10))
+	case uint16:
+		_, err = w.Write(strconv.AppendUint(d, uint64(it), 10))
+	case uint32:
+		_, err = w.Write(strconv.AppendUint(d, uint64(it), 10))
+	case uint64:
+		_, err = w.Write(strconv.AppendUint(d, it, 10))
+	case int64:
+		_, err = w.Write(strconv.AppendInt(d, it, 10))
+	case float64:
+		_, err = w.Write(strconv.AppendFloat(d, it, 'g', -1, 64))
+	default:
+		panic(fmt.Sprintf("type not supported: %T", any(i)))
+	}
 	return err
 }
 

@@ -54,7 +54,7 @@ func (sr someRecord) MapColumns(cm *dml.ColumnMap) error {
 
 func TestInsert_Bind(t *testing.T) {
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
-	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true}
+	wantArgs := []any{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true}
 
 	t.Run("valid with multiple records", func(t *testing.T) {
 		compareToSQL(t,

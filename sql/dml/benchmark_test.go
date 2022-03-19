@@ -29,11 +29,11 @@ import (
 )
 
 func BenchmarkArgsToIFace(b *testing.B) {
-	reflectIFaceContainer := make([]interface{}, 0, 25)
-	finalArgs := make([]interface{}, 0, 40)
+	reflectIFaceContainer := make([]any, 0, 25)
+	finalArgs := make([]any, 0, 40)
 	drvVal := []driver.Valuer{null.MakeString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
 	now1 := Now.UTC()
-	argUnion := make([]interface{}, 0, 30)
+	argUnion := make([]any, 0, 30)
 	b.ResetTimer()
 	b.Run("reflection all types", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -113,7 +113,7 @@ func BenchmarkArgsToIFace(b *testing.B) {
 	})
 }
 
-func encodePlaceholder(args []interface{}, value interface{}) ([]interface{}, error) {
+func encodePlaceholder(args []any, value any) ([]any, error) {
 	if valuer, ok := value.(driver.Valuer); ok {
 		// get driver.Valuer's data
 		var err error
@@ -184,7 +184,7 @@ func BenchmarkInterpolate(b *testing.B) {
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	const sqlBytes = `SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?`
 
-	args := []interface{}{1, -2, 3, 4, 5, 6, 7, 8, 9, 10, "Hello", true}
+	args := []any{1, -2, 3, 4, 5, 6, 7, 8, 9, 10, "Hello", true}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

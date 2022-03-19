@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-func toIFaceSlice(args ...interface{}) []interface{} {
+func toIFaceSlice(args ...any) []any {
 	for i, a := range args {
 		if a == nil {
 			args[i] = internalNULLNIL{}
@@ -35,7 +35,7 @@ func toIFaceSlice(args ...interface{}) []interface{} {
 }
 
 func TestArguments_Interfaces(t *testing.T) {
-	container := make([]interface{}, 0, 48)
+	container := make([]any, 0, 48)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := toIFaceSlice(
@@ -44,7 +44,7 @@ func TestArguments_Interfaces(t *testing.T) {
 			null.MakeBool(true), null.MakeTime(now()))
 
 		assert.Exactly(t,
-			[]interface{}{
+			[]any{
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1",
 				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
 				now(),
@@ -59,7 +59,7 @@ func TestArguments_Interfaces(t *testing.T) {
 			null.String{}, null.Int64{}, null.Float64{},
 			null.Bool{}, null.Time{})
 		assert.Exactly(t,
-			[]interface{}{
+			[]any{
 				nil, int64(-1), int64(1), int64(2), 3.1, true, "eCom1",
 				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
 				now(),
@@ -76,7 +76,7 @@ func TestArguments_Interfaces(t *testing.T) {
 			[]null.Float64{null.MakeFloat64(2.7), null.MakeFloat64(2.7)},
 			[]null.Bool{null.MakeBool(true)}, []null.Time{null.MakeTime(now()), null.MakeTime(now())})
 		assert.Exactly(t,
-			[]interface{}{
+			[]any{
 				nil, int64(-1), int64(-2), int64(1), int64(2), int64(568), int64(766), int64(2), 1.2, 3.1, false, true,
 				"eCom1", "eCom11",
 				[]uint8{0x65, 0x43, 0x6f, 0x6d, 0x32},
@@ -88,7 +88,7 @@ func TestArguments_Interfaces(t *testing.T) {
 			expandInterfaces(args))
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
-		assert.Nil(t, expandInterfaces([]interface{}{}), "args.expandInterfaces() must return nil")
+		assert.Nil(t, expandInterfaces([]any{}), "args.expandInterfaces() must return nil")
 	})
 }
 
@@ -100,7 +100,7 @@ func TestArguments_DriverValue(t *testing.T) {
 			driverValueBytes(`Invoice`), null.MakeString("Creditmemo"), nowSentinel{}, null.MakeTime(now()),
 		)
 		assert.Exactly(t,
-			[]interface{}{
+			[]any{
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65},
 				"Creditmemo", "2006-01-02 19:04:05", now(),
@@ -121,7 +121,7 @@ func TestArguments_DriverValue(t *testing.T) {
 			null.MakeTime(now()))
 
 		assert.Exactly(t,
-			[]interface{}{
+			[]any{
 				nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65},
 				"Creditmemo", "2006-01-02 19:04:05", now(),
