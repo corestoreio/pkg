@@ -13,7 +13,3 @@
 // limitations under the License.
 
 package authorization
-
-type TokenAuthorizer interface {
-	AuthorizeToken(token, resource string) error
-}
