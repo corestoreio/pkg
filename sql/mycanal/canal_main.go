@@ -42,7 +42,7 @@ type genericEventDump struct {
 	g *gocui.Gui
 }
 
-func (ge *genericEventDump) Do(_ context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
+func (ge *genericEventDump) Do(_ context.Context, action string, table *ddl.Table, rows [][]any) error {
 	ge.g.Update(func(g *gocui.Gui) error {
 		vr, err := g.View("right")
 		if err != nil {

@@ -1181,9 +1181,9 @@ func (cc *CatalogProductIndexEAVDecimalIDXes) DBLoad(ctx context.Context, dbm *D
 		return nil // might return data from cache
 	}
 	cacheKey := "CatalogProductIndexEAVDecimalIDXesSelectAll"
-	var args []interface{}
+	var args []any
 	if len(pkIDs) > 0 {
-		args = make([]interface{}, 0, len(pkIDs)*4)
+		args = make([]any, 0, len(pkIDs)*4)
 		for _, pk := range pkIDs {
 			args = append(args, pk.EntityID)
 			args = append(args, pk.AttributeID)
@@ -4028,9 +4028,9 @@ func (cc *SalesOrderStatusStates) DBLoad(ctx context.Context, dbm *DBM, pkIDs []
 		return nil // might return data from cache
 	}
 	cacheKey := "SalesOrderStatusStatesSelectAll"
-	var args []interface{}
+	var args []any
 	if len(pkIDs) > 0 {
-		args = make([]interface{}, 0, len(pkIDs)*2)
+		args = make([]any, 0, len(pkIDs)*2)
 		for _, pk := range pkIDs {
 			args = append(args, pk.Status)
 			args = append(args, pk.State)

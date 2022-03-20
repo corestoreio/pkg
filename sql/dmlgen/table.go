@@ -1146,9 +1146,9 @@ func (t *Table) fnCollectionDBMHandler(mainGen *codegen.Go, g *Generator) {
 
 	if tblPkCols.Len() > 1 { // for tables with more than one PK
 		mainGen.Pln(dmlEnabled, `	cacheKey := `, codegen.SkipWS(`"`, collectionFuncName, "", `"`), `
-	var args []interface{}
+	var args []any
 	if len(pkIDs) > 0 {
-		args = make([]interface{}, 0, len(pkIDs)*`, tblPkCols.Len(), `)
+		args = make([]any, 0, len(pkIDs)*`, tblPkCols.Len(), `)
 		for _, pk := range pkIDs {`)
 		tblPkCols.Each(func(c *ddl.Column) {
 			mainGen.Pln(dmlEnabled, `args = append(args, pk.`, strs.ToGoCamelCase(c.Field), `)`)

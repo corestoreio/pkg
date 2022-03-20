@@ -49,7 +49,7 @@ type tErrorLID struct {
 	t   *testing.T
 }
 
-func (t tErrorLID) Errorf(format string, args ...interface{}) {
+func (t tErrorLID) Errorf(format string, args ...any) {
 	for _, a := range args {
 		switch at := a.(type) {
 		case string:

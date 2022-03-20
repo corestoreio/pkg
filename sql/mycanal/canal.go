@@ -523,7 +523,7 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (*ddl.Table, er
 		return nil, errors.WithStack(err)
 	}
 
-	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
+	val, err, _ := c.tableSFG.Do(tableName, func() (any, error) {
 		if err := c.tables.Options(ddl.WithCreateTable(ctx, tableName, "")); err != nil {
 			return nil, errors.WithStack(err)
 		}

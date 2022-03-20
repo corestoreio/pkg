@@ -71,6 +71,6 @@ type testingMock struct {
 	wantErr errors.Kind
 }
 
-func (tm testingMock) Fatalf(format string, args ...interface{}) {
+func (tm testingMock) Fatalf(format string, args ...any) {
 	assert.True(tm.T, tm.wantErr.Match(args[0].(error)))
 }

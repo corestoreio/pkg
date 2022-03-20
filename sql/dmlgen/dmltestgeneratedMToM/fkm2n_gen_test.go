@@ -32,10 +32,10 @@ func TestNewDBManagerDB_b0014848206a53c73619e6569577340a(t *testing.T) {
 	assert.NoError(t, err)
 	var ps *pseudo.Service
 	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6},
-		pseudo.WithTagFakeFunc("website_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) any {
 			return 1
 		}),
-		pseudo.WithTagFakeFunc("store_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) any {
 			return 1
 		}),
 	)

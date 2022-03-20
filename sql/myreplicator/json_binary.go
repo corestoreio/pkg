@@ -93,7 +93,7 @@ type jsonBinaryDecoder struct {
 	err error
 }
 
-func (d *jsonBinaryDecoder) decodeValue(tp byte, data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeValue(tp byte, data []byte) any {
 	if d.err != nil {
 		return nil
 	}
@@ -134,7 +134,7 @@ func (d *jsonBinaryDecoder) decodeValue(tp byte, data []byte) interface{} {
 	return nil
 }
 
-func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObject bool) interface{} {
+func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObject bool) any {
 	offsetSize := jsonbGetOffsetSize(isSmall)
 	if d.isDataShort(data, 2*offsetSize) {
 		return nil
@@ -188,7 +188,7 @@ func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObj
 		return nil
 	}
 
-	values := make([]interface{}, count)
+	values := make([]any, count)
 	for i := 0; i < count; i++ {
 		// decode value
 		entryOffset := 2*offsetSize + valueEntrySize*i
@@ -220,7 +220,7 @@ func (d *jsonBinaryDecoder) decodeObjectOrArray(data []byte, isSmall bool, isObj
 		return values
 	}
 
-	m := make(map[string]interface{}, count)
+	m := make(map[string]any, count)
 	for i := 0; i < count; i++ {
 		m[keys[i]] = values[i]
 	}
@@ -239,7 +239,7 @@ func isInlineValue(tp byte, isSmall bool) bool {
 	return false
 }
 
-func (d *jsonBinaryDecoder) decodeLiteral(data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeLiteral(data []byte) any {
 	if d.isDataShort(data, 1) {
 		return nil
 	}
@@ -352,7 +352,7 @@ func (d *jsonBinaryDecoder) decodeString(data []byte) string {
 	return v
 }
 
-func (d *jsonBinaryDecoder) decodeOpaque(data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeOpaque(data []byte) any {
 	if d.isDataShort(data, 1) {
 		return nil
 	}
@@ -382,7 +382,7 @@ func (d *jsonBinaryDecoder) decodeOpaque(data []byte) interface{} {
 	return nil
 }
 
-func (d *jsonBinaryDecoder) decodeDecimal(data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeDecimal(data []byte) any {
 	precision := int(data[0])
 	scale := int(data[1])
 
@@ -392,7 +392,7 @@ func (d *jsonBinaryDecoder) decodeDecimal(data []byte) interface{} {
 	return v
 }
 
-func (d *jsonBinaryDecoder) decodeTime(data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeTime(data []byte) any {
 	v := d.decodeInt64(data)
 
 	if v == 0 {
@@ -414,7 +414,7 @@ func (d *jsonBinaryDecoder) decodeTime(data []byte) interface{} {
 	return fmt.Sprintf("%s%02d:%02d:%02d.%06d", sign, hour, min, sec, frac)
 }
 
-func (d *jsonBinaryDecoder) decodeDateTime(data []byte) interface{} {
+func (d *jsonBinaryDecoder) decodeDateTime(data []byte) any {
 	v := d.decodeInt64(data)
 	if v == 0 {
 		return "0000-00-00 00:00:00"

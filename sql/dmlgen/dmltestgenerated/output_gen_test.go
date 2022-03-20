@@ -186,39 +186,39 @@ func TestNewDBManagerDB_e0543bebb1223430cb42e7b7dd2109cd(t *testing.T) {
 	assert.NoError(t, err)
 	var ps *pseudo.Service
 	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6},
-		pseudo.WithTagFakeFunc("website_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) any {
 			return 1
 		}),
-		pseudo.WithTagFakeFunc("store_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) any {
 			return 1
 		}),
 
-		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) any {
 			return nil
 		}),
-		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_date1", func(maxLen int) any {
 			if ps.Intn(1000)%3 == 0 {
 				return nil
 			}
 			return ps.Dob18()
 		}),
-		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_date2", func(maxLen int) any {
 			t, _ := ps.Dob18().MarshalText()
 			return t
 		}),
-		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_decimal101", func(maxLen int) any {
 			return fmt.Sprintf("%.1f", ps.Price())
 		}),
-		pseudo.WithTagFakeFunc("price_b124", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("price_b124", func(maxLen int) any {
 			return fmt.Sprintf("%.4f", ps.Price())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_decimal123", func(maxLen int) any {
 			return fmt.Sprintf("%.3f", ps.Float64())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_decimal206", func(maxLen int) any {
 			return fmt.Sprintf("%.6f", ps.Float64())
 		}),
-		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("col_decimal2412", func(maxLen int) any {
 			return fmt.Sprintf("%.12f", ps.Float64())
 		}),
 		pseudo.WithTagFakeFuncAlias(

@@ -583,7 +583,7 @@ func fieldToType(f *ast.Field) fieldTypeInfo {
 	case *ast.Ident:
 		return fieldTypeInfo{ftype: arg.Name}
 	case *ast.InterfaceType:
-		return fieldTypeInfo{ftype: "interface{}"}
+		return fieldTypeInfo{ftype: "any"}
 	case *ast.SelectorExpr:
 
 		if ident, ok := arg.X.(*ast.Ident); ok && ident.Name != "" {
@@ -621,7 +621,7 @@ func isExported(name string) bool {
 func astNodeName(n ast.Node) string {
 	switch t := n.(type) {
 	case *ast.InterfaceType:
-		return "interface{}"
+		return "any"
 	case *ast.Ident:
 		return t.Name
 	case *ast.SelectorExpr:

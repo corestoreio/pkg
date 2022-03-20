@@ -42,7 +42,7 @@ type MasterStatus struct {
 
 // ToSQL implements dml.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
-func (ms MasterStatus) ToSQL() (string, []interface{}, error) {
+func (ms MasterStatus) ToSQL() (string, []any, error) {
 	return "SHOW MASTER STATUS", nil, nil
 }
 

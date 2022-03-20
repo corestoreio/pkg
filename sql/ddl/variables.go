@@ -135,7 +135,7 @@ func (vs *Variables) Keys(keys ...string) []string {
 
 // ToSQL implements dml.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
-func (vs *Variables) ToSQL() (string, []interface{}, error) {
+func (vs *Variables) ToSQL() (string, []any, error) {
 	return vs.Show.ToSQL()
 }
 

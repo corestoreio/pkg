@@ -133,7 +133,7 @@ func FatalIfError(t testing.TB, err error) {
 // CheckLastInsertID returns a function which accepts the return result from
 // Exec*() and returns itself the last_insert_id or emits an error.
 func CheckLastInsertID(t interface {
-	Errorf(format string, args ...interface{})
+	Errorf(format string, args ...any)
 }, msg ...string) func(sql.Result, error) int64 {
 	return func(res sql.Result, err error) int64 {
 		if err != nil {

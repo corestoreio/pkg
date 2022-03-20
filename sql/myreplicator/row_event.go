@@ -225,7 +225,7 @@ type RowsEvent struct {
 	ColumnBitmap2 []byte
 
 	// Rows: invalid: int64, float64, bool, []byte, string
-	Rows [][]interface{}
+	Rows [][]any
 
 	parseTime               bool
 	timestampStringLocation *time.Location
@@ -302,7 +302,7 @@ func isBitSet(bitmap []byte, i int) bool {
 }
 
 func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte) (int, error) {
-	row := make([]interface{}, e.ColumnCount)
+	row := make([]any, e.ColumnCount)
 
 	pos := 0
 
@@ -347,7 +347,7 @@ func (e *RowsEvent) decodeRows(data []byte, table *TableMapEvent, bitmap []byte)
 	return pos, nil
 }
 
-func (e *RowsEvent) parseFracTime(t interface{}) interface{} {
+func (e *RowsEvent) parseFracTime(t any) any {
 	v, ok := t.(fracTime)
 	if !ok {
 		return t
@@ -363,7 +363,7 @@ func (e *RowsEvent) parseFracTime(t interface{}) interface{} {
 }
 
 // see mysql sql/log_event.cc log_event_print_value
-func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{}, n int, err error) {
+func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v any, n int, err error) {
 	var length int = 0
 
 	if tp == mysql.MYSQL_TYPE_STRING {
@@ -681,7 +681,7 @@ func littleDecodeBit(data []byte, nbits int, length int) (value int64, err error
 	return
 }
 
-func decodeTimestamp2(data []byte, dec uint16, timestampStringLocation *time.Location) (interface{}, int, error) {
+func decodeTimestamp2(data []byte, dec uint16, timestampStringLocation *time.Location) (any, int, error) {
 	//get timestamp binary length
 	n := int(4 + (dec+1)/2)
 	sec := int64(binary.BigEndian.Uint32(data[0:4]))
@@ -708,7 +708,7 @@ func decodeTimestamp2(data []byte, dec uint16, timestampStringLocation *time.Loc
 
 const DATETIMEF_INT_OFS int64 = 0x8000000000
 
-func decodeDatetime2(data []byte, dec uint16) (interface{}, int, error) {
+func decodeDatetime2(data []byte, dec uint16) (any, int, error) {
 	//get datetime binary length
 	n := int(5 + (dec+1)/2)
 

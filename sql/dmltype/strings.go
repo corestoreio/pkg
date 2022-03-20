@@ -35,7 +35,7 @@ var quoteEscapeRegex = regexp.MustCompile(`([^\\]([\\]{2})*)\\"`)
 // todo implement column mapper
 
 // Scan satisfies the sql.Scanner interface for CSV.
-func (l *CSV) Scan(src interface{}) error {
+func (l *CSV) Scan(src any) error {
 	var str string
 	switch t := src.(type) {
 	case []byte:

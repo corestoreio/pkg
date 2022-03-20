@@ -74,14 +74,14 @@ func TestNewDBManagerDB_27ae1e9c372b14c55c03bdc667b0fb99(t *testing.T) {
 	assert.NoError(t, err)
 	var ps *pseudo.Service
 	ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de", MaxFloatDecimals: 6},
-		pseudo.WithTagFakeFunc("website_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("website_id", func(maxLen int) any {
 			return 1
 		}),
-		pseudo.WithTagFakeFunc("store_id", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("store_id", func(maxLen int) any {
 			return 1
 		}),
 
-		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) interface{} {
+		pseudo.WithTagFakeFunc("dmltestgenerated.CustomerAddressEntity.ParentID", func(maxLen int) any {
 			return nil
 		}),
 	)

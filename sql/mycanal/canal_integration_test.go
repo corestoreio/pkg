@@ -94,7 +94,7 @@ type catalogProductEvent struct {
 	counter map[string]int
 }
 
-func (cpe *catalogProductEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
+func (cpe *catalogProductEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]any) error {
 	cpe.counter[action]++
 	// Uncomment the following lines to see the data
 	// cpe.t.Logf("%d: %q %q.%q", cpe.idx, action, table.Schema, table.Name)
@@ -103,22 +103,22 @@ func (cpe *catalogProductEvent) Do(_ context.Context, action string, table *ddl.
 	// }
 
 	if action == mycanal.UpdateAction && table.Name == "catalog_product_entity" {
-		assert.Exactly(cpe.t, []interface{}{int32(66), int16(9), "simple", "MH01-XL-Orange", int16(0), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[0], "A: Row0: %#v", rows[0])
-		assert.Exactly(cpe.t, []interface{}{int32(66), int16(111), "simple", "MH01-XL-CS111", int16(1), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[1], "B: Row1: %#v", rows[1])
+		assert.Exactly(cpe.t, []any{int32(66), int16(9), "simple", "MH01-XL-Orange", int16(0), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[0], "A: Row0: %#v", rows[0])
+		assert.Exactly(cpe.t, []any{int32(66), int16(111), "simple", "MH01-XL-CS111", int16(1), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[1], "B: Row1: %#v", rows[1])
 		assert.Len(cpe.t, rows, 2)
 	}
 	if action == mycanal.DeleteAction && table.Name == "catalog_product_entity" {
-		assert.Exactly(cpe.t, []interface{}{int32(65), int16(9), "simple", "MH01-XL-Gray", int16(0), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[0], "C: Row0: %#v", rows[0])
+		assert.Exactly(cpe.t, []any{int32(65), int16(9), "simple", "MH01-XL-Gray", int16(0), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[0], "C: Row0: %#v", rows[0])
 		assert.Len(cpe.t, rows, 1)
 	}
 	if action == mycanal.UpdateAction && table.Name == "catalog_product_entity_varchar" {
-		assert.Exactly(cpe.t, []interface{}{int32(436), int16(73), int16(0), int32(44), "Didi Sport Watch"}, rows[0], "D: Row0: %#v", rows[0])
-		assert.Exactly(cpe.t, []interface{}{int32(436), int16(73), int16(0), int32(44), "Dodo Sport Watch and See"}, rows[1], "E: Row1: %#v", rows[1])
+		assert.Exactly(cpe.t, []any{int32(436), int16(73), int16(0), int32(44), "Didi Sport Watch"}, rows[0], "D: Row0: %#v", rows[0])
+		assert.Exactly(cpe.t, []any{int32(436), int16(73), int16(0), int32(44), "Dodo Sport Watch and See"}, rows[1], "E: Row1: %#v", rows[1])
 		assert.Len(cpe.t, rows, 2)
 	}
 	if action == mycanal.UpdateAction && table.Name == "catalog_product_entity_int" {
-		assert.Exactly(cpe.t, []interface{}{int32(212), int16(99), int16(0), int32(44), int32(4)}, rows[0], "F: Row0: %#v", rows[0])
-		assert.Exactly(cpe.t, []interface{}{int32(212), int16(99), int16(0), int32(44), nil}, rows[1], "G: Row1: %#v", rows[1])
+		assert.Exactly(cpe.t, []any{int32(212), int16(99), int16(0), int32(44), int32(4)}, rows[0], "F: Row0: %#v", rows[0])
+		assert.Exactly(cpe.t, []any{int32(212), int16(99), int16(0), int32(44), nil}, rows[1], "G: Row1: %#v", rows[1])
 		assert.Len(cpe.t, rows, 2)
 	}
 
@@ -140,7 +140,7 @@ type salesOrderEvent struct {
 	counter map[string]int
 }
 
-func (cpe *salesOrderEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
+func (cpe *salesOrderEvent) Do(_ context.Context, action string, table *ddl.Table, rows [][]any) error {
 	if table.Name != "sales_order" {
 		// should not happen due to the special registration of this handler
 		return errors.Fatal.Newf("table name %q not allowed and not expected", table.Name)
@@ -154,7 +154,7 @@ func (cpe *salesOrderEvent) Do(_ context.Context, action string, table *ddl.Tabl
 
 	if action == mycanal.InsertAction {
 		assert.Exactly(cpe.t, "89875168d4e71e08688d6a266413162a", rows[0][4], "A: Row4: %#v", rows[0][4])
-		// 	assert.Exactly(cpe.t, []interface{}{int32(66), int16(111), "simple", "MH01-XL-CS111", int16(1), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[1], "B: Row1: %#v", rows[1])
+		// 	assert.Exactly(cpe.t, []any{int32(66), int16(111), "simple", "MH01-XL-CS111", int16(1), int16(0), "2018-04-17 21:42:21", "2018-04-17 21:42:21"}, rows[1], "B: Row1: %#v", rows[1])
 		assert.Len(cpe.t, rows, 2)
 	}
 

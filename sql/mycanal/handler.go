@@ -24,7 +24,7 @@ type RowsEventHandler interface {
 	// event, and we don't support this version yet. The Do function will run in
 	// its own Goroutine. The provided argument `t` of type ddl.Table must only
 	// be used for reading, changing `t` causes race conditions.
-	Do(ctx context.Context, action string, t *ddl.Table, rows [][]interface{}) error
+	Do(ctx context.Context, action string, t *ddl.Table, rows [][]any) error
 	// Complete runs before a binlog rotation event happens. Same error rules
 	// apply here like for function Do(). The Complete function will run in its
 	// own Goroutine.
@@ -56,7 +56,7 @@ func (c *Canal) RegisterRowsEventHandler(tableNames []string, h ...RowsEventHand
 	}
 }
 
-func (c *Canal) processRowsEventHandler(ctx context.Context, action string, table *ddl.Table, rows [][]interface{}) error {
+func (c *Canal) processRowsEventHandler(ctx context.Context, action string, table *ddl.Table, rows [][]any) error {
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 

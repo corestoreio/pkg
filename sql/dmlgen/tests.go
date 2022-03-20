@@ -62,11 +62,11 @@ func (g *Generator) fnTestMainDB(testGen *codegen.Go, tbls tables) {
 		testGen.Pln(`var ps *pseudo.Service`)
 		testGen.Pln(`ps = pseudo.MustNewService(0, &pseudo.Options{Lang: "de",MaxFloatDecimals:6},`)
 		testGen.In()
-		testGen.Pln(`pseudo.WithTagFakeFunc("website_id", func(maxLen int) interface{} {`)
+		testGen.Pln(`pseudo.WithTagFakeFunc("website_id", func(maxLen int) any {`)
 		testGen.Pln(`    return 1`)
 		testGen.Pln(`}),`)
 
-		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) interface{} {`)
+		testGen.Pln(`pseudo.WithTagFakeFunc("store_id", func(maxLen int) any {`)
 		testGen.Pln(`    return 1`)
 		testGen.Pln(`}),`)
 		if fn, ok := g.customCode["pseudo.MustNewService.Option"]; ok {
