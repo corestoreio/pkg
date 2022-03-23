@@ -15,26 +15,58 @@
 package dmltype
 
 import (
-	"bytes"
 	"database/sql/driver"
-	"encoding/csv"
-	"regexp"
+	"fmt"
 	"strings"
-
-	"github.com/corestoreio/errors"
+	"unicode/utf8"
 )
+
+const CSVComma = ","
+
+var supportedCommas = [256]bool{
+	'0': false, '1': false, '2': false, '3': false, '4': false, '5': false, '6': false, '7': false,
+	'8': false, '9': false,
+
+	'a': false, 'b': false, 'c': false, 'd': false, 'e': false, 'f': false, 'g': false, 'h': false,
+	'i': false, 'j': false, 'k': false, 'l': false, 'm': false, 'n': false, 'o': false, 'p': false,
+	'q': false, 'r': false, 's': false, 't': false, 'u': false, 'v': false, 'w': false, 'x': false,
+	'y': false, 'z': false,
+
+	'A': false, 'B': false, 'C': false, 'D': false, 'E': false, 'F': false, 'G': false, 'H': false,
+	'I': false, 'J': false, 'K': false, 'L': false, 'M': false, 'N': false, 'O': false, 'P': false,
+	'Q': false, 'R': false, 'S': false, 'T': false, 'U': false, 'V': false, 'W': false, 'X': false,
+	'Y': false, 'Z': false,
+
+	'!':  false,
+	'$':  false,
+	'%':  false,
+	'&':  false,
+	'(':  false,
+	')':  false,
+	'*':  false,
+	'+':  false,
+	',':  true,
+	'-':  true,
+	'.':  true,
+	':':  true,
+	';':  true,
+	'=':  true,
+	'[':  false,
+	'\'': false,
+	']':  false,
+	'_':  true,
+	'~':  true,
+}
 
 // CSV represents an unmerged slice of strings. You can use package
 // slices.String for further modifications of this slice type. It also
 // implements Text Marshalers for usage in dml.ColumnMap.Text.
+// Strings will be merged and split by comma, hence CSV.
 type CSV []string
 
-// quoteEscapeRegex is the regex to match escaped characters in a string.
-var quoteEscapeRegex = regexp.MustCompile(`([^\\]([\\]{2})*)\\"`)
-
-// todo implement column mapper
-
-// Scan satisfies the sql.Scanner interface for CSV.
+// Scan satisfies the sql.Scanner interface for CSV. If a string starts with a
+// supported split-character, this function will take that character to split
+// the string.
 func (l *CSV) Scan(src any) error {
 	var str string
 	switch t := src.(type) {
@@ -43,36 +75,37 @@ func (l *CSV) Scan(src any) error {
 	case string:
 		str = t
 	default:
-		return errors.NotValid.Newf("[dmltype] CSV.Scan Unknown type or not yet implemented: %#v", src)
+		return fmt.Errorf("[dmltype] 1647806798161 CSV.Scan Unknown type or not yet implemented: %#v", src)
 	}
-
-	// change quote escapes for csv parser
-	str = quoteEscapeRegex.ReplaceAllString(str, `$1""`)
-	str = strings.Replace(str, `\\`, `\`, -1)
-
-	// remove braces
-	str = str[1 : len(str)-1]
 
 	// bail if only one
 	if len(str) == 0 {
-		*l = CSV([]string{})
+		*l = []string{}
 		return nil
 	}
 
-	// parse with csv reader
-	cr := csv.NewReader(strings.NewReader(str))
-	slice, err := cr.Read()
-	if err != nil {
-		return errors.NotValid.Newf("[dmltype] CSV.Scan CSV read error: %s", err)
+	// if the first rune contains a supported comma, we take that one
+	r, _ := utf8.DecodeRuneInString(str)
+	csvComma := CSVComma
+	if int(r) < len(supportedCommas) && supportedCommas[r] {
+		csvComma = string(r)
 	}
 
-	*l = CSV(slice)
-
+	split := strings.Split(str, csvComma)
+	split2 := split[:0]
+	for _, s := range split {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			split2 = append(split2, s)
+		}
+	}
+	*l = split2
+	// append coma to the slice ... might breaks things
 	return nil
 }
 
 func (l CSV) MarshalText() (text []byte, err error) {
-	return l.Bytes(), nil
+	return l.Bytes()
 }
 
 func (l *CSV) UnmarshalText(text []byte) error {
@@ -81,21 +114,13 @@ func (l *CSV) UnmarshalText(text []byte) error {
 
 // Value satisfies the driver.Valuer interface for CSV.
 func (l CSV) Value() (driver.Value, error) {
-	return string(l.Bytes()), nil
+	d, err := l.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	return string(d), nil
 }
 
-func (l CSV) Bytes() []byte {
-	buf := bytes.NewBuffer(make([]byte, 0, 128))
-
-	buf.WriteByte('{')
-	for i, s := range l {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteByte('"')
-		buf.WriteString(strings.Replace(strings.Replace(s, `\`, `\\\`, -1), `"`, `\"`, -1)) // optimize this
-		buf.WriteByte('"')
-	}
-	buf.WriteByte('}')
-	return buf.Bytes()
+func (l CSV) Bytes() ([]byte, error) {
+	return []byte(strings.Join(l, CSVComma)), nil
 }

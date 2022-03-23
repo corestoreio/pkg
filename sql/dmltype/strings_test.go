@@ -19,6 +19,9 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"testing"
+
+	"github.com/corestoreio/pkg/util/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -28,10 +31,28 @@ var (
 	_ encoding.TextUnmarshaler = (*CSV)(nil)
 )
 
-func TestStrings_Scan(t *testing.T) {
-	t.Skip("todo")
-}
+func TestStrings_Scan_Bytes(t *testing.T) {
+	runner := func(data any, wantErr error, wantCSV []string, wantStringified string) func(*testing.T) {
+		return func(t *testing.T) {
+			var csv CSV
+			haveErr := csv.Scan(data)
+			if wantErr != nil {
+				require.EqualError(t, haveErr, wantErr.Error())
+				return
+			}
+			require.NoError(t, haveErr)
+			assert.Exactly(t, wantCSV, []string(csv))
 
-func TestStrings_Value(t *testing.T) {
-	t.Skip("todo")
+			haveBytes, err := csv.Bytes()
+			require.NoError(t, err)
+			assert.Exactly(t, wantStringified, string(haveBytes))
+		}
+	}
+	t.Run("simple", runner(`a,b`, nil, []string{"a", "b"}, "a,b"))
+	t.Run("quoted", runner(`a"a,b'b`, nil, []string{"a\"a", "b'b"}, "a\"a,b'b"))
+	t.Run("ws quoted", runner(`a"a,    b'b`, nil, []string{"a\"a", "b'b"}, "a\"a,b'b"))
+	t.Run("comma quoted1", runner(`a,"a,,,    b'b`, nil, []string{"a", "\"a", "b'b"}, "a,\"a,b'b"))
+	t.Run("comma quoted2", runner(`a,"a,,,b,c`, nil, []string{"a", "\"a", "b", "c"}, "a,\"a,b,c"))
+	t.Run("semi colon as first rune", runner(`;a;a;;b;c`, nil, []string{"a", "a", "b", "c"}, "a,a,b,c"))
+	t.Run("weird char as first rune", runner(`a,c`, nil, []string{"a", "c"}, "a,c"))
 }
