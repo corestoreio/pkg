@@ -46,8 +46,8 @@ var supportedCommas = [256]bool{
 	'*':  false,
 	'+':  false,
 	',':  true,
-	'-':  true,
-	'.':  true,
+	'-':  false,
+	'.':  false,
 	':':  true,
 	';':  true,
 	'=':  true,
@@ -114,11 +114,7 @@ func (l *CSV) UnmarshalText(text []byte) error {
 
 // Value satisfies the driver.Valuer interface for CSV.
 func (l CSV) Value() (driver.Value, error) {
-	d, err := l.Bytes()
-	if err != nil {
-		return nil, err
-	}
-	return string(d), nil
+	return strings.Join(l, CSVComma), nil
 }
 
 func (l CSV) Bytes() ([]byte, error) {
