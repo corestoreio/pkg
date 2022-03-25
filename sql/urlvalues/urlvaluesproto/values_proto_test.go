@@ -1,10 +1,9 @@
-// +build csall proto
-
-package urlvalues
+package urlvaluesproto
 
 import (
 	"testing"
 
+	"github.com/corestoreio/pkg/sql/urlvalues"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -14,11 +13,11 @@ func TestProtoToValues(t *testing.T) {
 			{Key: "a", Value: []string{"b"}},
 		},
 	})
-	assert.Exactly(t, Values{"a": []string{"b"}}, vals)
+	assert.Exactly(t, urlvalues.Values{"a": []string{"b"}}, vals)
 }
 
 func TestValuesToProto(t *testing.T) {
-	pkv := ValuesToProto(Values{"a": []string{"b"}})
+	pkv := ValuesToProto(urlvalues.Values{"a": []string{"b"}})
 	assert.Exactly(t, &ProtoKeyValues{
 		Data: []*ProtoKeyValue{
 			{Key: "a", Value: []string{"b"}},

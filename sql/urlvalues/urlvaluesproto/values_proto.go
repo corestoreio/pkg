@@ -1,12 +1,12 @@
-// +build csall proto
+package urlvaluesproto
 
-package urlvalues
+import "github.com/corestoreio/pkg/sql/urlvalues"
 
 // ProtoToValues converts a proto message to a Values type. It appends to
 // argument vals, which can be nil.
-func ProtoToValues(vals Values, pkv *ProtoKeyValues) Values {
+func ProtoToValues(vals urlvalues.Values, pkv *ProtoKeyValues) urlvalues.Values {
 	if vals == nil {
-		vals = make(Values, len(pkv.Data))
+		vals = make(urlvalues.Values, len(pkv.Data))
 	}
 	for _, kv := range pkv.Data {
 		vals[kv.Key] = kv.Value
@@ -15,7 +15,7 @@ func ProtoToValues(vals Values, pkv *ProtoKeyValues) Values {
 }
 
 // ValuesToProto converts a Values map to a proto message.
-func ValuesToProto(vals Values) *ProtoKeyValues {
+func ValuesToProto(vals urlvalues.Values) *ProtoKeyValues {
 	var pkv ProtoKeyValues
 	pkv.Data = make([]*ProtoKeyValue, 0, len(vals))
 	for k, v := range vals {
