@@ -13,4 +13,7 @@
 // limitations under the License.
 
 // Package authorization enables management of access control list roles and rules.
+//
+// TODO
+// 	https://www.alexanderlolis.com/authorization-in-a-microservices-world
 package authorization
