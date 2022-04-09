@@ -15,10 +15,10 @@
 package ddl
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 )
 
@@ -150,9 +150,9 @@ func (vs *Variables) MapColumns(rc *dml.ColumnMap) error {
 		case "Value", "1":
 			rc.String(&value)
 		default:
-			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW VARIABLES", col)
+			return fmt.Errorf("[ddl] 1648326492950 Column %q not found in SHOW VARIABLES", col)
 		}
 	}
 	vs.Data[name] = value
-	return errors.WithStack(rc.Err())
+	return rc.Err()
 }

@@ -21,7 +21,6 @@ import (
 	"io"
 	"sort"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
 )
@@ -71,10 +70,10 @@ func (e *KeyColumnUsage) MapColumns(cm *dml.ColumnMap) error {
 		case "REFERENCED_COLUMN_NAME", "11":
 			cm.NullString(&e.ReferencedColumnName)
 		default:
-			return errors.NotFound.Newf("[testdata] KeyColumnUsage Column %q not found", c)
+			return fmt.Errorf("[testdata] 1648240622128 KeyColumnUsage Column %q not found", c)
 		}
 	}
-	return errors.WithStack(cm.Err())
+	return cm.Err()
 }
 
 // Reset resets the struct to its empty fields.
@@ -100,13 +99,13 @@ func (cc KeyColumnUsageCollection) Sort() {
 
 func (cc KeyColumnUsageCollection) scanColumns(cm *dml.ColumnMap, e *KeyColumnUsage, idx uint64) error {
 	if err := cc.BeforeMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	if err := e.MapColumns(cm); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	if err := cc.AfterMapColumns(idx, e); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	return nil
 }
@@ -117,7 +116,7 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		for i, e := range cc.Data {
 			if err := cc.scanColumns(cm, e, uint64(i)); err != nil {
-				return errors.WithStack(err)
+				return fmt.Errorf("[ddl] 1648240809336 failed to scanCloums: %w", err)
 			}
 		}
 	case dml.ColumnMapScan:
@@ -126,7 +125,7 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 		}
 		e := new(KeyColumnUsage)
 		if err := cc.scanColumns(cm, e, cm.Count); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 		cc.Data = append(cc.Data, e)
 	case dml.ColumnMapCollectionReadSet:
@@ -137,11 +136,11 @@ func (cc KeyColumnUsageCollection) MapColumns(cm *dml.ColumnMap) error {
 			case "COLUMN_NAME":
 				cm.Strings(cc.ColumnNames()...)
 			default:
-				return errors.NotFound.Newf("[testdata] KeyColumnUsageCollection Column %q not found", c)
+				return fmt.Errorf("[testdata] 1648240613838 KeyColumnUsageCollection Column %q not found", c)
 			}
 		}
 	default:
-		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+		return fmt.Errorf("[dml] 1648240609890 Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -206,23 +205,23 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 	if len(tables) == 0 {
 		rows, err = db.QueryContext(ctx, selFkAllTablesColumns)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v", tables)
+			return nil, fmt.Errorf("[ddl] 1648321452189 LoadKeyColumnUsage QueryContext for tables %v with: %w", tables, err)
 		}
 	} else {
 		sqlStr, _, err := dml.Interpolate(selFkTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage dml.ExpandPlaceHolders for tables %v", tables)
+			return nil, fmt.Errorf("[ddl] 1648321463999 LoadKeyColumnUsage dml.ExpandPlaceHolders for tables %v with: %w", tables, err)
 		}
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage QueryContext for tables %v with WHERE clause", tables)
+			return nil, fmt.Errorf("[ddl] 1648321483869 LoadKeyColumnUsage QueryContext for tables %v with WHERE clause: %w", tables, err)
 		}
 	}
 
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[ddl] LoadKeyColumnUsage.Rows.Close")
+			err = fmt.Errorf("[ddl] 1648321520712 LoadKeyColumnUsage.Rows.Close: %w", err2)
 		}
 	}()
 
@@ -231,25 +230,21 @@ func LoadKeyColumnUsage(ctx context.Context, db dml.Querier, tables ...string) (
 
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadKeyColumnUsage Scan Query for tables: %v", tables) // due to the defer
+			return nil, fmt.Errorf("[ddl] CS2F8FCFCB LoadKeyColumnUsage Scan Query for tables: %v with: %w", tables, err) // due to the defer
 		}
 		kcu := new(KeyColumnUsage)
 		if err = kcu.MapColumns(rc); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 		if !kcu.ReferencedTableName.Valid || !kcu.ReferencedColumnName.Valid {
-			err = errors.Fatal.Newf("[ddl] LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
-			return
+			return nil, fmt.Errorf("[ddl] CSD0357CB5 LoadKeyColumnUsage: The columns ReferencedTableName or ReferencedColumnName cannot be null: %#v", kcu)
 		}
 
 		kcuc := tc[kcu.TableName]
 		kcuc.Data = append(kcuc.Data, kcu)
 		tc[kcu.TableName] = kcuc
 	}
-	if err = rows.Err(); err != nil {
-		err = errors.WithStack(err)
-	}
-	return
+	return tc, rows.Err()
 }
 
 // ReverseKeyColumnUsage reverses the argument to a new key column usage
@@ -393,7 +388,7 @@ func GenerateKeyRelationships(ctx context.Context, db dml.Querier, foreignKeys m
 
 	fieldCount, err := countFieldsForTables(ctx, db)
 	if err != nil {
-		return KeyRelationShips{}, errors.WithStack(err)
+		return KeyRelationShips{}, err
 	}
 
 	for _, kcuc := range foreignKeys {
@@ -442,13 +437,13 @@ func countFieldsForTables(ctx context.Context, db dml.Querier) (_ map[string]*co
 
 	rows, err := db.QueryContext(ctx, sqlQry)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
+			err = fmt.Errorf("[ddl] 1648321636716 Close failed: %w", err2)
 		}
 	}()
 
@@ -463,7 +458,7 @@ func countFieldsForTables(ctx context.Context, db dml.Querier) (_ map[string]*co
 	ret := map[string]*columnKeyCount{}
 	for rows.Next() {
 		if err = rows.Scan(&col3.TableName, &col3.ColumnKey, &col3.Count); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 		ckc := ret[col3.TableName]
 		if ckc == nil {
@@ -481,7 +476,7 @@ func countFieldsForTables(ctx context.Context, db dml.Querier) (_ map[string]*co
 		case "UNI":
 			ckc.Uni = col3.Count
 		default:
-			return nil, errors.NotSupported.Newf("[ddl] ColumnKey %q not supported", col3.ColumnKey)
+			return nil, fmt.Errorf("[ddl] 1648321654500 ColumnKey %q not supported", col3.ColumnKey)
 		}
 
 		col3.TableName = ""
@@ -489,22 +484,22 @@ func countFieldsForTables(ctx context.Context, db dml.Querier) (_ map[string]*co
 		col3.Count = 0
 	}
 	if err = rows.Err(); err != nil {
-		err = errors.WithStack(err)
+		err = err
 	}
 	return ret, err
 }
 
 func DisableForeignKeys(ctx context.Context, db dml.Execer, callBack func() error) (err error) {
 	if _, err = db.ExecContext(ctx, "SET foreign_key_checks = 0;"); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	defer func() {
 		if _, err2 := db.ExecContext(ctx, "SET foreign_key_checks = 1;"); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
+			err = fmt.Errorf("[ddl] 1648321676853 ExecContext failed %w", err2)
 		}
 	}()
 	if err = callBack(); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	return nil
 }

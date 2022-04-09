@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/storage/null"
@@ -229,7 +228,7 @@ func TestTable_Truncate(t *testing.T) {
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -272,7 +271,7 @@ func TestTable_Rename(t *testing.T) {
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		err := tbl.Rename(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -312,7 +311,7 @@ func TestTable_Swap(t *testing.T) {
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("product")
 		err := tbl.Swap(context.TODO(), "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_", ddl.Options{})
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -366,7 +365,7 @@ func TestTable_Drop(t *testing.T) {
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
 		err := tbl.Drop(context.TODO(), ddl.Options{})
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -409,7 +408,7 @@ func TestTable_Optimize(t *testing.T) {
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := ddl.NewTable("produ™€ct")
 		err := tbl.Optimize(context.TODO(), ddl.Options{})
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 

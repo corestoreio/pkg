@@ -28,10 +28,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/corestoreio/pkg/util/bufferpool"
+	"github.com/hashicorp/go-multierror"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
+	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
 const (
@@ -134,7 +134,7 @@ func WithDB(db *sql.DB, opts ...dml.ConnPoolOption) TableOption {
 		fn: func(tm *Tables) error {
 			p, err := dml.NewConnPool(append(opts, dml.WithDB(db))...)
 			if err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 			return WithConnPool(p).fn(tm)
 		},
@@ -158,7 +158,7 @@ func WithConnPool(db *dml.ConnPool) TableOption {
 	}
 }
 
-// WithTable inserts a new table to the Tables struct. You can optionally
+// WithTable upserts a new table to the Tables struct. You can optionally
 // specify the columns. Without columns the call to load the columns from the
 // INFORMATION_SCHEMA must be added.
 func WithTable(tableName string, cols ...*Column) TableOption {
@@ -166,11 +166,11 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 		sortOrder: 10,
 		fn: func(tm *Tables) error {
 			if err := dml.IsValidIdentifier(tableName); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 
 			if err := tm.Upsert(NewTable(tableName, cols...)); err != nil {
-				return errors.Wrap(err, "[ddl] WithNewTable.Tables.Insert")
+				return err
 			}
 			return nil
 		},
@@ -199,7 +199,7 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 
 			lenIDCS := len(identifierCreateSyntax)
 			if lenIDCS%2 == 1 {
-				return errors.NotValid.Newf("[ddl] WithCreateTable expects a balanced slice, but got %d items.", lenIDCS)
+				return fmt.Errorf("[ddl] 1648325295533 WithCreateTable expects a balanced slice, but got %d items", lenIDCS)
 			}
 
 			tvNames := make([]string, 0, lenIDCS/2)
@@ -209,7 +209,7 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 				tvCreate := identifierCreateSyntax[i+1]
 
 				if err := dml.IsValidIdentifier(tvName); err != nil {
-					return errors.WithStack(err)
+					return err
 				}
 
 				tvNames = append(tvNames, tvName)
@@ -222,7 +222,7 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 				if isCreateStmt(tvName, tvCreate) && tm.ConnPool != nil {
 					// TODO ConnPool != nil might lead to unexpected behaviour ... fix tests to make remove this check.
 					if _, err := tm.ConnPool.DB.ExecContext(ctx, tvCreate); err != nil {
-						return errors.Wrapf(err, "[ddl] WithCreateTable failed to run for table %q the query: %q", tvName, tvCreate)
+						return fmt.Errorf("[ddl] 1648325370203 WithCreateTable failed to run for table %q the query: %q with error %w", tvName, tvCreate, err)
 					}
 				}
 			}
@@ -231,7 +231,7 @@ func WithCreateTable(ctx context.Context, identifierCreateSyntax ...string) Tabl
 			}
 			tc, err := LoadColumns(ctx, tm.ConnPool.DB, tvNames...)
 			if err != nil {
-				return errors.WithStack(err)
+				return fmt.Errorf("[ddl] 1648325436733 %w", err)
 			}
 			for _, n := range tvNames {
 				t := tm.tm[n]
@@ -262,11 +262,11 @@ func WithCreateTableFromFile(ctx context.Context, globPattern string, tableNames
 		fn: func(tm *Tables) error {
 			matches, err := filepath.Glob(globPattern)
 			if err != nil {
-				return errors.Wrapf(err, "[ddl] WithCreateTableFromFile and pattern %q", globPattern)
+				return fmt.Errorf("[ddl] 1648325500829 WithCreateTableFromFile and pattern %q with error %w", globPattern, err)
 			}
 			identifierCreateSyntax, err := loadSQLFiles(matches, tableNames)
 			if err != nil {
-				return errors.WithStack(err)
+				return fmt.Errorf("[ddl] 1648325524497 %w", err)
 			}
 			return WithCreateTable(ctx, identifierCreateSyntax...).fn(tm)
 		},
@@ -282,10 +282,10 @@ func loadSQLFiles(fileNames, tableNames []string) ([]string, error) {
 			if strings.Contains(fn, tn) {
 				data, err := ioutil.ReadFile(fn)
 				if err != nil {
-					return nil, errors.ReadFailed.New(err, "[ddl] WithCreateTableFromFile failed to file %q for table %q", fn, tn)
+					return nil, fmt.Errorf("[ddl] 1648325568382 WithCreateTableFromFile failed to file %q for table %q with error %w", fn, tn, err)
 				}
 				if !isCreateStmtBytes([]byte(tn), data) { // drop all comments
-					return nil, errors.NotAllowed.Newf("[ddl] WithCreateTableFromFile allows only CREATE TABLE|VIEW statements, got %q", data)
+					return nil, fmt.Errorf("[ddl] 1648325615002 WithCreateTableFromFile allows only CREATE TABLE|VIEW statements, got %q", data)
 				}
 				ret = append(ret, tn, string(data))
 				found = true
@@ -296,7 +296,7 @@ func loadSQLFiles(fileNames, tableNames []string) ([]string, error) {
 		}
 	}
 	if len(notFound) > 0 {
-		return nil, errors.Mismatch.Newf("[dd] WithCreateTableFromFile cannot load the files for tables: %v", notFound)
+		return nil, fmt.Errorf("[dd] 1648325624860 WithCreateTableFromFile cannot load the files for tables: %v", notFound)
 	}
 	return ret, nil
 }
@@ -325,20 +325,20 @@ func withDropTable(ctx context.Context, tm *Tables, db dml.Execer, tableViewName
 	for _, name := range tableViewNames {
 		if t, ok := tm.tm[name]; ok {
 			if err = t.Drop(ctx, Options{Execer: db}); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 			continue
 		}
 
 		if err := dml.IsValidIdentifier(name); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 		typ := "TABLE"
 		if strings.HasPrefix(name, PrefixView) {
 			typ = "VIEW"
 		}
 		if _, err = db.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dml.Quoter.Name(name)); err != nil {
-			return errors.Wrapf(err, "[ddl] Failed to drop %q", name)
+			return fmt.Errorf("[ddl] 1648325706283 Failed to drop %q with error: %w", name, err)
 		}
 	}
 	return nil
@@ -365,14 +365,14 @@ func WithLoadTables(ctx context.Context, db dml.Querier, tableNames ...string) T
 		fn: func(tm *Tables) error {
 			for _, tn := range tableNames {
 				if err := dml.IsValidIdentifier(tn); err != nil {
-					return errors.WithStack(err)
+					return err
 				}
 			}
 
 			// load all columns for all tables
 			tblColMap, err := LoadColumns(ctx, db, tableNames...)
 			if err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 
 			var rows *sql.Rows
@@ -380,45 +380,45 @@ func WithLoadTables(ctx context.Context, db dml.Querier, tableNames ...string) T
 				var err error
 				rows, err = db.QueryContext(ctx, selAllTables)
 				if err != nil {
-					return errors.WithStack(err)
+					return err
 				}
 			} else {
 				sqlStr, _, err := dml.Interpolate(selTables).Strs(tableNames...).ToSQL()
 				if err != nil {
-					return errors.Wrapf(err, "[ddl] WithLoadTables dml.ExpandPlaceHolders for tables %v", tableNames)
+					return fmt.Errorf("[ddl] 1648325797535 WithLoadTables dml.ExpandPlaceHolders for tables %v with error: %w", tableNames, err)
 				}
 				rows, err = db.QueryContext(ctx, sqlStr)
 				if err != nil {
-					return errors.Wrapf(err, "[ddl] WithLoadTables QueryContext for tables %v with WHERE clause", tableNames)
+					return fmt.Errorf("[ddl] 1648325818863 WithLoadTables QueryContext for tables %v with WHERE clause with error: %w", tableNames, err)
 				}
 			}
 
 			defer func() {
 				// Not testable with the sqlmock package :-(
 				if err2 := rows.Close(); err2 != nil && err == nil {
-					err = errors.WithStack(err2)
+					err = err2
 				}
 			}()
 
 			rc := new(dml.ColumnMap)
 			for rows.Next() {
 				if err = rc.Scan(rows); err != nil {
-					return errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tableNames)
+					return fmt.Errorf("[ddl] 1648325854139 Scan Query for tables: %v with error: %w", tableNames, err)
 				}
 
 				nt, err := newTable(rc)
 				if err != nil {
-					return errors.WithStack(err)
+					return err
 				}
 
 				nt.Columns = tblColMap[nt.Name]
 
 				if err := tm.Upsert(nt); err != nil {
-					return errors.WithStack(err)
+					return err
 				}
 			}
 			if err = rows.Err(); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 
 			return err
@@ -432,7 +432,7 @@ func NewTables(opts ...TableOption) (*Tables, error) {
 		tm: make(map[string]*Table),
 	}
 	if err := tm.Options(opts...); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	return tm, nil
 }
@@ -456,7 +456,7 @@ func (tm *Tables) Options(opts ...TableOption) error {
 
 	for _, to := range opts {
 		if err := to.fn(tm); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	tm.mu.Lock()
@@ -467,15 +467,6 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	}
 	tm.mu.Unlock()
 	return nil
-}
-
-// errTableNotFound provides a custom error behaviour with not capturing the
-// stack trace and hence less allocs.
-type errTableNotFound string
-
-func (t errTableNotFound) ErrorKind() errors.Kind { return errors.NotFound }
-func (t errTableNotFound) Error() string {
-	return fmt.Sprintf("[ddl] Table %q not found or not yet added.", string(t))
 }
 
 // Table returns the structure from a map m by a giving index i. What is the
@@ -489,7 +480,7 @@ func (tm *Tables) Table(name string) (*Table, error) {
 	if t, ok := tm.tm[name]; ok {
 		return t, nil
 	}
-	return nil, errTableNotFound(name)
+	return nil, fmt.Errorf("[ddl] 1648325960016 table not found: %q", name)
 }
 
 // MustTable same as Table function but panics when the table cannot be found or
@@ -592,10 +583,10 @@ func (tm *Tables) Validate(ctx context.Context) error {
 
 	tMap, err := LoadColumns(ctx, tm.ConnPool.DB, tblNames...)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	if have, want := len(tMap), len(tm.tm); have != want {
-		return errors.Mismatch.Newf("[ddl] Tables count %d does not match table count %d in database.", want, have)
+		return fmt.Errorf("[ddl] 1648325987792 Tables count %d does not match table count %d in database", want, have)
 	}
 	dbTableNames := make([]string, 0, len(tMap))
 	for tn := range tMap {
@@ -605,36 +596,40 @@ func (tm *Tables) Validate(ctx context.Context) error {
 
 	// TODO compare it that way, that the DB table is the master and Go objects must be updated
 	// once they do not match the database version.
+	var mErr *multierror.Error
+OuterLoop:
 	for tn, tbl := range tm.tm {
 		dbTblCols, ok := tMap[tn]
 		if !ok {
-			return errors.NotFound.Newf("[ddl] Table %q not found in database. Available tables: %v", tn, dbTableNames)
+			mErr = multierror.Append(mErr, fmt.Errorf("[ddl] 1648326007153 Table %q not found in database. Available tables: %v", tn, dbTableNames))
+			continue OuterLoop
 		}
 		if want, have := len(tbl.Columns), len(dbTblCols); want > have {
-			return errors.Mismatch.Newf("[ddl] Table %q has more columns (count %d) than its object (column count %d) in the database.", tn, want, have)
+			mErr = multierror.Append(mErr, fmt.Errorf("[ddl] 1648326097726 Table %q has more columns (count %d) than its object (column count %d) in the database", tn, want, have))
+			continue OuterLoop
 		}
 		for idx, c := range tbl.Columns {
 			dbCol := dbTblCols[idx]
 			if c.Field != dbCol.Field {
-				return errors.Mismatch.Newf("[ddl] Table %q with column name %q at index %d does not match database column name %q",
+				mErr = multierror.Append(mErr, fmt.Errorf("[ddl] 1648326113065 Table %q with column name %q at index %d does not match database column name %q",
 					tn, c.Field, idx, dbCol.Field,
-				)
+				))
 			}
 			if c.ColumnType != dbCol.ColumnType {
-				return errors.Mismatch.Newf("[ddl] Table %q with Go column name %q does not match MySQL column type. MySQL: %q Go: %q.",
+				mErr = multierror.Append(mErr, fmt.Errorf("[ddl] 1648326121587 Table %q with Go column name %q does not match MySQL column type. MySQL: %q Go: %q",
 					tn, c.Field, dbCol.ColumnType, c.ColumnType,
-				)
+				))
 			}
 			if c.Null != dbCol.Null {
-				return errors.Mismatch.Newf("[ddl] Table %q with column name %q does not match MySQL null types. MySQL: %q Go: %q",
+				mErr = multierror.Append(mErr, fmt.Errorf("[ddl] Table %q with column name %q does not match MySQL null types. MySQL: %q Go: %q",
 					tn, c.Field, dbCol.Null, c.Null,
-				)
+				))
 			}
 			// maybe more comparisons
 		}
 	}
 
-	return nil
+	return mErr.ErrorOrNil()
 }
 
 // Truncate force truncates all tables by also disabling foreign keys. Does not
@@ -646,7 +641,7 @@ func (tm *Tables) Truncate(ctx context.Context, o Options) error {
 	return DisableForeignKeys(ctx, o.exec(tm.ConnPool.DB), func() error {
 		for _, t := range tm.tm {
 			if err := t.Truncate(ctx, o); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 		}
 		return nil
@@ -669,7 +664,7 @@ func (tm *Tables) Optimize(ctx context.Context, o Options) error {
 	}
 	o.sqlAddShouldWait(buf)
 	_, err := o.exec(tm.ConnPool.DB).ExecContext(ctx, buf.String())
-	return errors.WithStack(err)
+	return err
 }
 
 // TableLock defines the tables which are getting locked. Only one of the five
@@ -687,14 +682,14 @@ type TableLock struct {
 
 func (tl TableLock) writeTable(buf *bytes.Buffer) error {
 	if err := dml.IsValidIdentifier(tl.Name); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	dml.Quoter.WriteQualifierName(buf, tl.Schema, tl.Name)
 
 	if tl.Alias != "" {
 		if err := dml.IsValidIdentifier(tl.Alias); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 		buf.WriteString(" AS ")
 		dml.Quoter.WriteQualifierName(buf, "", tl.Alias)
@@ -734,7 +729,7 @@ func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fn fu
 			buf.WriteByte(',')
 		}
 		if err := t.writeTable(buf); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	o.sqlAddShouldWait(buf)
@@ -742,16 +737,16 @@ func (tm *Tables) Lock(ctx context.Context, o Options, tables []TableLock, fn fu
 	return tm.SingleConnection(ctx,
 		func(singleCon *dml.Conn) error {
 			if _, err = singleCon.DB.ExecContext(ctx, buf.String()); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 			if err := fn(singleCon); err != nil {
-				return errors.WithStack(err)
+				return err
 			}
 			return nil
 		},
 		func(singleCon *dml.Conn) error { // this function rus in a defer block.
 			_, err := singleCon.DB.ExecContext(ctx, "UNLOCK TABLES")
-			return errors.WithStack(err)
+			return err
 		},
 	)
 }
@@ -769,7 +764,7 @@ func (tm *Tables) Transaction(ctx context.Context, opts *sql.TxOptions, fn func(
 func (tm *Tables) SingleConnection(ctx context.Context, fns ...func(*dml.Conn) error) (err error) {
 	c, err := tm.ConnPool.Conn(ctx)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	deferFunc := func(*dml.Conn) error { return nil }
 	if lfns := len(fns); lfns > 1 {
@@ -778,15 +773,15 @@ func (tm *Tables) SingleConnection(ctx context.Context, fns ...func(*dml.Conn) e
 	}
 	defer func() {
 		if err2 := deferFunc(c); err == nil && err2 != nil {
-			err = errors.WithStack(err2)
+			err = err2
 		}
 		if err2 := c.Close(); err == nil && err2 != nil {
-			err = errors.WithStack(err2)
+			err = err2
 		}
 	}()
 	for _, fn := range fns {
 		if err := fn(c); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	return nil

@@ -15,11 +15,12 @@
 package ddl
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 )
 
@@ -62,10 +63,10 @@ func (ms *MasterStatus) MapColumns(rc *dml.ColumnMap) error {
 		case "Executed_Gtid_Set", "4":
 			rc.String(&ms.ExecutedGTIDSet)
 		default:
-			return errors.NotFound.Newf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
+			return fmt.Errorf("[ddl] 1648321965877 Column %q not found in SHOW MASTER STATUS", col)
 		}
 	}
-	return errors.WithStack(rc.Err())
+	return rc.Err()
 }
 
 // Compare compares with another MasterStatus. Returns 1 if left hand side is
@@ -124,12 +125,12 @@ func (ms MasterStatus) WriteTo(w io.Writer) (n int64, err error) {
 func (ms *MasterStatus) FromString(str string) error {
 	c := strings.IndexByte(str, ';')
 	if c < 1 {
-		return errors.NotFound.Newf("[ddl] MasterStatus FromString: Delimiter semi-colon not found.")
+		return errors.New("[ddl] 1648322061911 MasterStatus FromString: Delimiter semi-colon not found")
 	}
 
 	pos, err := strconv.ParseUint(str[c+1:], 10, 32)
 	if err != nil {
-		return errors.NotValid.Newf("[ddl] MasterStatus FromString: %s", err)
+		return fmt.Errorf("[ddl] 1648322091203 MasterStatus FromString: %w", err)
 	}
 	ms.File = str[:c]
 	ms.Position = uint(pos)

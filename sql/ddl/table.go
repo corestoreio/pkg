@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
@@ -165,10 +164,10 @@ func newTable(rc *dml.ColumnMap) (*Table, error) {
 		case "MAX_INDEX_LENGTH", "21":
 			rc.NullUint64(&t.MaxIndexLength)
 		default:
-			return nil, errors.NotSupported.Newf("[ddl] Column %q not supported", col)
+			return nil, fmt.Errorf("[ddl] Column %q not supported", col)
 		}
 	}
-	return t, errors.WithStack(rc.Err())
+	return t, rc.Err()
 }
 
 // IsView determines if a table is a view. Either via system attribute or via
@@ -278,7 +277,12 @@ func (t *Table) runExec(ctx context.Context, o Options, qry string) error {
 		te = t.dcp.DB
 	}
 	if _, err := o.exec(te).ExecContext(ctx, qry); err != nil {
-		return errors.Wrapf(err, "[ddl] failed to exec %q", qry) // please do change this return signature, saves an alloc
+		return &dml.Error{
+			Err:     err,
+			Message: "Table.runExec",
+			Marker:  "1648323873945",
+			Query:   qry,
+		} // please do change this return signature, saves an alloc
 	}
 	return nil
 }
@@ -291,7 +295,7 @@ func (t *Table) Truncate(ctx context.Context, o Options) error {
 		return nil
 	}
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	var buf strings.Builder
 	buf.WriteString("TRUNCATE TABLE ")
@@ -308,10 +312,10 @@ func (t *Table) Truncate(ctx context.Context, o Options) error {
 // https://mariadb.com/kb/en/rename-table/
 func (t *Table) Rename(ctx context.Context, newTableName string, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	if err := dml.IsValidIdentifier(newTableName); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	var buf strings.Builder
 	buf.WriteString("RENAME TABLE ")
@@ -334,10 +338,10 @@ func (t *Table) Rename(ctx context.Context, newTableName string, o Options) erro
 // https://mariadb.com/kb/en/rename-table/
 func (t *Table) Swap(ctx context.Context, other string, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	if err := dml.IsValidIdentifier(other); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	tmp := TableName("", t.Name, strconv.FormatInt(time.Now().UnixNano(), 10))
@@ -371,7 +375,7 @@ func (t *Table) getTyp() string {
 // call WithDB before.
 func (t *Table) Drop(ctx context.Context, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
-		return errors.Wrap(err, "[ddl] Drop table name")
+		return err
 	}
 	var buf strings.Builder
 	buf.WriteString("DROP ")
@@ -390,7 +394,7 @@ func (t *Table) Drop(ctx context.Context, o Options) error {
 // Optimize optimizes a table. https://mariadb.com/kb/en/optimize-table/
 func (t *Table) Optimize(ctx context.Context, o Options) error {
 	if err := dml.IsValidIdentifier(t.Name); err != nil {
-		return errors.Wrap(err, "[ddl] Optimize table name")
+		return err
 	}
 	var buf strings.Builder
 	buf.WriteString("OPTIMIZE TABLE ")

@@ -21,16 +21,17 @@ import (
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
-var _ dml.QueryBuilder = (*ddl.MasterStatus)(nil)
-var _ dml.ColumnMapper = (*ddl.MasterStatus)(nil)
-var _ io.WriterTo = (*ddl.MasterStatus)(nil)
+var (
+	_ dml.QueryBuilder = (*ddl.MasterStatus)(nil)
+	_ dml.ColumnMapper = (*ddl.MasterStatus)(nil)
+	_ io.WriterTo      = (*ddl.MasterStatus)(nil)
+)
 
 func TestMasterStatus_Compare(t *testing.T) {
 	t.Parallel()
@@ -77,18 +78,18 @@ func TestMasterStatus_FromString(t *testing.T) {
 		in           string
 		wantFile     string
 		wantPosition uint
-		wantErrKind  errors.Kind
+		wantErr      string
 		wantString   string
 	}{
-		{"mysql-bin.000004;545460", "mysql-bin.000004", 545460, errors.NoKind, "mysql-bin.000004;545460"},
-		{"mysql-bin.000004;", "", 0, errors.NotValid, ""},
-		{"mysql-bin.000004", "", 0, errors.NotFound, ""},
+		{"mysql-bin.000004;545460", "mysql-bin.000004", 545460, "", "mysql-bin.000004;545460"},
+		{"mysql-bin.000004;", "", 0, "[ddl] 1648322091203 MasterStatus FromString: strconv.ParseUint: parsing \"\\uf8ff\": invalid syntax", ""},
+		{"mysql-bin.000004", "", 0, `[ddl] 1648322061911 MasterStatus FromString: Delimiter semi-colon not found`, ""},
 	}
 	for i, test := range tests {
 		haveMS := &ddl.MasterStatus{}
 		haveErr := haveMS.FromString(test.in)
-		if !test.wantErrKind.Empty() {
-			assert.True(t, test.wantErrKind.Match(haveErr), "Index %d: %+v", i, haveErr)
+		if test.wantErr != "" {
+			assert.EqualError(t, haveErr, test.wantErr, "Index %d: %+v", i, haveErr)
 			assert.Empty(t, haveMS.File, "Index %d", i)
 			assert.Empty(t, haveMS.Position, "Index %d", i)
 			assert.Empty(t, haveMS.String(), "Index %d", i)

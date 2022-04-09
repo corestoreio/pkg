@@ -22,13 +22,8 @@ import (
 
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dmltest"
-	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/assert"
 )
-
-func init() {
-	null.MustSetJSONMarshaler(json.Marshal, json.Unmarshal)
-}
 
 func TestLoadForeignKeys_Integration(t *testing.T) {
 	dbc := dmltest.MustConnectDB(t)
@@ -99,7 +94,7 @@ func TestLoadKeyRelationships(t *testing.T) {
 	var buf bytes.Buffer
 	krs.Debug(&buf)
 	t.Log("\n", buf.String())
-	assert.LenBetween(t, buf.String(), 1840, 2380)
+	assert.LenBetween(t, buf.String(), 1840, 3350)
 
 	t.Run("ManyToMany", func(t *testing.T) {
 		targetTable, targetColumn := krs.ManyToManyTarget("athlete_team_member", "team_id")

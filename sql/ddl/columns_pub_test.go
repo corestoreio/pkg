@@ -21,7 +21,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/ddl"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
@@ -71,25 +70,25 @@ func TestLoadColumns_Integration(t *testing.T) {
 	tests := []struct {
 		table          string
 		want           string
-		wantErrKind    errors.Kind
+		wantErr        bool
 		wantJoinFields string
 	}{
 		{
 			"core_config_data_test3",
 			"[{\"Field\":\"config_id\",\"Pos\":1,\"Default\":null,\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"auto_increment\",\"Comment\":\"Config Id\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"scope\",\"Pos\":2,\"Default\":\"'default'\",\"Null\":\"NO\",\"DataType\":\"varchar\",\"CharMaxLength\":8,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"varchar(8)\",\"Key\":\"MUL\",\"Extra\":\"\",\"Comment\":\"Config Scope\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"scope_id\",\"Pos\":3,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Scope Id\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"path\",\"Pos\":4,\"Default\":\"'general'\",\"Null\":\"NO\",\"DataType\":\"varchar\",\"CharMaxLength\":255,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"varchar(255)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Path\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"value\",\"Pos\":5,\"Default\":\"NULL\",\"Null\":\"YES\",\"DataType\":\"text\",\"CharMaxLength\":65535,\"Precision\":null,\"Scale\":null,\"ColumnType\":\"text\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Config Value\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"}]",
-			errors.NoKind,
+			false,
 			"config_id_scope_scope_id_path_value",
 		},
 		{
 			"catalog_category_product_test4",
 			"[{\"Field\":\"entity_id\",\"Pos\":1,\"Default\":null,\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"PRI\",\"Extra\":\"auto_increment\",\"Comment\":\"Entity ID\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"category_id\",\"Pos\":2,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"\",\"Comment\":\"Category ID\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"product_id\",\"Pos\":3,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(10) unsigned\",\"Key\":\"PRI\",\"Extra\":\"\",\"Comment\":\"Product ID\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"},{\"Field\":\"position\",\"Pos\":4,\"Default\":\"0\",\"Null\":\"NO\",\"DataType\":\"int\",\"CharMaxLength\":null,\"Precision\":10,\"Scale\":0,\"ColumnType\":\"int(11)\",\"Key\":\"\",\"Extra\":\"\",\"Comment\":\"Position\",\"Generated\":\"NEVER\",\"GenerationExpression\":null,\"Aliases\":null,\"Uniquified\":false,\"StructTag\":\"\"}]",
-			errors.NoKind,
+			false,
 			"entity_id_category_id_product_id_position",
 		},
 		{
 			"non_existent_table",
 			"",
-			errors.NotFound,
+			true,
 			"",
 		},
 	}
@@ -97,15 +96,16 @@ func TestLoadColumns_Integration(t *testing.T) {
 	for i, test := range tests {
 		tc, err := ddl.LoadColumns(context.TODO(), dbc.DB, test.table)
 		cols1 := tc[test.table]
-		if !test.wantErrKind.Empty() {
-			assert.True(t, test.wantErrKind.Match(err), "Index %d", i)
-		} else {
-			assert.NoError(t, err, "Index %d\n%+v", i, err)
-			data, err := json.Marshal(cols1)
-			assert.NoError(t, err)
-			assert.Equal(t, test.want, string(data), "Index %d\n%q", i, data)
-			assert.Equal(t, test.wantJoinFields, cols1.JoinFields("_"), "Index %d", i)
+		if test.wantErr {
+			assert.Error(t, err, "Index %d", i)
+			return
 		}
+		assert.NoError(t, err, "Index %d\n%+v", i, err)
+		data, err := json.Marshal(cols1)
+		assert.NoError(t, err)
+		assert.Equal(t, test.want, string(data), "Index %d\n%q", i, data)
+		assert.Equal(t, test.wantJoinFields, cols1.JoinFields("_"), "Index %d", i)
+
 	}
 }
 

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/bufferpool"
@@ -100,23 +99,23 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		var err error
 		rows, err = db.QueryContext(ctx, selAllTablesColumns)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadColumns QueryContext for tables %v", tables)
+			return nil, fmt.Errorf("[ddl] 1648321715195 LoadColumns QueryContext for tables %v with: %w", tables, err)
 		}
 	} else {
 		sqlStr, _, err := dml.Interpolate(selTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadColumns dml.ExpandPlaceHolders for tables %v", tables)
+			return nil, fmt.Errorf("[ddl] 1648321729034 LoadColumns dml.ExpandPlaceHolders for tables %v with %w", tables, err)
 		}
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[ddl] LoadColumns QueryContext for tables %v with WHERE clause", tables)
+			return nil, fmt.Errorf("[ddl] 1648321748905 LoadColumns QueryContext for tables %v with WHERE clause: %w", tables, err)
 		}
 	}
 	var err error
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
+			err = fmt.Errorf("[ddl] 1648321767806 Close failed: %w", err2)
 		}
 	}()
 
@@ -124,13 +123,13 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 	rc := new(dml.ColumnMap)
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
-			return nil, errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tables)
+			return nil, fmt.Errorf("[ddl] 1648321838511 Scan Query for tables: %v with: %w", tables, err)
 		}
 		var c *Column
 		var tableName string
 		c, tableName, err = newColumn(rc)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, fmt.Errorf("[ddl] 1648321855131 newColumn failed: %w", err)
 		}
 
 		if _, ok := tc[tableName]; !ok {
@@ -141,10 +140,10 @@ func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[str
 		tc[tableName] = append(tc[tableName], c)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, fmt.Errorf("[ddl] 1648321890165 rows.Err: %w", err)
 	}
 	if len(tc) == 0 {
-		return nil, errors.NotFound.Newf("[ddl] Tables %v not found", tables)
+		return nil, fmt.Errorf("[ddl] Tables %v not found", tables)
 	}
 	return tc, err
 }
@@ -407,10 +406,10 @@ func newColumn(rc *dml.ColumnMap) (c *Column, tableName string, err error) {
 		case "struct_tag":
 			rc.String(&c.StructTag)
 		default:
-			return nil, "", errors.NotSupported.Newf("[ddl] Column %q not supported or alias not found", col)
+			return nil, "", fmt.Errorf("[ddl] 1648321925121 Column %q not supported or alias not found", col)
 		}
 	}
-	return c, tableName, errors.WithStack(rc.Err())
+	return c, tableName, rc.Err()
 }
 
 // GoComment creates a comment from a database column to be used in Go code
