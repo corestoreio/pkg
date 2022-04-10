@@ -1281,6 +1281,7 @@ func Error(t TestingT, err error, msgAndArgs ...interface{}) bool {
 }
 
 // ErrorIsKind asserts that an error matches the expected Kind.
+// deprecated no replacement
 func ErrorIsKind(t TestingT, expected errors.Kind, err error, msgAndArgs ...interface{}) {
 	if err == nil {
 		Error(t, err, msgAndArgs...)
@@ -1637,7 +1638,7 @@ func MatchesGolden(t TestingT, pathGoldenFile string, haveData []byte, updateGol
 	wantData = goldenCB(wantData)
 
 	if updateGolden {
-		NoError(t, ioutil.WriteFile(pathGoldenFile, haveData, 0644))
+		NoError(t, ioutil.WriteFile(pathGoldenFile, haveData, 0o644))
 	}
 
 	if !bytes.Equal(wantData, haveData) {
