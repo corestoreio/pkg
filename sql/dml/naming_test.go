@@ -17,7 +17,6 @@ package dml
 import (
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
@@ -123,7 +122,7 @@ func TestIsValidIdentifier(t *testing.T) {
 }
 
 func TestIsValidIdentifier2(t *testing.T) {
-	assert.ErrorIsKind(t, errors.NotValid, IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')"))
+	assert.Error(t, IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')"))
 	assert.NoError(t, IsValidIdentifier("table.col"))
 }
 

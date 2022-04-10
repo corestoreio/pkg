@@ -2,10 +2,10 @@
 Query: "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'"
 
 "Conn.ExecContext" Took: 0s
-Query: "CREATE DATABASE IF NOT EXISTS `{{SCHEMA}}`"
+Query: "CREATE DATABASE IF NOT EXISTS `test`"
 
 "Conn.ExecContext" Took: 0s
-Query: "ALTER DATABASE `{{SCHEMA}}` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
+Query: "ALTER DATABASE `test` DEFAULT CHARACTER SET='utf8mb4' COLLATE='utf8mb4_unicode_ci'"
 
 "Conn.Close" Took: 0s
 
@@ -36,11 +36,11 @@ NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bern
 Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
 
 "Stmt.QueryContext" Took: 0s
-Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
+Query: "Prepared ID:RANJID1"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Bernd"}}
 
 "Stmt.Close" Took: 0s
-Query: "/*$ID$RANJID1*/SELECT * FROM `dml_people` WHERE (`name` = ?)"
+Query: "Prepared ID:RANJID1"
 
 "Conn.QueryContext" Took: 0s
 Query: "/*$ID$RANJID2*/SELECT SQL_NO_CACHE * FROM `dml_people` WHERE (`name` = 'Das Brot')"
@@ -54,17 +54,14 @@ NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo
 Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
 
 "Stmt.ExecContext" Took: 0s
-Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
+Query: "Prepared ID:RANJID3"
 NamedArgs: []driver.NamedValue{driver.NamedValue{Name:"", Ordinal:1, Value:"Hugo"}}
 
 "Stmt.Close" Took: 0s
-Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`=?"
+Query: "Prepared ID:RANJID3"
 
 "Conn.ExecContext" Took: 0s
 Query: "/*$ID$RANJID3*/UPDATE `dml_people` SET `name`='Bernie'"
-
-"Conn.ExecContext" Took: 0s
-Query: "DROP DATABASE IF EXISTS `{{SCHEMA}}`"
 
 "Conn.Close" Took: 0s
 

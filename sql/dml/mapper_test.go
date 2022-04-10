@@ -83,7 +83,7 @@ func TestColumnMap_BinaryText(t *testing.T) {
 
 	cm.CheckValidUTF8 = true
 	err := cm.Text(&textBinaryEncoder{data: []byte("\xc0\x80")}).Err()
-	assert.ErrorIsKind(t, errors.NotValid, err)
+	assert.Error(t, err)
 }
 
 func TestColumnMap_Nil_Pointers(t *testing.T) {
@@ -169,7 +169,7 @@ func TestScannedColumn_Scan(t *testing.T) {
 	assert.Exactly(t, "<nil>", sc.String())
 
 	err := sc.Scan(uint8(1))
-	assert.ErrorIsKind(t, errors.NotSupported, err)
+	assert.Error(t, err)
 }
 
 func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
@@ -245,7 +245,7 @@ func TestColumnMap_Scan_Empty_Bytes(t *testing.T) {
 	})
 	t.Run("Time", func(t *testing.T) {
 		var v time.Time
-		assert.EqualError(t, cm.Time(&v).Err(), "[dml] Column \"SomeColumn\" Time cannot be empty.")
+		assert.Error(t, cm.Time(&v).Err())
 		assert.True(t, v.IsZero(), "Got: %s", v.String())
 		cm.scanErr = nil
 	})

@@ -52,12 +52,12 @@ func (sr someRecord) MapColumns(cm *ColumnMap) error {
 func TestInsert_NoArguments(t *testing.T) {
 	t.Run("ToSQL", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b").BuildValues()
-		compareToSQL2(t, ins, errors.NoKind,
+		compareToSQL2(t, ins, false,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
 	t.Run("WithDBR.ToSQL", func(t *testing.T) {
 		ins := NewInsert("tableA").AddColumns("a", "b").WithDBR(dbMock{})
-		compareToSQL2(t, ins, errors.NoKind,
+		compareToSQL2(t, ins, false,
 			"INSERT INTO `tableA` (`a`,`b`) VALUES (?,?)")
 	})
 }
@@ -65,14 +65,14 @@ func TestInsert_NoArguments(t *testing.T) {
 func TestInsert_SetValuesCount(t *testing.T) {
 	t.Run("No BuildValues", func(t *testing.T) {
 		ins := NewInsert("a").AddColumns("b", "c")
-		compareToSQL2(t, ins, errors.NoKind,
+		compareToSQL2(t, ins, false,
 			"INSERT INTO `a` (`b`,`c`) VALUES ",
 		)
 		assert.Exactly(t, []string{"b", "c"}, ins.qualifiedColumns)
 	})
 	t.Run("BuildValues", func(t *testing.T) {
 		ins := NewInsert("a").AddColumns("b", "c").BuildValues()
-		compareToSQL2(t, ins, errors.NoKind,
+		compareToSQL2(t, ins, false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 		)
 		assert.Exactly(t, []string{"b", "c"}, ins.qualifiedColumns)
@@ -80,14 +80,14 @@ func TestInsert_SetValuesCount(t *testing.T) {
 	t.Run("set to two", func(t *testing.T) {
 		compareToSQL2(t,
 			NewInsert("a").AddColumns("b", "c").SetRowCount(2).BuildValues(),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		)
 	})
 	t.Run("with values", func(t *testing.T) {
 		ins := NewInsert("dml_people").AddColumns("name", "key")
 		inA := ins.WithDBR(nil)
-		compareToSQL2(t, inA.TestWithArgs("Barack", "44"), errors.NoKind, "INSERT INTO `dml_people` (`name`,`key`) VALUES (?,?)",
+		compareToSQL2(t, inA.TestWithArgs("Barack", "44"), false, "INSERT INTO `dml_people` (`name`,`key`) VALUES (?,?)",
 			"Barack", "44",
 		)
 		assert.Exactly(t, []string{"name", "key"}, ins.qualifiedColumns)
@@ -98,7 +98,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 		person.Email.Data = "obama@whitehouse.gov"
 		compareToSQL2(t,
 			NewInsert("dml_people").AddColumns("name", "email").WithDBR(dbMock{}).TestWithArgs(Qualify("", &person)),
-			errors.NoKind,
+			false,
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES (?,?)",
 			"Barack", "obama@whitehouse.gov",
 		)
@@ -216,7 +216,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			OrderByDesc("id"),
 		).
 			WithDBR(nil).TestWithArgs(897),
-			errors.NoKind,
+			false,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = ?) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = 897) AND (`e` = 'wat') ORDER BY `id` DESC ON DUPLICATE KEY UPDATE `a`=VALUES(`a`), `b`=VALUES(`b`)",
 			int64(897),
@@ -240,7 +240,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			Paginate(1, 20),
 		).
 			WithDBR(dbMock{}).TestWithArgs(4444),
-			errors.NoKind,
+			false,
 			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 0,20",
 			"INSERT INTO `tableA` (`a`,`b`,`c`) SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 4444) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 0,20",
 			int64(4444),
@@ -259,7 +259,7 @@ func TestInsert_FromSelect(t *testing.T) {
 				Column("e").PlaceHolder(),
 			),
 		).WithDBR(dbMock{}).TestWithArgs("Guys!", 4444),
-			errors.NoKind,
+			false,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = ?) AND (`a` IN (1,2,3)) AND (`e` = ?)",
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `something_id`, `user_id` FROM `some_table` WHERE (`d` = 'Guys!') AND (`a` IN (1,2,3)) AND (`e` = 4444)",
 			"Guys!", int64(4444),
@@ -275,7 +275,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 		ins := NewInsert("dml_people").AddColumns("name", "email").
 			WithDBR(dbMock{}).TestWithArgs(Qualify("", p))
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES (?,?)",
 			"INSERT INTO `dml_people` (`name`,`email`) VALUES ('Pike','pikes@peak.co')",
 			"Pike", "pikes@peak.co",
@@ -316,7 +316,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 		ins := NewInsert("tableA").AddColumns("a", "b").FromSelect(sel).WithDBR(dbMock{})
 
-		compareToSQL(t, ins.TestWithArgs(Qualify("dp", p), Qualify("dg", p2), sql.Named("xSize", 678) /*fPlaceholder*/, 3.14159), errors.NoKind,
+		compareToSQL(t, ins.TestWithArgs(Qualify("dp", p), Qualify("dg", p2), sql.Named("xSize", 678) /*fPlaceholder*/, 3.14159), false,
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = ?) WHERE (`dg`.`dob` > ?) AND (`age` < 56) AND (`size` > ?) AND ((`dp`.`name` = ?) OR (`e` = 'wat')) AND (`fPlaceholder` <= ?) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = ?) AND (`n` = 'wh3r3') ORDER BY `l`",
 			"INSERT INTO `tableA` (`a`,`b`) SELECT `a`, `b` FROM `dml_person` AS `dp` INNER JOIN `dml_group` AS `dg` ON (`dp`.`id` = 20180128) WHERE (`dg`.`dob` > 1970) AND (`age` < 56) AND (`size` > 678) AND ((`dp`.`name` = 'Hans Wurst') OR (`e` = 'wat')) AND (`fPlaceholder` <= 3.14159) AND (`g` > 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING (`dp`.`email` = 'hans@wurst.com') AND (`n` = 'wh3r3') ORDER BY `l`",
 			int64(20180128), int64(1970), int64(678), "Hans Wurst", 3.14159, "hans@wurst.com",
@@ -330,7 +330,7 @@ func TestInsert_Replace_Ignore(t *testing.T) {
 		Replace().Ignore().
 		AddColumns("b", "c").
 		WithDBR(dbMock{}).TestWithArgs(1, 2, 3, 4),
-		errors.NoKind,
+		false,
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (1,2),(3,4)",
 		int64(1), int64(2), int64(3), int64(4),
@@ -341,7 +341,7 @@ func TestInsert_WithoutColumns(t *testing.T) {
 	t.Run("each column in its own Arg", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").SetRowCount(3).
 			WithDBR(dbMock{}).TestWithArgs(2046, 33, 3, 2046, 34, 3, 2046, 35, 3),
-			errors.NoKind,
+			false,
 			"INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)",
 			int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3), int64(2046), int64(35), int64(3),
@@ -357,7 +357,7 @@ func TestInsert_sqlNamedArg(t *testing.T) {
 			{Name: "linked_product_id", Value: 33},
 			{Name: "link_type_id", Value: 3},
 		}),
-			errors.NoKind,
+			false,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
 			int64(2046), int64(33), int64(3),
@@ -371,7 +371,7 @@ func TestInsert_sqlNamedArg(t *testing.T) {
 	//			Column("type_name").Expression("CONCAT(`product_id`,'Manufacturer')"),
 	//			Column("link_type_id").Int64(3),
 	//		),
-	//		errors.NoKind,
+	//		false,
 	//		"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,CONCAT(`product_id`,'Manufacturer'),?)",
 	//		"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,CONCAT(`product_id`,'Manufacturer'),3)",
 	//		int64(2046), int64(33), int64(3),
@@ -388,7 +388,7 @@ func TestInsert_sqlNamedArg(t *testing.T) {
 			{Name: "linked_product_id", Value: 34},
 			{Name: "link_type_id", Value: 3},
 		}),
-			errors.NoKind,
+			false,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)",
 			int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3),
@@ -429,7 +429,7 @@ func TestInsert_AddArguments(t *testing.T) {
 	t.Run("single WithDBR", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").WithDBR(dbMock{}).TestWithArgs(1, 2),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
 			int64(1), int64(2),
@@ -440,7 +440,7 @@ func TestInsert_AddArguments(t *testing.T) {
 			NewInsert("a").AddColumns("b", "c").
 				OnDuplicateKey().
 				WithDBR(dbMock{}).TestWithArgs(1, 2, 3, 4, 5, 6),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			int64(1), int64(2), int64(3), int64(4), int64(5), int64(6),
@@ -449,7 +449,7 @@ func TestInsert_AddArguments(t *testing.T) {
 	t.Run("single AddValues", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").WithDBR(dbMock{}).TestWithArgs(1, 2),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
 			int64(1), int64(2),
@@ -459,7 +459,7 @@ func TestInsert_AddArguments(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
 				OnDuplicateKey().WithDBR(dbMock{}).TestWithArgs(1, 2, 3, 4, 5, 6),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			int64(1), int64(2), int64(3), int64(4), int64(5), int64(6),
@@ -473,7 +473,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
 			AddOnDuplicateKeyExclude("entity_id").
 			WithDBR(dbMock{}).TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2),
-			errors.NoKind,
+			false,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
@@ -486,7 +486,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").Time(now())).
 			WithDBR(dbMock{}).TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2),
-			errors.NoKind,
+			false,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
@@ -501,7 +501,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 		insA := ins.WithDBR(dbMock{}).TestWithArgs(
 			1, "Martin", "martin@go.go", 3, "2019-01-01", 2, sql.Named("time", now()),
 		)
-		compareToSQL(t, insA, errors.NoKind,
+		compareToSQL(t, insA, false,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2), now(),
@@ -515,7 +515,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").PlaceHolder())
 		insA := ins.WithDBR(dbMock{})
-		compareToSQL2(t, insA.TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2, now()), errors.NoKind,
+		compareToSQL2(t, insA.TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2, now()), false,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2), now(),
 		)
@@ -528,7 +528,7 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 			AddOnDuplicateKeyExclude("entity_id").
 			AddOnDuplicateKey(Column("created_at").NamedArg("time")).
 			WithDBR(dbMock{})
-		compareToSQL(t, ins.TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2, sql.Named("time", now())), errors.NoKind,
+		compareToSQL(t, ins.TestWithArgs(1, "Martin", "martin@go.go", 3, "2019-01-01", 2, sql.Named("time", now())), false,
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
 			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
 			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2), now(),
@@ -540,13 +540,13 @@ func TestInsert_OnDuplicateKey(t *testing.T) {
 		ins := NewInsert("customer_gr1d_flat").
 			AddColumns("name", "email", "group_id", "created_at", "website_id").
 			OnDuplicateKey().WithDBR(dbMock{}).TestWithArgs("Martin", "martin@go.go", 3, "2019-01-01", 2)
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES ('Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
 		)
 		// testing for being idempotent
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"", //"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES ('Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
 			"Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
@@ -584,9 +584,9 @@ func TestInsert_Parallel_Bind_Slice(t *testing.T) {
 		// TODO try to move this above to see if it's race free.
 		insA := ins.WithDBR(nil)
 
-		compareToSQL(t, insA.TestWithArgs(Qualify("", persons)), errors.NoKind, wantPH, wantIP, wantArgs...)
+		compareToSQL(t, insA.TestWithArgs(Qualify("", persons)), false, wantPH, wantIP, wantArgs...)
 
-		compareToSQL(t, insA.TestWithArgs(Qualify("", persons)), errors.NoKind, wantPH, wantIP, wantArgs...)
+		compareToSQL(t, insA.TestWithArgs(Qualify("", persons)), false, wantPH, wantIP, wantArgs...)
 	})
 }
 
@@ -598,7 +598,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 				Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
 			).BuildValues()
 
-		compareToSQL2(t, ins, errors.NoKind,
+		compareToSQL2(t, ins, false,
 			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0))",
 		)
 	})
@@ -611,7 +611,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 	//			Column("customer_id").Expr("IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)"),
 	//		).BuildValues()
 	//
-	//	compareToSQL2(t, ins, errors.NoKind,
+	//	compareToSQL2(t, ins, false,
 	//		"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0)),(?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0))",
 	//	)
 	//})
@@ -637,7 +637,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 					),
 				),
 			).BuildValues()
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`group_id`) VALUES (?,?,(SELECT `group_id` FROM `customer_group` WHERE (`name` = ?)))",
 			"",
 		)
@@ -654,7 +654,7 @@ func TestInsert_Expressions_In_Values(t *testing.T) {
 					),
 				),
 			).BuildValues()
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `catalog_product_customer_relation` (`product_id`,`sort_order`,`customer_id`,`group_id`) VALUES (?,?,IFNULL(SELECT entity_id FROM customer_entity WHERE email like ?,0),(SELECT `group_id` FROM `customer_group` WHERE (`name` = ?)))",
 			"",
 		)

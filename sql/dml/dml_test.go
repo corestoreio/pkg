@@ -288,15 +288,15 @@ func installFixtures(t testing.TB, db *sql.DB, c *installFixturesConfig) {
 // interpolated string. This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL(
-	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
+	t testing.TB, qb QueryBuilder, wantErr bool,
 	wantSQLPlaceholders, wantSQLInterpolated string,
 	wantArgs ...any,
 ) {
 	sqlStr, args, err := qb.ToSQL()
-	if wantErrKind.Empty() {
+	if !wantErr {
 		assert.NoError(t, err)
 	} else {
-		assert.ErrorIsKind(t, wantErrKind, err)
+		assert.Error(t, err)
 	}
 
 	if wantSQLPlaceholders != "" {
@@ -315,10 +315,10 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	if wantErrKind.Empty() {
+	if !wantErr {
 		assert.NoError(t, err)
 	} else {
-		assert.ErrorIsKind(t, wantErrKind, err)
+		assert.Error(t, err)
 	}
 	assert.Exactly(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 	assert.Nil(t, args, "DBR should be nil when the SQL string gets interpolated")
@@ -327,15 +327,15 @@ func compareToSQL(
 // compareToSQL2 This function also exists in file dml_public_test.go to
 // avoid import cycles when using a single package dedicated for testing.
 func compareToSQL2(
-	t testing.TB, qb QueryBuilder, wantErrKind errors.Kind,
+	t testing.TB, qb QueryBuilder, wantErr bool,
 	wantSQL string, wantArgs ...any,
 ) {
 	t.Helper()
 	sqlStr, args, err := qb.ToSQL()
-	if wantErrKind.Empty() {
+	if !wantErr {
 		assert.NoError(t, err, "With SQL %q", wantSQL)
 	} else {
-		assert.ErrorIsKind(t, wantErrKind, err)
+		assert.Error(t, err)
 	}
 	assert.Exactly(t, wantSQL, sqlStr, "SQL strings do not match")
 	assert.Exactly(t, wantArgs, args, "Arguments do not match")

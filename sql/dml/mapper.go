@@ -23,7 +23,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/storage/null"
 	"github.com/corestoreio/pkg/util/byteconv"
 )
@@ -244,7 +243,7 @@ func (s *scannedColumn) Scan(src any) (err error) {
 	case nil:
 		s.field = 'n'
 	default:
-		err = errors.NotSupported.Newf("[dml] ColumnMap.Scan does not yet support type %T with value: %#v", val, val)
+		err = fmt.Errorf("[dml] 1649532685909 ColumnMap.Scan does not yet support type %T with value: %#v", val, val)
 	}
 	return err
 }
@@ -265,7 +264,7 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 	if !b.initialized {
 		cols, err := r.Columns()
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 
 		b.setColumns(cols)
@@ -285,10 +284,7 @@ func (b *ColumnMap) Scan(r *sql.Rows) error {
 	} else {
 		b.Count++
 	}
-	if err := r.Scan(b.scanArgs...); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+	return r.Scan(b.scanArgs...)
 }
 
 // Err returns the delayed error from one of the scans and parsings. Function is
@@ -350,15 +346,15 @@ func (b *ColumnMap) Bool(ptr *bool) *ColumnMap {
 		case 'y':
 			*ptr, _, b.scanErr = byteconv.ParseBool(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532847084 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		case 's':
 			*ptr, b.scanErr = strconv.ParseBool(v.string)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532850027 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -390,13 +386,13 @@ func (b *ColumnMap) NullBool(ptr *null.Bool) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeBoolFromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532889274 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		case 's':
 			if v.string != "" {
 				ptr.Bool, b.scanErr = strconv.ParseBool(v.string)
 				if b.scanErr != nil {
-					b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+					b.scanErr = fmt.Errorf("[dml] 1649532891950 Column %q with error: %w", b.Column(), b.scanErr)
 				}
 				ptr.Valid = b.scanErr == nil
 			} else {
@@ -404,7 +400,7 @@ func (b *ColumnMap) NullBool(ptr *null.Bool) *ColumnMap {
 				ptr.Valid = false
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -431,10 +427,10 @@ func (b *ColumnMap) Int(ptr *int) *ColumnMap {
 			i64, _, b.scanErr = byteconv.ParseInt(v.byte)
 			*ptr = int(i64)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532900534 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -461,10 +457,10 @@ func (b *ColumnMap) Int64(ptr *int64) *ColumnMap {
 	case 'y':
 		*ptr, _, b.scanErr = byteconv.ParseInt(v.byte)
 		if b.scanErr != nil {
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649532905258 Column %q with error: %w", b.Column(), b.scanErr)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -492,14 +488,14 @@ func (b *ColumnMap) Int32(ptr *int32) *ColumnMap {
 		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
 		switch {
 		case b.scanErr != nil:
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649532910346 Column %q with error: %w", b.Column(), b.scanErr)
 		case i64 > math.MaxInt32, i64 < -math.MaxInt32:
-			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int32: i64: %d", b.Column(), i64)
+			b.scanErr = fmt.Errorf("[dml] 1649533361246 Column %q overflows int32: i64: %d", b.Column(), i64)
 		default:
 			*ptr = int32(i64)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -527,14 +523,14 @@ func (b *ColumnMap) Int16(ptr *int16) *ColumnMap {
 		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
 		switch {
 		case b.scanErr != nil:
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649532915743 Column %q with error: %w", b.Column(), b.scanErr)
 		case i64 > math.MaxInt16, i64 < -math.MaxInt16:
-			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int16: i64: %d", b.Column(), i64)
+			b.scanErr = fmt.Errorf("[dml] 1649533385933 Column %q overflows int16: i64: %d", b.Column(), i64)
 		default:
 			*ptr = int16(i64)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] 1649533389507 Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -562,14 +558,14 @@ func (b *ColumnMap) Int8(ptr *int8) *ColumnMap {
 		i64, _, b.scanErr = byteconv.ParseInt(v.byte)
 		switch {
 		case b.scanErr != nil:
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649532921154 Column %q with error: %w", b.Column(), b.scanErr)
 		case i64 > math.MaxInt8, i64 < -math.MaxInt8:
-			b.scanErr = errors.Overflowed.Newf("[dml] Column %q overflows int8: i64: %d", b.Column(), i64)
+			b.scanErr = fmt.Errorf("[dml] 1649533410105 Column %q overflows int8: i64: %d", b.Column(), i64)
 		default:
 			*ptr = int8(i64)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] 1649533413976 Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -597,10 +593,10 @@ func (b *ColumnMap) NullInt64(ptr *null.Int64) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeInt64FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532925895 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -629,10 +625,10 @@ func (b *ColumnMap) NullInt32(ptr *null.Int32) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeInt32FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532966947 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -661,10 +657,10 @@ func (b *ColumnMap) NullInt16(ptr *null.Int16) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeInt16FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532971518 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -693,10 +689,10 @@ func (b *ColumnMap) NullInt8(ptr *null.Int8) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeInt8FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532978741 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -725,10 +721,10 @@ func (b *ColumnMap) NullUint64(ptr *null.Uint64) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeUint64FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532983260 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -757,10 +753,10 @@ func (b *ColumnMap) NullUint32(ptr *null.Uint32) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeUint32FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649532999016 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -789,10 +785,10 @@ func (b *ColumnMap) NullUint16(ptr *null.Uint16) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeUint16FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533005807 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -821,10 +817,10 @@ func (b *ColumnMap) NullUint8(ptr *null.Uint8) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeUint8FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533012588 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -849,10 +845,10 @@ func (b *ColumnMap) Float64(ptr *float64) *ColumnMap {
 		case 'y':
 			*ptr, _, b.scanErr = byteconv.ParseFloat(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533032763 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -881,7 +877,7 @@ func (b *ColumnMap) Decimal(ptr *null.Decimal) *ColumnMap {
 		case 'n':
 			ptr.Valid = false
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -907,12 +903,12 @@ func (b *ColumnMap) NullFloat64(ptr *null.Float64) *ColumnMap {
 		case 'y':
 			*ptr, b.scanErr = null.MakeFloat64FromByte(v.byte)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533037000 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		case 'n':
 			ptr.Valid = false
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -939,10 +935,10 @@ func (b *ColumnMap) Uint(ptr *uint) *ColumnMap {
 			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
 			*ptr = uint(u64)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533041002 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -969,10 +965,10 @@ func (b *ColumnMap) Uint8(ptr *uint8) *ColumnMap {
 			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 8)
 			*ptr = uint8(u64)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533045240 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -999,10 +995,10 @@ func (b *ColumnMap) Uint16(ptr *uint16) *ColumnMap {
 			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 16)
 			*ptr = uint16(u64)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533050547 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1029,10 +1025,10 @@ func (b *ColumnMap) Uint32(ptr *uint32) *ColumnMap {
 			u64, _, b.scanErr = byteconv.ParseUint(v.byte, 10, 32)
 			*ptr = uint32(u64)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533055112 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1057,10 +1053,10 @@ func (b *ColumnMap) Uint64(ptr *uint64) *ColumnMap {
 		case 'y':
 			*ptr, _, b.scanErr = byteconv.ParseUint(v.byte, 10, strconv.IntSize)
 			if b.scanErr != nil {
-				b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533059094 Column %q with error: %w", b.Column(), b.scanErr)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1084,7 +1080,7 @@ func (b *ColumnMap) Debug(w ioWriter) (err error) {
 		if b.field == 'n' {
 			_, _ = w.Write(tNil)
 		} else if _, err = fmt.Fprintf(w, ": %q", b); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	return nil
@@ -1111,7 +1107,7 @@ func (b *ColumnMap) Byte(ptr *[]byte) *ColumnMap {
 		case 'n':
 			*ptr = nil
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1132,7 +1128,7 @@ func (b *ColumnMap) Text(enc interface {
 		var data []byte
 		data, b.scanErr = enc.MarshalText()
 		if b.CheckValidUTF8 && !utf8.Valid(data) {
-			b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+			b.scanErr = fmt.Errorf("[dml] 1649533441330 Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 		} else {
 			b.args = append(b.args, data)
 		}
@@ -1142,12 +1138,12 @@ func (b *ColumnMap) Text(enc interface {
 	switch v := b.scanCol[b.index]; v.field {
 	case 'y', 'n':
 		if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
-			b.scanErr = errors.NotValid.Newf("[dml] Column %q contains invalid UTF-8 characters", b.Column(), b.Count)
+			b.scanErr = fmt.Errorf("[dml] 1649533448677 Column %q IDX:%d contains invalid UTF-8 characters", b.Column(), b.Count)
 		} else if b.scanErr = enc.UnmarshalText(v.byte); b.scanErr != nil {
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649533063790 Column %q with error: %w", b.Column(), b.scanErr)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -1173,10 +1169,10 @@ func (b *ColumnMap) Binary(enc interface {
 	switch v := b.scanCol[b.index]; v.field {
 	case 'y', 'n':
 		if b.scanErr = enc.UnmarshalBinary(v.byte); b.scanErr != nil {
-			b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+			b.scanErr = fmt.Errorf("[dml] 1649533068402 Column %q with error: %w", b.Column(), b.scanErr)
 		}
 	default:
-		b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+		b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 	}
 	return b
 }
@@ -1198,18 +1194,18 @@ func (b *ColumnMap) String(ptr *string) *ColumnMap {
 		switch v := b.scanCol[b.index]; v.field {
 		case 's':
 			if b.CheckValidUTF8 && !utf8.ValidString(v.string) {
-				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+				b.scanErr = fmt.Errorf("[dml] 1649533459370 Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
 				*ptr = v.string
 			}
 		case 'y':
 			if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
-				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+				b.scanErr = fmt.Errorf("[dml] 1649533465808 Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
 				*ptr = string(v.byte)
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] 1649533477981 Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1232,14 +1228,14 @@ func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 		switch v := b.scanCol[b.index]; v.field {
 		case 's':
 			if b.CheckValidUTF8 && !utf8.ValidString(v.string) {
-				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+				b.scanErr = fmt.Errorf("[dml] 1649533490498 Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
 				ptr.Data = v.string
 				ptr.Valid = true
 			}
 		case 'y':
 			if b.CheckValidUTF8 && !utf8.Valid(v.byte) {
-				b.scanErr = errors.NotValid.Newf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+				b.scanErr = fmt.Errorf("[dml] 1649533498261 Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 			} else {
 				ptr.Data = string(v.byte)
 				ptr.Valid = v.byte != nil
@@ -1248,7 +1244,7 @@ func (b *ColumnMap) NullString(ptr *null.String) *ColumnMap {
 			ptr.Data = ""
 			ptr.Valid = false
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] 1649533502539 Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 
@@ -1273,17 +1269,17 @@ func (b *ColumnMap) Time(ptr *time.Time) *ColumnMap {
 			*ptr = v.time
 		case 'y':
 			if len(v.byte) == 0 {
-				b.scanErr = errors.Empty.Newf("[dml] Column %q Time cannot be empty.", b.Column())
+				b.scanErr = fmt.Errorf("[dml] 1649533511414 Column %q Time cannot be empty.", b.Column())
 			} else {
 				var nt null.Time
 				nt, b.scanErr = null.ParseDateTime(string(v.byte), time.UTC) // time.Location can be merged into ColumnMap but then change NullTime method receiver.
 				*ptr = nt.Time
 				if b.scanErr != nil {
-					b.scanErr = errors.BadEncoding.New(b.scanErr, "[dml] Column %q", b.Column())
+					b.scanErr = fmt.Errorf("[dml] 1649533072494 Column %q with error: %w", b.Column(), b.scanErr)
 				}
 			}
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
@@ -1308,29 +1304,27 @@ func (b *ColumnMap) NullTime(ptr *null.Time) *ColumnMap {
 			ptr.Valid = true
 		case 's':
 			if err := ptr.Scan(v.string); err != nil {
-				b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", v.string, err)
+				b.scanErr = fmt.Errorf("[dml] 1649533520040 ColumnMap NullTime: Invalid time string: %q with error %s", v.string, err)
 			}
 		case 'y':
 			if err := ptr.Scan(v.byte); err != nil {
-				b.scanErr = errors.NotValid.Newf("[dml] ColumnMap NullTime: Invalid time string: %q with error %s", v.byte, err)
+				b.scanErr = fmt.Errorf("[dml] 1649533526774 ColumnMap NullTime: Invalid time string: %q with error %s", v.byte, err)
 			}
 		case 'n':
 			ptr.Time = time.Time{}
 			ptr.Valid = false
 		default:
-			b.scanErr = errors.NotSupported.Newf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
+			b.scanErr = fmt.Errorf("[dml] Column %q does not support field type: %q", b.Column(), v.field)
 		}
 	}
 	return b
 }
 
-const columnMapErrMsgSlices = "[dml] ColumnMap.%s does only support mode ColumnMapCollectionReadSet"
-
 func (b *ColumnMap) addSlice(fnName string, slice any) *ColumnMap {
 	if b.shouldCollectArgs() && b.scanErr == nil && b.Mode() == ColumnMapCollectionReadSet {
 		b.args = append(b.args, slice)
 	} else {
-		b.scanErr = errors.NotSupported.Newf(columnMapErrMsgSlices, fnName)
+		b.scanErr = fmt.Errorf("[dml] 1649533329737 ColumnMap.%s does only support mode ColumnMapCollectionReadSet", fnName)
 	}
 	return b
 }

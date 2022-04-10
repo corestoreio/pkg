@@ -324,14 +324,14 @@ func TestDBR_OrderByLimit(t *testing.T) {
 
 		t.Run("ASC", func(t *testing.T) {
 			a.OrderBy("email", "id")
-			compareToSQL2(t, a, errors.NoKind,
+			compareToSQL2(t, a, false,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > 221) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `id` LIMIT 44,55",
 			)
 		})
 		t.Run("DESC", func(t *testing.T) {
 			a.OrderBys = a.OrderBys[:1]
 			a.OrderByDesc("firstname")
-			compareToSQL2(t, a, errors.NoKind,
+			compareToSQL2(t, a, false,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > 221) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
 			)
 		})
@@ -344,14 +344,14 @@ func TestDBR_OrderByLimit(t *testing.T) {
 
 		t.Run("ASC", func(t *testing.T) {
 			a.OrderBy("email", "id")
-			compareToSQL2(t, a, errors.NoKind,
+			compareToSQL2(t, a, false,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `id` LIMIT 44,55",
 			)
 		})
 		t.Run("DESC", func(t *testing.T) {
 			a.OrderBys = a.OrderBys[:1]
 			a.OrderByDesc("firstname")
-			compareToSQL2(t, a, errors.NoKind,
+			compareToSQL2(t, a, false,
 				"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE 'em@1l.de') ORDER BY `email`, `firstname` DESC LIMIT 44,55",
 			)
 		})
@@ -378,13 +378,13 @@ func TestDBR_PreGeneratedQueries(t *testing.T) {
 
 	// modify SQL
 
-	compareToSQL2(t, cp.WithCacheKey("id_greater"), errors.NoKind,
+	compareToSQL2(t, cp.WithCacheKey("id_greater"), false,
 		"SELECT `a`, `b` FROM `c` WHERE (`id` > ?) AND (`email` LIKE ?)",
 	)
-	compareToSQL2(t, cp.WithCacheKey("id_less"), errors.NoKind,
+	compareToSQL2(t, cp.WithCacheKey("id_less"), false,
 		"SELECT `a`, `b` FROM `c` WHERE (`id` < ?)",
 	)
-	compareToSQL2(t, cp.WithCacheKey("id_not_found"), errors.NotFound, "")
+	compareToSQL2(t, cp.WithCacheKey("id_not_found"), true, "")
 }
 
 func TestExecValidateOneAffectedRow(t *testing.T) {

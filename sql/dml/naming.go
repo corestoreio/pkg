@@ -16,11 +16,11 @@ package dml
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/bufferpool"
 )
 
@@ -116,7 +116,7 @@ func (a id) writeQuoted(w *bytes.Buffer, placeHolders []string) (_ []string, err
 	if a.DerivedTable != nil {
 		w.WriteByte('(')
 		if placeHolders, err = a.DerivedTable.toSQL(w, placeHolders); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, fmt.Errorf("[dml] 1648324312088 writeQuoted failed: %w", err)
 		}
 		w.WriteByte(')')
 		w.WriteString(" AS ")
@@ -164,7 +164,7 @@ func (idc ids) writeQuoted(w *bytes.Buffer, placeHolders []string) (_ []string, 
 			w.WriteString(", ")
 		}
 		if placeHolders, err = a.writeQuoted(w, placeHolders); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, fmt.Errorf("[dml] 1648324339117 %w", err)
 		}
 	}
 	return placeHolders, nil
@@ -221,7 +221,7 @@ func (idc ids) AppendColumns(isUnsafe bool, columns ...string) ids {
 func (idc ids) AppendColumnsAliases(isUnsafe bool, columns ...string) ids {
 	if (len(columns) % 2) == 1 {
 		// A programmer made an error
-		panic(errors.Mismatch.Newf("[dml] Expecting a balanced slice! Got: %v", columns))
+		panic(fmt.Errorf("[dml] Expecting a balanced slice! Got: %v", columns))
 	}
 	if cap(idc) == 0 {
 		idc = make(ids, 0, len(columns)/2)
@@ -252,7 +252,7 @@ func (idc ids) appendConditions(expressions Conditions) (ids, error) {
 			if len(e.Right.args) > 0 {
 				if err := writeInterpolate(buf, idf.Expression, e.Right.args); err != nil {
 					bufferpool.Put(buf)
-					return nil, errors.Wrapf(err, "[dml] ids.appendConditions with expression: %q", idf.Expression)
+					return nil, fmt.Errorf("[dml] 1648324526672 ids.appendConditions with expression: %q error: %w", idf.Expression, err)
 				}
 				idf.Expression = buf.String()
 				buf.Reset()
@@ -409,7 +409,7 @@ const dummyQualifier = "X" // just a dummy value, can be optimized later
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func IsValidIdentifier(objectName string) (err error) {
 	if v := isValidIdentifier(objectName); v != 0 {
-		err = errors.NotValid.Newf("[dml] Invalid identifier %q (Case %d)", objectName, v)
+		err = fmt.Errorf("[dml] 1648324659366 Invalid identifier %q (Case %d)", objectName, v)
 	}
 	return
 }

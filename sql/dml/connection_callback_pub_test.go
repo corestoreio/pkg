@@ -22,11 +22,12 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/corestoreio/pkg/util/conv"
+	"github.com/alecthomas/repr"
 
 	"github.com/corestoreio/pkg/sql/dml"
 	"github.com/corestoreio/pkg/sql/dmltest"
 	"github.com/corestoreio/pkg/util/assert"
+	"github.com/corestoreio/pkg/util/conv"
 )
 
 func TestDriverCallBack(t *testing.T) {
@@ -41,6 +42,8 @@ func TestDriverCallBack(t *testing.T) {
 		dml.WithDriverCallBack(func(fnName string) func(error, string, []driver.NamedValue) error {
 			start := now()
 			return func(err error, query string, namedArgs []driver.NamedValue) error {
+				repr.Println(query)
+
 				fmt.Fprintf(buf, "%q Took: %s\n", fnName, now().Sub(start))
 				if err != nil {
 					fmt.Fprintf(buf, "Error: %s\n", err)

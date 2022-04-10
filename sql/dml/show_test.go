@@ -17,42 +17,41 @@ package dml
 import (
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/corestoreio/pkg/util/assert"
 )
 
 func TestShow(t *testing.T) {
 	t.Run("variables", func(t *testing.T) {
 		s := NewShow().Variable()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW VARIABLES",
 			"SHOW VARIABLES",
 		)
 	})
 	t.Run("variables global", func(t *testing.T) {
 		s := NewShow().Variable().Global()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW GLOBAL VARIABLES",
 			"SHOW GLOBAL VARIABLES",
 		)
 	})
 	t.Run("variables session", func(t *testing.T) {
 		s := NewShow().Variable().Session()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW SESSION VARIABLES",
 			"SHOW SESSION VARIABLES",
 		)
 	})
 	t.Run("variables global session", func(t *testing.T) {
 		s := NewShow().Variable().Session().Global()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW SESSION VARIABLES",
 			"SHOW SESSION VARIABLES",
 		)
 	})
 	t.Run("variables LIKE interpolated", func(t *testing.T) {
 		s := NewShow().Variable().Like().WithDBR(dbMock{}).TestWithArgs("aria%")
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",
 			"aria%",
@@ -62,7 +61,7 @@ func TestShow(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").PlaceHolder()).
 			WithDBR(dbMock{})
-		compareToSQL(t, s.TestWithArgs("aria%"), errors.NoKind,
+		compareToSQL(t, s.TestWithArgs("aria%"), false,
 			"SHOW VARIABLES WHERE (`Variable_name` = ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` = 'aria%')",
 			"aria%",
@@ -71,7 +70,7 @@ func TestShow(t *testing.T) {
 	})
 	t.Run("variables WHERE interpolate", func(t *testing.T) {
 		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 		)
@@ -80,7 +79,7 @@ func TestShow(t *testing.T) {
 		s := NewShow().Variable().
 			Where(Column("Variable_name").In().PlaceHolder()).
 			WithDBR(dbMock{}).TestWithArgs([]string{"basedir", "back_log"})
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW VARIABLES WHERE (`Variable_name` IN ?)",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
 			"basedir",
@@ -90,7 +89,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("master status", func(t *testing.T) {
 		s := NewShow().MasterStatus()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW MASTER STATUS",
 			"SHOW MASTER STATUS",
 		)
@@ -98,7 +97,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("binary log", func(t *testing.T) {
 		s := NewShow().BinaryLog()
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW BINARY LOG",
 			"SHOW BINARY LOG",
 		)
@@ -106,7 +105,7 @@ func TestShow(t *testing.T) {
 
 	t.Run("status WHERE", func(t *testing.T) {
 		s := NewShow().Session().Status().Where(Column("Variable_name").Like().Str("%error%"))
-		compareToSQL(t, s, errors.NoKind,
+		compareToSQL(t, s, false,
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
 		)
