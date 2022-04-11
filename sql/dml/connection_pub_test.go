@@ -176,7 +176,7 @@ func TestWithRawSQL(t *testing.T) {
 	t.Run("ConnPool", func(t *testing.T) {
 		// compareToSQL(t,
 		//	dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN (?,?,?)").TestWithArgs(9, 5, 6, 7),
-		//	errors.NoKind,
+		//	false,
 		//	"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
 		//	"",
 		//	int64(9), int64(5), int64(6), int64(7),
@@ -184,13 +184,13 @@ func TestWithRawSQL(t *testing.T) {
 		//
 		// compareToSQL(t,
 		//	dbc.WithRawSQL("SELECT * FROM users WHERE x = 1"),
-		//	errors.NoKind,
+		//	false,
 		//	"SELECT * FROM users WHERE x = 1",
 		//	"",
 		//)
 		// compareToSQL(t,
 		//	dbc.WithRawSQL("SELECT * FROM users WHERE x = ? AND y IN ?").ExpandPlaceHolders().TestWithArgs(9, []int{5, 6, 7}),
-		//	errors.NoKind,
+		//	false,
 		//	"SELECT * FROM users WHERE x = ? AND y IN (?,?,?)",
 		//	"",
 		//	int64(9), int64(5), int64(6), int64(7),
@@ -198,14 +198,14 @@ func TestWithRawSQL(t *testing.T) {
 		compareToSQL(t,
 			dbc.WithQueryBuilder(dml.QuerySQL("SELECT * FROM users WHERE x = ? AND y IN ?")).
 				TestWithArgs(9, []int{5, 6, 7}), // .Interpolate() gets called automatically
-			errors.NoKind,
+			false,
 			"SELECT * FROM users WHERE x = ? AND y IN ?",
 			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 			int64(9), int64(5), int64(6), int64(7),
 		)
 		// compareToSQL(t,
 		//	dbc.WithRawSQL("wat").TestWithArgs(9, 5, 6, 7),
-		//	errors.NoKind,
+		//	false,
 		//	"wat",
 		//	"",
 		//	int64(9), int64(5), int64(6), int64(7),
@@ -221,14 +221,14 @@ func TestWithRawSQL(t *testing.T) {
 		compareToSQL(t,
 			c.WithQueryBuilder(dml.QuerySQL("SELECT * FROM users WHERE x = ? AND y IN ?")).
 				Interpolate().TestWithArgs(9, []int{5, 6, 7}),
-			errors.NoKind,
+			false,
 			"SELECT * FROM users WHERE x = ? AND y IN ?",
 			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 			int64(9), int64(5), int64(6), int64(7),
 		)
 		compareToSQL(t,
 			c.WithQueryBuilder(dml.QuerySQL("wat")).TestWithArgs(9, 5, 6, 7),
-			errors.NoKind,
+			false,
 			"wat",
 			"",
 			int64(9), int64(5), int64(6), int64(7),
@@ -247,14 +247,14 @@ func TestWithRawSQL(t *testing.T) {
 		compareToSQL(t,
 			tx.WithQueryBuilder(dml.QuerySQL("SELECT * FROM users WHERE x = ? AND y IN ?")).
 				Interpolate().TestWithArgs(9, []int{5, 6, 7}),
-			errors.NoKind,
+			false,
 			"SELECT * FROM users WHERE x = ? AND y IN ?",
 			"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 			int64(9), int64(5), int64(6), int64(7),
 		)
 		compareToSQL(t,
 			tx.WithQueryBuilder(dml.QuerySQL("wat")).TestWithArgs(9, 5, 6, 7),
-			errors.NoKind,
+			false,
 			"wat",
 			"",
 			int64(9), int64(5), int64(6), int64(7),

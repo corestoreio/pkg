@@ -29,7 +29,7 @@ import (
 
 func TestDelete_Prepare(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
-		compareToSQL(t, dml.NewDelete("").Where(dml.Column("a").Int64(1)), errors.Empty, "", "")
+		compareToSQL(t, dml.NewDelete("").Where(dml.Column("a").Int64(1)), true, "", "")
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -171,14 +171,14 @@ func TestDelete_Join(t *testing.T) {
 		)
 
 	t.Run("JOIN USING with alias", func(t *testing.T) {
-		compareToSQL(t, del1, errors.NoKind,
+		compareToSQL(t, del1, false,
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"",
 		)
 	})
 
 	t.Run("JOIN USING with alias WithDBR", func(t *testing.T) {
-		compareToSQL(t, del1.WithDBR(dbMock{}).TestWithArgs(now()), errors.NoKind,
+		compareToSQL(t, del1.WithDBR(dbMock{}).TestWithArgs(now()), false,
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"DELETE `ce`,`customer_address`,`customer_company` FROM `customer_entity` AS `ce` INNER JOIN `customer_company` AS `cc` USING (`ce.entity_id`,`cc.customer_id`) RIGHT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < '2006-01-02 15:04:05')",
 			now(),
@@ -196,7 +196,7 @@ func TestDelete_Join(t *testing.T) {
 				dml.Column("ce.created_at").Less().PlaceHolder(),
 			)
 
-		compareToSQL(t, del, errors.NoKind,
+		compareToSQL(t, del, false,
 			"DELETE `customer_entity`,`customer_address` FROM `customer_entity` LEFT JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"",
 		)
@@ -210,7 +210,7 @@ func TestDelete_Join(t *testing.T) {
 				dml.Columns("ce.entity_id", "ca.parent_id"),
 			)
 
-		compareToSQL(t, del, errors.NoKind,
+		compareToSQL(t, del, false,
 			"DELETE `customer_entity`,`customer_address` FROM `customer_entity` OUTER JOIN `customer_address` AS `ca` USING (`ce.entity_id`,`ca.parent_id`)",
 			"",
 		)
@@ -226,7 +226,7 @@ func TestDelete_Join(t *testing.T) {
 				dml.Column("ce.created_at").Less().PlaceHolder(),
 			)
 
-		compareToSQL(t, del, errors.NoKind,
+		compareToSQL(t, del, false,
 			"DELETE FROM `customer_entity` CROSS JOIN `customer_address` AS `ca` ON (`ce`.`entity_id` = `ca`.`parent_id`) WHERE (`ce`.`created_at` < ?)",
 			"",
 		)
@@ -242,7 +242,7 @@ func TestDelete_Returning(t *testing.T) {
 				dml.Columns("ce.entity_id", "ca.parent_id"),
 			)
 		del.Returning = dml.NewSelect()
-		compareToSQL(t, del, errors.NotAllowed,
+		compareToSQL(t, del, true,
 			"",
 			"",
 		)
@@ -254,7 +254,7 @@ func TestDelete_Returning(t *testing.T) {
 				dml.Column("ce.entity_id").GreaterOrEqual().PlaceHolder(),
 			)
 		del.Returning = dml.NewSelect("entity_id", "created_at").From("customer_entity")
-		compareToSQL(t, del, errors.NoKind,
+		compareToSQL(t, del, false,
 			"DELETE FROM `customer_entity` WHERE (`ce`.`entity_id` >= ?) RETURNING SELECT `entity_id`, `created_at` FROM `customer_entity`",
 			"",
 		)

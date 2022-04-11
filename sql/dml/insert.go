@@ -232,7 +232,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer, placeHolders []string) ([]string, erro
 	}
 
 	if b.Into == "" {
-		return nil, errors.Empty.Newf("[dml] Inserted table is missing")
+		return nil, errors.New("[dml] Inserted table is missing")
 	}
 
 	ior := "INSERT "

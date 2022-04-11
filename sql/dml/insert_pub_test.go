@@ -64,7 +64,7 @@ func TestInsert_Bind(t *testing.T) {
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
 				).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			wantArgs...,
@@ -77,7 +77,7 @@ func TestInsert_Bind(t *testing.T) {
 					dml.Column("something_id").Int64(99),
 					dml.Column("user_id").Values(),
 				).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]), dml.Qualify("", objs[2])),
-			errors.NoKind,
+			false,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
 			wantArgs...,
@@ -93,7 +93,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dml.NewInsert("customer_entity").
 				WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", customers[0]), dml.Qualify("", customers[1]), dml.Qualify("", customers[2])),
-			errors.NoKind,
+			false,
 			"INSERT INTO `customer_entity` VALUES (?,?,?,?,?),(?,?,?,?,?),(?,?,?,?,?)",
 			"INSERT INTO `customer_entity` VALUES (11,'Karl Gopher',7,47.11,'1FE9983E|28E76FBC'),(12,'Fung Go Roo',7,28.94,'4FE7787E|15E59FBB|794EFDE8'),(13,'John Doe',6,138.54,'')",
 			int64(11), "Karl Gopher", int64(7), 47.11, "1FE9983E|28E76FBC", int64(12), "Fung Go Roo", int64(7), 28.94, "4FE7787E|15E59FBB|794EFDE8", int64(13), "John Doe", int64(6), 138.54, "",
@@ -105,7 +105,7 @@ func TestInsert_Bind(t *testing.T) {
 			dml.NewInsert("a").AddColumns("something_it", "user_id", "other").WithDBR(dbMock{}).TestWithArgs(
 				dml.Qualify("", objs[0]), dml.Qualify("", objs[1]),
 			),
-			errors.NotFound,
+			true,
 			"",
 			"",
 		)
@@ -117,7 +117,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in := &dml.Insert{}
 		in.AddColumns("a", "b")
 		_, _, err := in.ToSQL()
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("ToSQL Error", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.AddColumns("a", "b")
 		stmt, _, err := in.ToSQL()
 		assert.Empty(t, stmt)
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("DB Error", func(t *testing.T) {
@@ -299,7 +299,7 @@ func TestInsert_BuildValues(t *testing.T) {
 			AddColumns("name", "email").BuildValues().
 			WithDBR(dbMock{})
 
-		compareToSQL(t, insA.TestWithArgs(dml.Qualify("", p)), errors.NoKind,
+		compareToSQL(t, insA.TestWithArgs(dml.Qualify("", p)), false,
 			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
 			"",
 			"Pike", "pikes@peak.co",
@@ -309,7 +309,7 @@ func TestInsert_BuildValues(t *testing.T) {
 	t.Run("WithoutArgs", func(t *testing.T) {
 		ins := dml.NewInsert("alpha").AddColumns("name", "email").BuildValues()
 
-		compareToSQL(t, ins, errors.NoKind,
+		compareToSQL(t, ins, false,
 			"INSERT INTO `alpha` (`name`,`email`) VALUES (?,?)",
 			"",
 		)
@@ -424,7 +424,7 @@ func TestInsert_WithArgs_record(t *testing.T) {
 	i := dml.NewInsert("catalog_product_entity").
 		WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", objs[0]), dml.Qualify("", objs[1]))
 
-	compareToSQL(t, i, errors.NoKind,
+	compareToSQL(t, i, false,
 		"INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)",
 		"INSERT INTO `catalog_product_entity` VALUES (1,5,'simple','SOA9',0),(2,5,'virtual',NULL,1)",
 		int64(1), int64(5), "simple", "SOA9", false,

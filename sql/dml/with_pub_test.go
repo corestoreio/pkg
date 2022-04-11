@@ -63,7 +63,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "one", Select: dml.NewSelect().Unsafe().AddColumns("1")},
 		).Select(dml.NewSelect().Star().From("one"))
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
 			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
 		)
@@ -79,7 +79,7 @@ func TestNewWith(t *testing.T) {
 				).All(),
 			},
 		).Recursive().Select(dml.NewSelect().Star().From("cte"))
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
 			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
 		)
@@ -90,7 +90,7 @@ func TestNewWith(t *testing.T) {
 			dml.WithCTE{Name: "intermed", Select: dml.NewSelect().Star().From("test").Where(dml.Column("x").GreaterOrEqual().Int(5))},
 			dml.WithCTE{Name: "derived", Select: dml.NewSelect().Star().From("intermed").Where(dml.Column("x").Less().Int(10))},
 		).Select(dml.NewSelect().Star().From("derived"))
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
 			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
 		)
@@ -99,7 +99,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "multi", Columns: []string{"x", "y"}, Select: dml.NewSelect().Unsafe().AddColumns("1", "2")},
 		).Select(dml.NewSelect("x", "y").From("multi"))
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH `multi` (`x`,`y`) AS (SELECT 1, 2)\nSELECT `x`, `y` FROM `multi`",
 			"",
 		)
@@ -110,7 +110,7 @@ func TestNewWith(t *testing.T) {
 			dml.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dml.NewSelect().Unsafe().AddColumns("123")},
 		).Delete(dml.NewDelete("test").Where(dml.Column("val").In().Sub(dml.NewSelect("val").From("check_vals"))))
 
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
 			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
 		)
@@ -125,7 +125,7 @@ func TestNewWith(t *testing.T) {
 		).Update(dml.NewUpdate("numbers").AddClauses(dml.Column("n").Int(0)).Where(dml.Expr("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
-		compareToSQL(t, cte, errors.NoKind,
+		compareToSQL(t, cte, false,
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 		)
@@ -146,7 +146,7 @@ func TestNewWith(t *testing.T) {
 		cte := dml.NewWith(
 			dml.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dml.NewSelect().AddColumns("123")},
 		)
-		compareToSQL(t, cte, errors.Empty,
+		compareToSQL(t, cte, true,
 			"",
 			"",
 		)

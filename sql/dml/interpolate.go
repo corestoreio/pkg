@@ -62,12 +62,12 @@ func expandPlaceHolderTuples(buf *bytes.Buffer, sql []byte, argCount int) error 
 	}
 
 	if tupleCount == 0 {
-		return errors.NotValid.Newf("[dml] expandPlaceHolderTuples failed to scan SQL string. Can't find number of tuples.")
+		return fmt.Errorf("[dml] expandPlaceHolderTuples failed to scan SQL string. Can't find number of tuples.")
 	}
 	if idxPlaceHolderTuples > 0 {
 		buf.Write(sql[:idxPlaceHolderTuples])
 		if uint(argCount)%tupleCount != 0 {
-			return errors.NotValid.Newf("[dml] expandPlaceHolderTuples rowCount can be zero. argCount must be at least %d but got %d", tupleCount, argCount)
+			return fmt.Errorf("[dml] expandPlaceHolderTuples rowCount can be zero. argCount must be at least %d but got %d", tupleCount, argCount)
 		}
 		buf.WriteByte('(')
 		writeTuplePlaceholders(buf, uint(argCount)/tupleCount, tupleCount)

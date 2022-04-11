@@ -179,7 +179,7 @@ func (b *Delete) ToSQL() (string, []any, error) {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err error) {
 	if b.Table.Name == "" {
-		return nil, errors.Empty.Newf("[dml] Delete: Table is missing")
+		return nil, errors.New("[dml] Delete: Table is missing")
 	}
 
 	w.WriteString("DELETE ")
@@ -204,7 +204,7 @@ func (b *Delete) toSQL(w *bytes.Buffer, placeHolders []string) (_ []string, err 
 	if len(b.MultiTables) > 0 {
 		w.WriteByte(' ')
 		if b.Returning != nil {
-			return nil, errors.NotAllowed.Newf("[dml] MariaDB does not support RETURNING in multi-table DELETEs")
+			return nil, errors.New("[dml] MariaDB does not support RETURNING in multi-table DELETEs")
 		}
 	}
 

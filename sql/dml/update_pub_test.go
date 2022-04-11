@@ -308,7 +308,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 			Where(dml.Column("entity_id").Greater().PlaceHolder()).
 			WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
 
-		compareToSQL(t, u, errors.NoKind,
+		compareToSQL(t, u, false,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -322,7 +322,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("entity_id").Greater().PlaceHolder(),
 			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
-		compareToSQL(t, u, errors.NoKind,
+		compareToSQL(t, u, false,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (66,77)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -336,7 +336,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("x").In().Int64s(66, 77),
 				dml.Column("y").Greater().Int64(99),
 			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce))
-		compareToSQL(t, u, errors.NoKind,
+		compareToSQL(t, u, false,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (66,77)) AND (`y` > 99)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
 			int64(6), "p456", "3/4/5", int64(678),
@@ -353,7 +353,7 @@ func TestUpdate_BindRecord(t *testing.T) {
 				dml.Column("cpe.entity_id").In().Int64s(66, 77),
 				dml.Column("cpei.attribute_set_id").Equal().PlaceHolder(), // 6
 			).WithDBR(dbMock{}).TestWithArgs(dml.Qualify("", ce), dml.Qualify("cpei", ce))
-		compareToSQL(t, u, errors.NoKind,
+		compareToSQL(t, u, false,
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = ?)",
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` = 6)",
 			int64(6), "p456", "3/4/5", int64(678), int64(6),
