@@ -16,7 +16,7 @@ DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ24" conn_source:
 DEBUG Commit conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ24" duration: 0
 DEBUG BeginTx conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28"
 DEBUG Prepare conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" duration: 0
-DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "" length_args: 0 length_raw_args: 1 source: "i" error: "[dml] Interpolation failed: \"/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)\": [dml] Number of place holders (2) vs number of arguments (1) do not match."
+DEBUG Exec conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" conn_source: "Tx" is_prepared: false query_id: "UNIQ12" query: "/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)" duration: 0 sql: "" length_args: 0 length_raw_args: 1 source: "i" error: "[dml] 1649619824499 Error: [dml] Number of place holders (2) vs number of arguments (1) do not match. Interpolation failed: \"/*$ID$UNIQ12*/REPLACE INTO `dml_people` (`email`,`name`) VALUES (?,?)\""
 DEBUG Rollback conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ28" duration: 0
 DEBUG BeginTx conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ32"
 DEBUG Prepare conn_pool_id: "UNIQ04" conn_id: "UNIQ20" tx_id: "UNIQ32" duration: 0

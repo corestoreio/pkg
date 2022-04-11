@@ -139,7 +139,7 @@ func TestInsert_Prepare(t *testing.T) {
 
 		stmt, err := inDBR.Prepare(context.Background())
 		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {

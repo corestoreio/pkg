@@ -45,7 +45,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.Where(dml.Column("a").Int(1))
 		stmt, err := ddbr.Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("ExecArgs One Row", func(t *testing.T) {

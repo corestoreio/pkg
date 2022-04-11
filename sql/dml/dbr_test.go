@@ -429,5 +429,5 @@ func TestDBRValidateMinAffectedRow(t *testing.T) {
 	err := dbr.ResultCheckFn("TableName", 0, StaticSQLResult{Rows: 2}, nil)
 	assert.NoError(t, err)
 	err = dbr.ResultCheckFn("TableName", 0, StaticSQLResult{Rows: 1}, nil)
-	assert.ErrorIsKind(t, errors.NotValid, err)
+	assert.Error(t, err)
 }

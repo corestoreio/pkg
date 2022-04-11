@@ -37,7 +37,7 @@ func TestWith_Query(t *testing.T) {
 		sel := dml.NewWith(dml.WithCTE{Name: "sel", Select: dml.NewSelect().Unsafe().AddColumns("1")}).
 			Select(dml.NewSelect().Star().From("sel"))
 		rows, err := sel.WithDBR(dbc.DB).QueryContext(context.TODO())
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 		assert.Nil(t, rows)
 	})
 }
@@ -54,7 +54,7 @@ func TestWith_Load(t *testing.T) {
 			Select(dml.NewSelect().Star().From("sel"))
 		rows, err := sel.WithDBR(dbc.DB).Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 }
 

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -464,7 +465,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []any) (_ string, _ []any, err error) 
 
 	cachedSQL := a.cachedSQL.rawSQL
 	if !a.isPrepared && cachedSQL == "" {
-		return "", nil, errors.Empty.Newf("[dml] DBR: The SQL string is empty.")
+		return "", nil, fmt.Errorf("")
 	}
 
 	if a.cachedSQL.templateStmtCount < 2 && hasNamedArgs == 0 && qualifiedRecordCount == 0 &&
@@ -518,7 +519,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []any) (_ string, _ []any, err error) 
 
 	// `switch` statement no suitable.
 	if a.Options > 0 && lenExtArgs > 0 && qualifiedRecordCount == 0 && len(args) == 0 {
-		return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+		return "", nil, fmt.Errorf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice")
 	}
 
 	if a.cachedSQL.containsTuples {
@@ -558,7 +559,7 @@ func (a *DBR) prepareQueryAndArgs(extArgs []any) (_ string, _ []any, err error) 
 	}
 	if a.Options&argOptionInterpolate != 0 {
 		if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), args); err != nil {
-			return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.String())
+			return "", nil, fmt.Errorf("[dml] 1649619159449 Error:%w Interpolation failed: %q", err, sqlBuf.String())
 		}
 		return sqlBuf.Second.String(), nil, nil
 	}
@@ -589,8 +590,8 @@ func (a *DBR) appendConvertedRecordsToArguments(hasNamedArgs uint8, collectedArg
 	qualifiedColumns := a.cachedSQL.qualifiedColumns
 	if lqca := len(a.QualifiedColumnsAliases); lqca > 0 {
 		if lqca != len(a.cachedSQL.qualifiedColumns) {
-			return nil, errors.Mismatch.Newf(
-				"[dml] Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length",
+			return nil, fmt.Errorf(
+				"[dml] 1649619151756 Argument.Record: QualifiedColumnsAliases slice %v and qualifiedColumns slice %v must have the same length",
 				a.QualifiedColumnsAliases,
 				a.cachedSQL.qualifiedColumns,
 			)
@@ -687,7 +688,7 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []any, primitiveCounts int) (str
 			switch qRec := arg.(type) {
 			case QualifiedRecord:
 				if qRec.Qualifier != "" {
-					return "", nil, errors.Fatal.Newf("[dml] Qualifier in %T is not supported and not needed.", qRec)
+					return "", nil, fmt.Errorf("[dml] 1649619300580 Qualifier in %T is not supported and not needed", qRec)
 				}
 				if err := qRec.Record.MapColumns(cm); err != nil {
 					return "", nil, errors.WithStack(err)
@@ -735,12 +736,12 @@ func (a *DBR) prepareQueryAndArgsInsert(extArgs []any, primitiveCounts int) (str
 
 	if a.Options > 0 {
 		if primitiveCounts > 0 && !containsRecords && len(cm.args) == 0 {
-			return "", nil, errors.NotAllowed.Newf("[dml] Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice.")
+			return "", nil, fmt.Errorf("[dml] 1649619321167 Interpolation/ExpandPlaceholders supports only Records and Arguments and not yet an interface slice")
 		}
 
 		if a.Options&argOptionInterpolate != 0 {
 			if err := writeInterpolateBytes(sqlBuf.Second, sqlBuf.First.Bytes(), cm.args); err != nil {
-				return "", nil, errors.Wrapf(err, "[dml] Interpolation failed: %q", sqlBuf.First.String())
+				return "", nil, fmt.Errorf("[dml] 1649619824499 Error: %w Interpolation failed: %q", err, sqlBuf.First.String())
 			}
 			return sqlBuf.Second.String(), nil, nil
 		}
@@ -841,11 +842,11 @@ func (a *DBR) Prepare(ctx context.Context) (*DBR, error) {
 		return nil, errors.WithStack(err)
 	}
 	if _, ok := a.DB.(stmtWrapper); ok {
-		return nil, errors.Fatal.Newf("already a prepared statement")
+		return nil, fmt.Errorf("[dml] 1649619920611 already a prepared statement")
 	}
 	stmt, err := a.DB.PrepareContext(ctx, sqlStr)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Preparation of query %q failed", sqlStr)
+		return nil, fmt.Errorf("[dml] 1649619937617 Preparation of query %q failed: %w", sqlStr, err)
 	}
 	a.isPrepared = true
 	a.DB = stmtWrapper{stmt: stmt}
@@ -968,14 +969,13 @@ func (a *DBR) IterateSerial(ctx context.Context, callBack func(*ColumnMap) error
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] IterateSerial.Query with query ID %q", a.cachedSQL.id)
-		return
+		return fmt.Errorf("[dml] 1649619985624 %w IterateSerial.Query with query ID %q", err, a.cachedSQL.id)
 	}
 	cmr := pooledColumnMapGet() // this sync.Pool might not work correctly, write a complex test.
 	defer pooledBufferColumnMapPut(cmr, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] IterateSerial.QueryContext.Rows.Close")
+			err = fmt.Errorf("[dml] 1649620158419 %w IterateSerial.QueryContext.Rows.Close", err2)
 		}
 	})
 
@@ -1002,7 +1002,7 @@ func iterateParallelForNextLoop(ctx context.Context, r *sql.Rows, rowChan chan<-
 			err = errors.WithStack(err)
 		}
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] IterateParallel.QueryContext.Rows.Close")
+			err = err2
 		}
 	}()
 
@@ -1035,13 +1035,12 @@ func (a *DBR) IterateParallel(ctx context.Context, concurrencyLevel int, callBac
 		defer log.WhenDone(a.log).Debug("IterateParallel", log.String("id", a.cachedSQL.id), log.Err(err))
 	}
 	if concurrencyLevel < 1 {
-		return errors.OutOfRange.Newf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero.", concurrencyLevel, a.cachedSQL.id)
+		return fmt.Errorf("[dml] DBR.IterateParallel concurrencyLevel %d for query ID %q cannot be smaller zero", concurrencyLevel, a.cachedSQL.id)
 	}
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] IterateParallel.Query with query ID %q", a.cachedSQL.id)
-		return
+		return fmt.Errorf("[dml] 1649705203611 IterateParallel.Query Error %w with query ID %q", err, a.cachedSQL.id)
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -1080,18 +1079,17 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...any) (rowCount u
 
 	r, err := a.query(ctx, args)
 	if err != nil {
-		err = errors.Wrapf(err, "[dml] DBR.Load.QueryContext failed with queryID %q and ColumnMapper %T", a.cachedSQL.id, s)
-		return
+		return 0, fmt.Errorf("[dml] 1649705228843 DBR.Load.QueryContext failed with error %w with queryID %q and ColumnMapper %T", err, a.cachedSQL.id, s)
 	}
 	cm := pooledColumnMapGet()
 	defer pooledBufferColumnMapPut(cm, nil, func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := r.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dml] DBR.Load.Rows.Close")
+			err = err2
 		}
 		if rc, ok := s.(ioCloser); ok {
 			if err2 := rc.Close(); err2 != nil && err == nil {
-				err = errors.Wrap(err2, "[dml] DBR.Load.ColumnMapper.Close")
+				err = err2
 			}
 		}
 	})
@@ -1101,7 +1099,7 @@ func (a *DBR) Load(ctx context.Context, s ColumnMapper, args ...any) (rowCount u
 			return 0, errors.WithStack(err)
 		}
 		if err = s.MapColumns(cm); err != nil {
-			return 0, errors.Wrapf(err, "[dml] DBR.Load failed with queryID %q and ColumnMapper %T", a.cachedSQL.id, s)
+			return 0, fmt.Errorf("[dml] DBR.Load failed with error %w with queryID %q and ColumnMapper %T", err, a.cachedSQL.id, s)
 		}
 	}
 	if err = r.Err(); err != nil {
@@ -1344,7 +1342,7 @@ func (a *DBR) query(ctx context.Context, args []any) (rows *sql.Rows, err error)
 		if sqlStr == "" {
 			sqlStr = "PREPARED:" + a.cachedSQL.rawSQL
 		}
-		return nil, errors.Wrapf(err, "[dml] Query.QueryContext with query %q", sqlStr)
+		return nil, fmt.Errorf("[dml] 1649705411520 Query.QueryContext failed: %w", err)
 	}
 	return rows, err
 }
@@ -1362,7 +1360,7 @@ func (a *DBR) exec(ctx context.Context, rawArgs []any) (result sql.Result, err e
 
 	result, err = a.DB.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dml] ExecContext with query %q", sqlStr) // err gets catched by the defer
+		return nil, fmt.Errorf("[dml] 1649705158140 ExecContext error %w with query %q", err, sqlStr) // err gets catched by the defer
 	}
 	lID, err := result.LastInsertId()
 	if err != nil {
@@ -1405,7 +1403,7 @@ func ExecValidateOneAffectedRow(res sql.Result, err error) error {
 	return nil
 }
 
-// DBRValidateMinOneAffectedRow is an option argument to provide a basic helper
+// DBRValidateMinAffectedRow is an option argument to provide a basic helper
 // function to check that at least one row has been deleted.
 func DBRValidateMinAffectedRow(minExpectedRows int64) DBRFunc {
 	return func(dbr *DBR) {
@@ -1415,7 +1413,7 @@ func DBRValidateMinAffectedRow(minExpectedRows int64) DBRFunc {
 			}
 			rowCount, err := res.RowsAffected()
 			if err == nil && rowCount < minExpectedRows {
-				err = errors.NotValid.Newf("[dml] %q can't validate affected rows. Have %d MinWant %d", tableName, rowCount, minExpectedRows)
+				err = fmt.Errorf("[dml] 1649619244737 %q can't validate affected rows. Have %d MinWant %d", tableName, rowCount, minExpectedRows)
 			}
 			return err
 		}
@@ -1435,7 +1433,7 @@ func strictAffectedRowsResultCheck(tableName string, expectedAffectedRows int, r
 
 	ar, err := res.RowsAffected()
 	if err == nil && ar != int64(expectedAffectedRows) {
-		err = errors.NotValid.Newf("[dml] %q can't validate affected rows. Have %d MinWant %d", tableName, ar, expectedAffectedRows)
+		err = fmt.Errorf("[dml] 1649619183058 %q can't validate affected rows. Have %d MinWant %d", tableName, ar, expectedAffectedRows)
 	}
 
 	return err

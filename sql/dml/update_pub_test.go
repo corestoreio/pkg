@@ -46,7 +46,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			},
 		}).WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", nil))
 		assert.Nil(t, res)
-		assert.ErrorIsKind(t, errors.Mismatch, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("alias mismatch Prepare", func(t *testing.T) {
@@ -68,7 +68,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 			Email: null.MakeString("alf@m') -- el.mac"),
 		}
 		res, err := dbr.WithQualifiedColumnsAliases("update_sku").ExecContext(context.TODO(), dml.Qualify("", p))
-		assert.ErrorIsKind(t, errors.Mismatch, err)
+		assert.Error(t, err)
 		assert.Nil(t, res, "No result is expected")
 	})
 
@@ -80,7 +80,7 @@ func TestUpdate_WithArgs(t *testing.T) {
 
 		res, err := mu.ExecContext(context.TODO())
 		assert.Nil(t, res)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("prepared success", func(t *testing.T) {

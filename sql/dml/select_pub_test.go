@@ -66,7 +66,7 @@ func (p *fakePerson) MapColumns(cm *dml.ColumnMap) error {
 		case "update_time", "7":
 			cm.Time(&p.UpdateTime)
 		default:
-			return errors.NotFound.Newf("[dml_test] fakePerson Column %q not found", c)
+			return fmt.Errorf("[dml_test] fakePerson Column %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -90,7 +90,7 @@ func (cc *fakePersons) MapColumns(cm *dml.ColumnMap) error {
 		cc.Data = append(cc.Data, p)
 
 	default:
-		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+		return fmt.Errorf("[dml] Unknown Mode: %q", string(m))
 	}
 	return cm.Err()
 }
@@ -100,7 +100,7 @@ func TestSelect_QueryContext(t *testing.T) {
 		sel := &dml.Select{}
 		rows, err := sel.WithDBR(dbMock{}).QueryContext(context.Background())
 		assert.Nil(t, rows)
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -111,12 +111,12 @@ func TestSelect_QueryContext(t *testing.T) {
 		}
 		sel.AddColumns("a", "b")
 		selDBR := sel.WithDBR(dbMock{
-			error: errors.AlreadyClosed.Newf("Who closed myself?"),
+			error: errors.New("Who closed myself?"),
 		})
 
 		rows, err := selDBR.QueryContext(context.Background())
 		assert.Nil(t, rows)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -178,7 +178,7 @@ func (p *TableCoreConfigData) MapColumns(cm *dml.ColumnMap) error {
 		case "value", "4":
 			cm.NullString(&p.Value)
 		default:
-			return errors.NotFound.Newf("[dml] Field %q not found", c)
+			return fmt.Errorf("[dml] Field %q not found", c)
 		}
 	}
 	return cm.Err()
@@ -203,7 +203,7 @@ func (ps *TableCoreConfigDataSlice) MapColumns(cm *dml.ColumnMap) error {
 	case dml.ColumnMapCollectionReadSet, dml.ColumnMapEntityReadAll, dml.ColumnMapEntityReadSet:
 		// noop not needed
 	default:
-		return errors.NotSupported.Newf("[dml] Unknown Mode: %q", string(m))
+		return fmt.Errorf("[dml] Unknown Mode: %q", string(m))
 	}
 	return nil
 }
@@ -276,12 +276,12 @@ func TestSelect_Load(t *testing.T) {
 		defer dmltest.MockClose(t, dbc, dbMock)
 
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").
-			RowError(1, errors.ConnectionFailed.Newf("Con failed"))
+			RowError(1, fmt.Errorf("Con failed"))
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
 
 		ccd := &TableCoreConfigDataSlice{}
 		_, err := dbc.WithQueryBuilder(dml.NewSelect("config_id").From("core_config_data")).Load(context.Background(), ccd)
-		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("ioClose error", func(t *testing.T) {
@@ -292,10 +292,10 @@ func TestSelect_Load(t *testing.T) {
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
 
 		ccd := &TableCoreConfigDataSlice{
-			err: errors.Duplicated.Newf("Somewhere exists a duplicate entry"),
+			err: fmt.Errorf("Somewhere exists a duplicate entry"),
 		}
 		_, err := dbc.WithQueryBuilder(dml.NewSelect("config_id").From("core_config_data")).Load(context.Background(), ccd)
-		assert.ErrorIsKind(t, errors.Duplicated, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -304,12 +304,12 @@ func TestSelect_Prepare(t *testing.T) {
 		dbc, dbMock := dmltest.MockDB(t)
 		defer dmltest.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.AlreadyClosed.Newf("Who closed myself?"))
+		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(fmt.Errorf("Who closed myself?"))
 
 		stmt := dbc.WithPrepare(context.Background(), dml.NewSelect("a", "b").From("tableX"))
 		assert.NotNil(t, stmt)
 
-		assert.ErrorIsKind(t, errors.AlreadyClosed, stmt.PreviousError())
+		assert.Error(t, stmt.PreviousError())
 	})
 
 	t.Run("Prepare IN", func(t *testing.T) {
@@ -439,9 +439,9 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 
 		t.Run("WithRecords_Error", func(t *testing.T) {
-			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
+			p := &TableCoreConfigDataSlice{err: fmt.Errorf("Found a duplicate")}
 			rows, err := stmt.QueryContext(context.Background(), dml.Qualify("", p))
-			assert.ErrorIsKind(t, errors.Duplicated, err)
+			assert.Error(t, err)
 			assert.Nil(t, rows)
 		})
 	})
@@ -531,9 +531,9 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				dml.NewSelect().AddColumns("id", "weight", "height", "update_time").From("dml_fake_person").
 					Limit(0, 5).OrderBy("id"),
 			).IterateSerial(context.Background(), func(cm *dml.ColumnMap) error {
-				return errors.Blocked.Newf("Mapping blocked")
+				return fmt.Errorf("Mapping blocked")
 			})
-			assert.ErrorIsKind(t, errors.Blocked, err)
+			assert.Error(t, err)
 		})
 
 		t.Run("serial serial", func(t *testing.T) {
@@ -549,7 +549,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				}
 
 				if fp.Weight < 1 || fp.Height < 1 || fp.ID < 0 || fp.UpdateTime.IsZero() {
-					return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+					return fmt.Errorf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 				}
 				counter++
 				return nil
@@ -575,7 +575,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 					}
 					// fmt.Printf("%d: %#v\n", i, fp)
 					if fp.Weight < 1 || fp.Height < 1 || fp.ID < i || fp.UpdateTime.IsZero() {
-						return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+						return fmt.Errorf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 					}
 					counter++
 					return nil
@@ -621,16 +621,16 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				Limit(0, 50).OrderBy("id")).IterateParallel(context.Background(), 0, func(cm *dml.ColumnMap) error {
 				return nil
 			})
-			assert.ErrorIsKind(t, errors.OutOfRange, err)
+			assert.Error(t, err)
 		})
 
 		t.Run("error in mapper of all workers", func(t *testing.T) {
 			err := dbc.WithQueryBuilder(dml.NewSelect().From("dml_fake_person").AddColumns("id", "weight", "height", "update_time").
 				Limit(0, 50).OrderBy("id")).IterateParallel(context.Background(), concurrencyLevel, func(cm *dml.ColumnMap) error {
-				return errors.Blocked.Newf("Mapping blocked error")
+				return fmt.Errorf("Mapping blocked error")
 			})
 
-			assert.ErrorIsKind(t, errors.Blocked, err)
+			assert.Error(t, err)
 		})
 
 		t.Run("successful 40 rows fibonacci", func(t *testing.T) {
@@ -648,7 +648,7 @@ func TestSelect_Argument_Iterate(t *testing.T) {
 				}
 
 				if fp.Weight < 1 || fp.Height < 1 || fp.ID < 1 || fp.UpdateTime.IsZero() {
-					return errors.NotValid.Newf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
+					return fmt.Errorf("failed to load fakePerson: one of the four fields (id,weight,height,update_time) is empty: %#v", fp)
 				}
 
 				if fp.ID < 41 {
@@ -777,7 +777,7 @@ func TestPrepareWithDBR(t *testing.T) {
 		ctx := context.Background()
 
 		err := dbc.WithPrepare(ctx, dml.NewSelect().From("a")).Close()
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("union error", func(t *testing.T) {
@@ -786,7 +786,7 @@ func TestPrepareWithDBR(t *testing.T) {
 		ctx := context.Background()
 
 		err := dbc.WithPrepare(ctx, dml.NewUnion(dml.NewSelect("*").From("b"))).Close()
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 }
 

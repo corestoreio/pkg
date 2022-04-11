@@ -34,7 +34,7 @@ func TestUnion_Query(t *testing.T) {
 		)
 		rows, err := u.WithDBR(dbMock{}).QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	u := dml.NewUnion(
@@ -48,7 +48,7 @@ func TestUnion_Query(t *testing.T) {
 		})
 		rows, err := dbr.QueryContext(context.TODO())
 		assert.Nil(t, rows)
-		assert.ErrorIsKind(t, errors.ConnectionFailed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Success", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestUnion_Load(t *testing.T) {
 
 		rows, err := u.WithDBR(dbc.DB).Load(context.TODO(), nil)
 		assert.Exactly(t, uint64(0), rows)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -105,7 +105,7 @@ func TestUnion_Prepare(t *testing.T) {
 		)
 		stmt, err := u.WithDBR(dbMock{}).Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.Empty, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Error", func(t *testing.T) {
@@ -128,7 +128,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 		stmt, err := dbc.WithQueryBuilder(u).Prepare(context.TODO())
 		assert.Nil(t, stmt)
-		assert.ErrorIsKind(t, errors.AlreadyClosed, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Query", func(t *testing.T) {
@@ -222,7 +222,7 @@ func TestUnion_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := &TableCoreConfigDataSlice{err: errors.Duplicated.Newf("Found a duplicate")}
 			rows, err := stmt.QueryContext(context.TODO(), dml.Qualify("", p))
-			assert.ErrorIsKind(t, errors.Duplicated, err)
+			assert.Error(t, err)
 			assert.Nil(t, rows)
 		})
 	})

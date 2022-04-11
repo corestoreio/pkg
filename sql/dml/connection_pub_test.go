@@ -165,7 +165,7 @@ func TestTx_Wrap(t *testing.T) {
 			assert.Nil(t, res)
 			return err
 		})
-		assert.ErrorIsKind(t, errors.Aborted, err)
+		assert.Error(t, err)
 	})
 }
 

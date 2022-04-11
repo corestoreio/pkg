@@ -230,7 +230,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.Contains(t, err.Error(), `[dml] Column "null_bool": strconv.ParseBool: parsing "Nope": invalid syntax`)
+		assert.Error(t, err)
 	})
 
 	t.Run("fmt.Stringer", func(t *testing.T) {
@@ -368,7 +368,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
@@ -388,7 +388,7 @@ func TestColumnMap_Query(t *testing.T) {
 
 		rc, err := dbc.WithQueryBuilder(tbl).Load(context.TODO(), tbl)
 		assert.Exactly(t, uint64(0), rc)
-		assert.ErrorIsKind(t, errors.NotValid, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -406,7 +406,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		"text", "binary",
 	}
 
-	runner := func(scanErrWantKind errors.Kind, want string, values ...driver.Value) func(*testing.T) {
+	runner := func(scanErrWant bool, want string, values ...driver.Value) func(*testing.T) {
 		return func(t *testing.T) {
 			r := sqlmock.NewRows(columns).AddRow(values...)
 			dbMock.ExpectPrepare("SELECT \\* FROM `test`").ExpectQuery().WillReturnRows(r)
@@ -421,8 +421,8 @@ func TestColumnMap_Prepared(t *testing.T) {
 			assert.NoError(t, err)
 
 			rc, err := stmt.Load(context.TODO(), tbl)
-			if scanErrWantKind != errors.NoKind {
-				assert.True(t, errors.MatchKind(err, scanErrWantKind), "Should be Error Kind %s; Got: %s\n%+v", scanErrWantKind, errors.UnwrapKind(err), err)
+			if scanErrWant {
+				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Exactly(t, uint64(1), rc, "Should return one loaded row")
@@ -430,7 +430,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		}
 	}
 	t.Run("native bool", runner(
-		errors.NoKind,
+		false,
 		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
 		true, false, // "bool", "null_bool"
 		1, 2, nil, // "int", "int64", "null_int64"
@@ -441,7 +441,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("int bool", runner(
-		errors.NoKind,
+		false,
 		"bool: \"1\"\nnull_bool: \"1\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
 		1, 1,
 		1, 2, nil,
@@ -452,7 +452,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("float64 bool error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		float64(1), 1,
 		1, 2, nil,
@@ -463,7 +463,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("string bool error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		"ok", 1,
 		1, 2, nil,
@@ -474,7 +474,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null bool empty string", runner(
-		errors.NoKind,
+		false,
 		"bool: \"1\"\nnull_bool: \"\"\nint: \"1\"\nint64: \"2\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: <nil>\ntext: <nil>\nbinary: <nil>",
 		1, "",
 		1, 2, nil,
@@ -485,7 +485,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null bool float64 error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		1, float64(1),
 		1, 2, nil,
@@ -496,7 +496,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null bool byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		1, []byte(`ok`),
 		1, 2, nil,
@@ -507,7 +507,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null bool string error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		1, `ok`,
 		1, 2, nil,
@@ -518,7 +518,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("int string error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		"1", 2, nil, // "int", "int64", "null_int64"
@@ -529,7 +529,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("int byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		[]byte("1.0"), 2, nil, // "int", "int64", "null_int64"
@@ -541,7 +541,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 	))
 
 	t.Run("int64 string error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, "2", nil, // "int", "int64", "null_int64"
@@ -552,7 +552,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("int64 byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, []byte("2.0"), nil, // "int", "int64", "null_int64"
@@ -563,7 +563,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null int64 byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, []byte("2.0"), // "int", "int64", "null_int64"
@@ -574,7 +574,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null int64 float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 2.0, // "int", "int64", "null_int64"
@@ -585,7 +585,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("float64 as int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -596,7 +596,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("float64 as byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -607,7 +607,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null float64 as byte error", runner(
-		errors.BadEncoding,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -618,7 +618,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null float64 as int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -629,7 +629,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("decimal no error", runner(
-		errors.NoKind,
+		false,
 		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: \"3\"\nfloat64: \"6.4\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"\"\nnull_string: <nil>\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: \"48.98\"\ntext: <nil>\nbinary: <nil>",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -640,7 +640,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("decimal int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -651,7 +651,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("uint float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -662,7 +662,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("uint8 float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -673,7 +673,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("uint16 float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -684,7 +684,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("uint32 float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -695,7 +695,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("uint64 float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -706,7 +706,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("byte as float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -717,7 +717,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("string as float error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -728,7 +728,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("string as invalid utf8 string error", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -739,7 +739,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("string as invalid utf8 byte error", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -750,7 +750,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null string as invalid utf8 byte error", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -761,7 +761,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null string as invalid int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -772,7 +772,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("time as invalid int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -783,7 +783,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null time as invalid int error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -794,7 +794,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null time as invalid string error", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -805,7 +805,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		nil, nil, // "text", "binary",
 	))
 	t.Run("null time as invalid byte error", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -817,7 +817,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 	))
 
 	t.Run("text/binary valid", runner(
-		errors.NoKind,
+		false,
 		"bool: \"true\"\nnull_bool: \"false\"\nint: \"1\"\nint64: \"2\"\nnull_int64: \"3\"\nfloat64: \"6.4\"\nnull_float64: <nil>\nuint: \"1\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"Hi\"\nstr: \"x\"\nnull_string: \"y\"\ntime: \"0001-01-01 00:00:00 +0000 UTC\"\nnull_time: <nil>\ndecimal: \"48.98\"\ntext: \"Hello World Text\"\nbinary: \"Hello Binary\"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -828,7 +828,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		[]byte(`Hello World Text`), []byte("Hello Binary"), // "text", "binary",
 	))
 	t.Run("text invalid UTF8", runner(
-		errors.NotValid,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -839,7 +839,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		[]byte("hello \xc0\x80"), []byte("Hello Binary"), // "text", "binary",
 	))
 	t.Run("text type error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -850,7 +850,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		"hello \xc0\x80", []byte("Hello Binary"), // "text", "binary",
 	))
 	t.Run("binary type error", runner(
-		errors.NotSupported,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -862,7 +862,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 	))
 
 	t.Run("text marshal error", runner(
-		errors.Empty,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
@@ -873,7 +873,7 @@ func TestColumnMap_Prepared(t *testing.T) {
 		[]byte("error"), nil, // "text", "binary",
 	))
 	t.Run("binary marshal error", runner(
-		errors.Empty,
+		true,
 		"",
 		true, false, // "bool", "null_bool"
 		1, 2, 3, // "int", "int64", "null_int64"
