@@ -13,6 +13,9 @@
 // limitations under the License.
 
 /*
-Package cataloginventory handles product inventory and indexing
+Package cataloginventory handles product inventory and indexing.
+
+Magento 2 Multiple Inventory Architectural Proposal #1790
+https://github.com/magento/magento2/pull/1790
 */
 package cataloginventory
