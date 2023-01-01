@@ -21,7 +21,7 @@
 //
 // This package works only with MySQL and its derivates like MariaDB or Percona.
 //
-// Abbreviations
+// # Abbreviations
 //
 // DML (https://en.wikipedia.org/wiki/Data_manipulation_language) Select,
 // Insert, Update and Delete.
@@ -46,10 +46,15 @@
 // Database locks should not be used by the average developer. Understand
 // optimistic concurrency and use serializable isolation.
 //
+// TODO(CyS) Soft deletion with system versioned tables (MariaDB only) see here
+//
+//	 where they discuss various concepts about soft deletion:
+//		https://news.ycombinator.com/item?id=34202606 and here https://news.ycombinator.com/item?id=32156009
+//
 // TODO(CyS) refactor some parts of the code once Go implements generics ;-)
 //
 // TODO(CyS) implement usage of window functions:
-//    - https://mariadb.com/kb/en/library/window-functions/
-//    - https://dev.mysql.com/doc/refman/8.0/en/window-functions-usage.html
-//    - https://blog.statsbot.co/sql-window-functions-tutorial-b5075b87d129
+//   - https://mariadb.com/kb/en/library/window-functions/
+//   - https://dev.mysql.com/doc/refman/8.0/en/window-functions-usage.html
+//   - https://blog.statsbot.co/sql-window-functions-tutorial-b5075b87d129
 package dml
